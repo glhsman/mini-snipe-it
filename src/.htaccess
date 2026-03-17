@@ -1,0 +1,3 @@
+# Zugriff auf alle Dateien in diesem Ordner verweigern
+Order deny,allow
+Deny from all

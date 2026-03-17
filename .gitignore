@@ -1,0 +1,17 @@
+# .env Dateien (Sensible Daten)
+.env
+
+# Composer & Node Dependencies
+/vendor/
+/node_modules/
+
+# Temporäre Dateien & Logs
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE-spezifische Dateien
+.idea/
+.vscode/
+nbproject/

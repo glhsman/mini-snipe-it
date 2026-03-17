@@ -1,0 +1,13 @@
+# Verzeichnis-Listing verhindern
+Options -Indexes
+
+# Zugriff auf sensible Dateien sperren
+<FilesMatch "^\.env|database\.sql">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# Standard-Einstiegspunkt (optional, falls DocumentRoot nicht auf public/ zeigt)
+# RewriteEngine On
+# RewriteRule ^$ public/index.php [L]
+# RewriteRule ^((?!public/).*)$ public/$1 [L]

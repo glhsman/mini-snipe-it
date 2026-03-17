@@ -1,0 +1,140 @@
+<?php
+namespace App\Controllers;
+
+use PDO;
+
+class MasterDataController {
+    private $db;
+
+    public function __construct($db) {
+        $this->db = $db;
+    }
+
+    public function getLocations() {
+        $stmt = $this->db->query("SELECT * FROM locations ORDER BY name");
+        return $stmt->fetchAll();
+    }
+
+    public function getManufacturers() {
+        $stmt = $this->db->query("SELECT * FROM manufacturers ORDER BY name");
+        return $stmt->fetchAll();
+    }
+
+    public function getCategories() {
+        $stmt = $this->db->query("SELECT * FROM categories ORDER BY name");
+        return $stmt->fetchAll();
+    }
+
+    public function getStatusLabels() {
+        $stmt = $this->db->query("SELECT * FROM status_labels ORDER BY name");
+        return $stmt->fetchAll();
+    }
+
+    public function getAssetModels() {
+        $stmt = $this->db->query("SELECT m.*, ma.name as manufacturer_name, c.name as category_name 
+                                  FROM asset_models m 
+                                  LEFT JOIN manufacturers ma ON m.manufacturer_id = ma.id 
+                                  LEFT JOIN categories c ON m.category_id = c.id 
+                                  ORDER BY m.name");
+        return $stmt->fetchAll();
+    }
+
+    public function getLocationById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM locations WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function getAssetModelById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM asset_models WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function getCategoryById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM categories WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function getManufacturerById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM manufacturers WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    // --- Locations ---
+    public function addLocation($data) {
+        $sql = "INSERT INTO locations (name, address, city, kuerzel) VALUES (?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$data['name'], $data['address'] ?? null, $data['city'] ?? null, $data['kuerzel'] ?? null]);
+    }
+
+    public function updateLocation($id, $data) {
+        $sql = "UPDATE locations SET name = ?, address = ?, city = ?, kuerzel = ? WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$data['name'], $data['address'] ?? null, $data['city'] ?? null, $data['kuerzel'] ?? null, $id]);
+    }
+
+    public function deleteLocation($id) {
+        $stmt = $this->db->prepare("DELETE FROM locations WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    // --- Asset Models ---
+    public function addAssetModel($data) {
+        $sql = "INSERT INTO asset_models (name, manufacturer_id, category_id, model_number) VALUES (?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            $data['name'], 
+            $data['manufacturer_id'] ?: null, 
+            $data['category_id'] ?: null, 
+            $data['model_number'] ?? null
+        ]);
+    }
+
+    public function updateAssetModel($id, $data) {
+        $sql = "UPDATE asset_models SET name = ?, manufacturer_id = ?, category_id = ?, model_number = ? WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            $data['name'], 
+            $data['manufacturer_id'] ?: null, 
+            $data['category_id'] ?: null, 
+            $data['model_number'] ?? null, 
+            $id
+        ]);
+    }
+
+    public function deleteAssetModel($id) {
+        $stmt = $this->db->prepare("DELETE FROM asset_models WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    // --- Categories ---
+    public function createCategory($data) {
+        $stmt = $this->db->prepare("INSERT INTO categories (name, kuerzel) VALUES (?, ?)");
+        return $stmt->execute([$data['name'], strtoupper($data['kuerzel'] ?? '')]);
+    }
+    public function updateCategory($id, $data) {
+        $stmt = $this->db->prepare("UPDATE categories SET name = ?, kuerzel = ? WHERE id = ?");
+        return $stmt->execute([$data['name'], strtoupper($data['kuerzel'] ?? ''), $id]);
+    }
+    public function deleteCategory($id) {
+        $stmt = $this->db->prepare("DELETE FROM categories WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    // --- Manufacturers ---
+    public function createManufacturer($name) {
+        $stmt = $this->db->prepare("INSERT INTO manufacturers (name) VALUES (?)");
+        return $stmt->execute([$name]);
+    }
+    public function updateManufacturer($id, $name) {
+        $stmt = $this->db->prepare("UPDATE manufacturers SET name = ? WHERE id = ?");
+        return $stmt->execute([$name, $id]);
+    }
+    public function deleteManufacturer($id) {
+        $stmt = $this->db->prepare("DELETE FROM manufacturers WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+}
