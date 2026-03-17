@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } catch (\PDOException $e) {
             // Fängt Unique-Constraint-Fehler etc. ab
-            $error = "Datenbankfehler: Benutzer konnte nicht angelegt werden. E-Mail oder Benutzername evtl. schon vergeben.";
+            $error = "Datenbankfehler: " . $e->getMessage();
         }
     }
 }

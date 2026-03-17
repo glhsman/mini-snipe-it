@@ -261,6 +261,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $('select.form-control').select2({
                 width: '100%'
             });
+
+            // Seriennummer in Großbuchstaben umwandeln
+            const serialInput = document.querySelector('input[name="serial"]');
+            if (serialInput) {
+                serialInput.addEventListener('input', function() {
+                    this.value = this.value.toUpperCase();
+                });
+            }
         });
     </script>
 </body>

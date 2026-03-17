@@ -26,7 +26,7 @@ class MasterDataController {
     }
 
     public function getStatusLabels() {
-        $stmt = $this->db->query("SELECT * FROM status_labels ORDER BY name");
+        $stmt = $this->db->query("SELECT * FROM status_labels ORDER BY id");
         return $stmt->fetchAll();
     }
 

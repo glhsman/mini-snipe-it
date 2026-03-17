@@ -14,10 +14,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     
     $id = (int)$_POST['id'];
     
-    if ($assetController->deleteAsset($id)) {
-        header('Location: assets.php?success=deleted');
-    } else {
-        header('Location: assets.php?error=delete_failed');
+    try {
+        if ($assetController->deleteAsset($id)) {
+            header('Location: assets.php?success=deleted');
+        } else {
+            header('Location: assets.php?error=delete_failed');
+        }
+    } catch (\Exception $e) {
+        header('Location: assets.php?error=' . urlencode($e->getMessage()));
     }
     exit;
 } else {

@@ -50,6 +50,14 @@ $assets = $assetController->getAllAssets();
             <?php endif; ?>
         </header>
 
+        <?php if (isset($_GET['success'])): ?>
+            <div class="alert alert-success">Asset erfolgreich gelöscht.</div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-error"><?php echo htmlspecialchars($_GET['error']); ?></div>
+        <?php endif; ?>
+
         <div class="card">
             <table class="data-table">
                 <thead>

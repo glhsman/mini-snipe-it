@@ -53,6 +53,15 @@ class AssetController {
     }
 
     public function deleteAsset($id) {
+        // Prüfen, ob Asset einem Benutzer zugewiesen ist
+        $stmt = $this->db->prepare("SELECT user_id FROM assets WHERE id = ?");
+        $stmt->execute([$id]);
+        $asset = $stmt->fetch();
+
+        if ($asset && $asset['user_id'] !== null) {
+            throw new \Exception("Asset ist einem Benutzer zugewiesen und kann nicht gelöscht werden.");
+        }
+
         $stmt = $this->db->prepare("DELETE FROM assets WHERE id = ?");
         return $stmt->execute([$id]);
     }

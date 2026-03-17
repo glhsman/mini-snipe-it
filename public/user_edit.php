@@ -31,17 +31,22 @@ $error = null;
 $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $password = $_POST['password'] ?? '';
+    $password_confirm = $_POST['password_confirm'] ?? '';
+    
     $data = [
         'first_name'  => $_POST['first_name'] ?? '',
         'last_name'   => $_POST['last_name'] ?? '',
         'email'       => $_POST['email'] ?? '',
         'username'    => $_POST['username'] ?? '',
         'location_id' => !empty($_POST['location_id']) ? (int)$_POST['location_id'] : null,
-        'password'    => $_POST['password'] ?? ''
+        'password'    => $password
     ];
 
     if (empty($data['username'])) {
         $error = "Benutzername darf nicht leer sein.";
+    } elseif (!empty($password) && $password !== $password_confirm) {
+        $error = "Die eingegebenen Passwörter stimmen nicht überein.";
     } else {
         if ($userController->updateUser($userId, $data)) {
             header('Location: users.php');
@@ -68,6 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-control:focus { border-color: var(--primary-color); }
         .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; }
         .alert-error { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.2); }
+        .password-wrapper { position: relative; }
+        .password-toggle { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); z-index: 10; padding: 0.5rem; }
+        .password-toggle:hover { color: white; }
+        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
     </style>
 </head>
 <body>
@@ -121,8 +130,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Neues Passwort (leer lassen für keine Änderung)</label>
-                        <input type="password" name="password" class="form-control" placeholder="••••••••">
+                        <div class="password-wrapper">
+                            <input type="password" name="password" id="pwd1" class="form-control" placeholder="••••••••">
+                            <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd1', this)"></i>
+                        </div>
                     </div>
+                    <div class="form-group">
+                        <label>Passwort bestätigen</label>
+                        <div class="password-wrapper">
+                            <input type="password" name="password_confirm" id="pwd2" class="form-control" placeholder="••••••••">
+                            <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd2', this)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
                     <div class="form-group">
                         <label>Standort</label>
                         <select name="location_id" class="form-control">
@@ -143,5 +165,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </div>
     </main>
+
+    <script>
+        function togglePassword(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>
