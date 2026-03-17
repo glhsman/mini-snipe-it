@@ -10,7 +10,7 @@
 *.tmp
 .DS_Store
 Thumbs.db
-
+Mein Mini Snipe-IT.url
 # IDE-spezifische Dateien
 .idea/
 .vscode/

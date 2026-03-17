@@ -11,9 +11,10 @@ class AssetController {
     }
 
     public function getAllAssets() {
-        $query = "SELECT a.*, m.name as model_name, s.name as status_name, l.name as location_name, u.username as assigned_to 
+        $query = "SELECT a.*, m.name as model_name, s.name as status_name, l.name as location_name, u.username as assigned_to, mf.name as manufacturer_name 
                   FROM assets a 
                   LEFT JOIN asset_models m ON a.model_id = m.id 
+                  LEFT JOIN manufacturers mf ON m.manufacturer_id = mf.id
                   LEFT JOIN status_labels s ON a.status_id = s.id 
                   LEFT JOIN locations l ON a.location_id = l.id 
                   LEFT JOIN users u ON a.user_id = u.id 
