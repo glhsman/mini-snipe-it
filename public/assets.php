@@ -67,6 +67,35 @@ $statusClasses = [
     'in reparatur' => 'badge-info',
     'ausgemustert' => 'badge-secondary'
 ];
+
+function renderPagination($page, $totalPages, $perPage) {
+    if ($totalPages <= 1) return '';
+    ob_start(); ?>
+    <div style="display:flex; justify-content:center; align-items:center; gap: 0.4rem; padding: 0.8rem 0;">
+        <?php if ($page > 1): ?>
+            <a href="<?php echo htmlspecialchars(paginationUrl(1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Erste Seite"><i class="fas fa-angle-double-left"></i></a>
+            <a href="<?php echo htmlspecialchars(paginationUrl($page - 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-left"></i></a>
+        <?php endif; ?>
+
+        <?php
+        $start = max(1, $page - 2);
+        $end   = min($totalPages, $page + 2);
+        for ($i = $start; $i <= $end; $i++): ?>
+            <a href="<?php echo htmlspecialchars(paginationUrl($i, $perPage)); ?>"
+               style="padding:0.35rem 0.65rem; border-radius:0.375rem; font-size:0.8rem; text-decoration:none; min-width:2rem; text-align:center;
+                      <?php echo $i === $page ? 'background: var(--primary-color); color: white;' : 'background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid var(--glass-border);'; ?>">
+                <?php echo $i; ?>
+            </a>
+        <?php endfor; ?>
+
+        <?php if ($page < $totalPages): ?>
+            <a href="<?php echo htmlspecialchars(paginationUrl($page + 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-right"></i></a>
+            <a href="<?php echo htmlspecialchars(paginationUrl($totalPages, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Letzte Seite"><i class="fas fa-angle-double-right"></i></a>
+        <?php endif; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -157,6 +186,8 @@ $statusClasses = [
                 </div>
             </div>
             
+            <?php echo renderPagination($page, $totalPages, $perPage); ?>
+            
             <div style="overflow-x: auto; width: 100%;">
                 <table class="data-table">
                 <thead>
@@ -224,32 +255,12 @@ $statusClasses = [
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            </div>
-
+                   </div>
+            
+            <?php echo renderPagination($page, $totalPages, $perPage); ?>
+            
             <?php if ($totalPages > 1): ?>
-            <div style="display:flex; justify-content:center; align-items:center; gap: 0.4rem; padding: 1.5rem 0 0.5rem;">
-                <?php if ($page > 1): ?>
-                    <a href="<?php echo htmlspecialchars(paginationUrl(1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Erste Seite"><i class="fas fa-angle-double-left"></i></a>
-                    <a href="<?php echo htmlspecialchars(paginationUrl($page - 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-left"></i></a>
-                <?php endif; ?>
-
-                <?php
-                $start = max(1, $page - 2);
-                $end   = min($totalPages, $page + 2);
-                for ($i = $start; $i <= $end; $i++): ?>
-                    <a href="<?php echo htmlspecialchars(paginationUrl($i, $perPage)); ?>"
-                       style="padding:0.35rem 0.65rem; border-radius:0.375rem; font-size:0.8rem; text-decoration:none; min-width:2rem; text-align:center;
-                              <?php echo $i === $page ? 'background: var(--primary-color); color: white;' : 'background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid var(--glass-border);'; ?>">
-                        <?php echo $i; ?>
-                    </a>
-                <?php endfor; ?>
-
-                <?php if ($page < $totalPages): ?>
-                    <a href="<?php echo htmlspecialchars(paginationUrl($page + 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-right"></i></a>
-                    <a href="<?php echo htmlspecialchars(paginationUrl($totalPages, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Letzte Seite"><i class="fas fa-angle-double-right"></i></a>
-                <?php endif; ?>
-            </div>
-            <p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding-bottom:0.75rem;">Seite <?php echo $page; ?> von <?php echo $totalPages; ?></p>
+                <p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding-bottom:0.75rem;">Seite <?php echo $page; ?> von <?php echo $totalPages; ?></p>
             <?php endif; ?>
         </div>
     </main>
