@@ -43,6 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'password'    => $password
     ];
 
+    if (Auth::isAdmin()) {
+        $data['role'] = $_POST['role'] ?? 'user';
+    }
+
     if (empty($data['username'])) {
         $error = "Benutzername darf nicht leer sein.";
     } elseif (!empty($password) && $password !== $password_confirm) {
@@ -156,6 +160,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php if (Auth::isAdmin()): ?>
+                    <div class="form-group">
+                        <label>Rolle</label>
+                        <select name="role" class="form-control">
+                            <option value="user" <?php echo ($user['role'] == 'user') ? 'selected' : ''; ?>>Benutzer</option>
+                            <option value="editor" <?php echo ($user['role'] == 'editor') ? 'selected' : ''; ?>>Bearbeiter</option>
+                            <option value="admin" <?php echo ($user['role'] == 'admin') ? 'selected' : ''; ?>>Administrator</option>
+                        </select>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div style="margin-top: 2rem;">

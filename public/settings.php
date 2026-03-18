@@ -94,7 +94,7 @@ $models = $masterData->getAssetModels();
             <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
         <?php endif; ?>
 
-        <div class="settings-section">
+        <div class="settings-section" id="models">
             <div class="settings-header">
                 <h2>Asset Modelle</h2>
                 <a href="model_create.php" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i></a>
@@ -125,7 +125,7 @@ $models = $masterData->getAssetModels();
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-            <div class="settings-section">
+            <div class="settings-section" id="categories">
                 <div class="settings-header">
                     <h2>Kategorien</h2>
                     <a href="category_create.php" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i></a>
@@ -148,7 +148,7 @@ $models = $masterData->getAssetModels();
                 </div>
             </div>
 
-            <div class="settings-section">
+            <div class="settings-section" id="manufacturers">
                 <div class="settings-header">
                     <h2>Hersteller</h2>
                     <a href="manufacturer_create.php" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i></a>
@@ -161,6 +161,30 @@ $models = $masterData->getAssetModels();
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section" style="margin-top: 3rem;">
+            <div class="settings-header">
+                <h2>Datenimport (CSV)</h2>
+            </div>
+            <div class="card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding: 2rem;">
+                <div>
+                    <h3 style="color: var(--text-main); margin-bottom: 1rem;"><i class="fas fa-users" style="margin-right: 0.5rem; color: var(--primary-color);"></i> Benutzer Importieren</h3>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Erstelle mehrere Benutzerkonten auf einmal. Du kannst Daten für Standorte automatisch zuordnen lassen.</p>
+                    <div style="display: flex; gap: 1rem;">
+                        <a href="import_users.php" class="btn btn-primary"><i class="fas fa-upload"></i> Importieren</a>
+                        <a href="downloads/sample_users.csv" download class="btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);"><i class="fas fa-download"></i> Muster CSV</a>
+                    </div>
+                </div>
+                <div style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+                    <h3 style="color: var(--text-main); margin-bottom: 1rem;"><i class="fas fa-laptop" style="margin-right: 0.5rem; color: #a855f7;"></i> Assets Importieren</h3>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Lade deine Asset-Liste hoch. Fehlende Modelle, Hersteller und Kategorien können automatisch erstellt werden.</p>
+                    <div style="display: flex; gap: 1rem;">
+                        <a href="import_assets.php" class="btn btn-primary" style="background: #a855f7;"><i class="fas fa-upload"></i> Importieren</a>
+                        <a href="downloads/sample_assets.csv" download class="btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);"><i class="fas fa-download"></i> Muster CSV</a>
+                    </div>
                 </div>
             </div>
         </div>

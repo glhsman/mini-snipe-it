@@ -88,17 +88,17 @@ $assets = $assetController->getAllAssets();
                         <td><?php echo $asset['assigned_to'] ? htmlspecialchars($asset['assigned_to']) : '-'; ?></td>
                         <td>
                             <?php if (Auth::isEditor()): ?>
-                                <a href="asset_edit.php?id=<?php echo $asset['id']; ?>" style="color: inherit; text-decoration: none;">
-                                    <i class="fas fa-edit" title="Bearbeiten" style="cursor:pointer; margin-right: 10px;"></i>
-                                </a>
-                                <form method="POST" action="asset_delete.php" style="display:inline;" onsubmit="return confirm('Möchten Sie das Asset \'<?php echo htmlspecialchars(addslashes($asset['name'] ?: $asset['asset_tag'])); ?>\' wirklich löschen?');">
-                                    <input type="hidden" name="id" value="<?php echo $asset['id']; ?>">
-                                    <button type="submit" title="Löschen" style="background:none; border:none; padding:0; color:var(--accent-rose); cursor:pointer;">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                    <a href="asset_edit.php?id=<?php echo $asset['id']; ?>" class="btn-icon" title="Bearbeiten">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="asset_delete.php" style="display:inline;" onsubmit="return confirm('Möchten Sie das Asset \'<?php echo htmlspecialchars(addslashes($asset['name'] ?: $asset['asset_tag'])); ?>\' wirklich löschen?');">
+                                        <input type="hidden" name="id" value="<?php echo $asset['id']; ?>">
+                                        <button type="submit" title="Löschen" class="btn-icon btn-icon-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                             <?php else: ?>
-                                <i class="fas fa-eye" style="cursor:pointer; color: var(--text-muted);"></i>
+                                <span class="btn-icon" title="Ansehen"><i class="fas fa-eye"></i></span>
                             <?php endif; ?>
                         </td>
                     </tr>

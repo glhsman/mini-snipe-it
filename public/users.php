@@ -44,6 +44,14 @@ $users = $userController->getAllUsers();
             <?php endif; ?>
         </header>
 
+        <?php if (isset($_GET['success'])): ?>
+            <div class="alert alert-success">Benutzer erfolgreich gelöscht.</div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-error"><?php echo htmlspecialchars($_GET['error']); ?></div>
+        <?php endif; ?>
+
         <div class="card">
             <table class="data-table">
                 <thead>
@@ -64,12 +72,17 @@ $users = $userController->getAllUsers();
                         <td><?php echo htmlspecialchars($user['location_name'] ?? '-'); ?></td>
                         <td>
                             <?php if (Auth::isEditor()): ?>
-                                <a href="user_edit.php?id=<?php echo $user['id']; ?>" style="color: inherit; text-decoration: none;">
-                                    <i class="fas fa-edit" style="cursor:pointer; margin-right: 10px;"></i>
-                                </a>
-                                <i class="fas fa-trash" style="cursor:pointer; color: var(--accent-rose);"></i>
+                                    <a href="user_edit.php?id=<?php echo $user['id']; ?>" class="btn-icon" title="Bearbeiten">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="user_delete.php" style="display:inline;" onsubmit="return confirm('Möchten Sie den Benutzer \'<?php echo htmlspecialchars(addslashes($user['username'])); ?>\' wirklich löschen?');">
+                                        <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
+                                        <button type="submit" title="Löschen" class="btn-icon btn-icon-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                             <?php else: ?>
-                                <i class="fas fa-eye" style="cursor:pointer; color: var(--text-muted);"></i>
+                                <span class="btn-icon" title="Ansehen"><i class="fas fa-eye"></i></span>
                             <?php endif; ?>
                         </td>
                     </tr>

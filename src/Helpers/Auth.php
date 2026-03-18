@@ -30,6 +30,11 @@ class Auth {
         return $_SESSION['role'] ?? 'user';
     }
 
+    public static function getUsername() {
+        self::startSession();
+        return $_SESSION['username'] ?? 'Gast';
+    }
+
     public static function isAdmin() {
         return self::getRole() === 'admin';
     }
