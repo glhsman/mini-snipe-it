@@ -319,8 +319,48 @@ $models = $masterData->getAssetModels();
         }
 
         // Automatisches Uppercase für Kürzel
-        kuerzelInput.addEventListener('input', function() {
-            this.value = this.value.toUpperCase();
+        if (kuerzelInput) {
+            kuerzelInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        }
+
+        // Tabellensortierung für Modelle (Client-Side)
+        document.querySelectorAll('.settings-section#models table.data-table th').forEach((th, index) => {
+            if ([0, 1, 2].includes(index)) { // Nur Name, Hersteller, Kategorie
+                th.style.cursor = 'pointer';
+                const text = th.textContent;
+                th.innerHTML = `<span>${text}</span> <i class="fas fa-sort" style="font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-left: 5px;"></i>`;
+
+                th.addEventListener('click', () => {
+                    const table = th.closest('table');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    
+                    if (rows.length === 1 && rows[0].innerText.includes("Keine Modelle")) return;
+
+                    const isAsc = th.classList.toggle('asc');
+
+                    // Reset alle anderen Icons in dieser Tabellen-Header
+                    th.parentNode.querySelectorAll('i').forEach(i => {
+                        i.className = 'fas fa-sort';
+                        i.style.color = 'rgba(255,255,255,0.3)';
+                    });
+
+                    const icon = th.querySelector('i');
+                    icon.className = isAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                    icon.style.color = 'var(--primary-color)';
+
+                    rows.sort((a, b) => {
+                        let textA = a.children[index].textContent.trim().toLowerCase();
+                        let textB = b.children[index].textContent.trim().toLowerCase();
+                        return isAsc ? textA.localeCompare(textB, 'de') : textB.localeCompare(textA, 'de');
+                    });
+
+                    tbody.innerHTML = '';
+                    rows.forEach(r => tbody.appendChild(r));
+                });
+            }
         });
     </script>
 </body>
