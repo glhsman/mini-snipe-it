@@ -35,7 +35,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'user_id'       => !empty($_POST['user_id']) ? (int)$_POST['user_id'] : null,
         'purchase_date' => !empty($_POST['purchase_date']) ? $_POST['purchase_date'] : null,
         'notes'         => $_POST['notes'] ?? '',
-        'name'          => '' // Namensfeld entfernt
+        'name'          => '',
+        'pin'           => !empty($_POST['pin']) ? trim($_POST['pin']) : null,
+        'puk'           => !empty($_POST['puk']) ? trim($_POST['puk']) : null,
+        'rufnummer'     => !empty($_POST['rufnummer']) ? trim($_POST['rufnummer']) : null,
+        'mac_adresse'   => !empty($_POST['mac_adresse']) ? trim($_POST['mac_adresse']) : null,
+        'ram'           => !empty($_POST['ram']) ? (int)$_POST['ram'] : null,
+        'ssd_size'      => !empty($_POST['ssd_size']) ? (int)$_POST['ssd_size'] : null,
+        'cores'         => !empty($_POST['cores']) ? (int)$_POST['cores'] : null,
+        'os_version'    => !empty($_POST['os_version']) ? trim($_POST['os_version']) : null
     ];
 
     if (empty($data['asset_tag'])) {
@@ -132,7 +140,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <select name="model_id" class="form-control">
                             <option value="">- Kein Modell -</option>
                             <?php foreach ($models as $model): ?>
-                                <option value="<?php echo $model['id']; ?>" <?php echo (isset($_POST['model_id']) && $_POST['model_id'] == $model['id']) ? 'selected' : ''; ?>>
+                                <option value="<?php echo $model['id']; ?>" 
+                                        data-sim="<?php echo $model['has_sim_fields'] ?? 0; ?>" 
+                                        data-hardware="<?php echo $model['has_hardware_fields'] ?? 0; ?>"
+                                        <?php echo (isset($_POST['model_id']) && $_POST['model_id'] == $model['id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($model['manufacturer_name'] . ' ' . $model['name']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -179,6 +190,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label>Notizen</label>
                     <textarea name="notes" class="form-control" rows="3"><?php echo isset($_POST['notes']) ? htmlspecialchars($_POST['notes']) : ''; ?></textarea>
+                </div>
+
+                <!-- Pakete Zusatzfelder -->
+                <div id="group-sim" class="form-grid" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.5rem; margin-top: 1.5rem;">
+                    <h3 style="grid-column: 1 / -1; margin-bottom: 0.5rem; color: var(--primary-color);">SIM-Daten</h3>
+                    <div class="form-group">
+                        <label>PIN (4 Ziffern)</label>
+                        <input type="text" name="pin" class="form-control" maxlength="4" pattern="\d{4}" placeholder="z.B. 1234" value="<?php echo isset($_POST['pin']) ? htmlspecialchars($_POST['pin']) : ''; ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>PUK (8 Ziffern)</label>
+                        <input type="text" name="puk" class="form-control" maxlength="8" pattern="\d{8}" placeholder="z.B. 12345678" value="<?php echo isset($_POST['puk']) ? htmlspecialchars($_POST['puk']) : ''; ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>Rufnummer</label>
+                        <input type="text" name="rufnummer" class="form-control" placeholder="z.B. +4915112345678" value="<?php echo isset($_POST['rufnummer']) ? htmlspecialchars($_POST['rufnummer']) : ''; ?>">
+                    </div>
+                </div>
+
+                <div id="group-hardware" class="form-grid" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.5rem;">
+                    <h3 style="grid-column: 1 / -1; margin-bottom: 0.5rem; color: var(--primary-color);">Hardware & OS</h3>
+                    <div class="form-group">
+                        <label>MAC-Adresse</label>
+                        <input type="text" name="mac_adresse" class="form-control" placeholder="z.B. AA:BB:CC:DD:EE:FF" value="<?php echo isset($_POST['mac_adresse']) ? htmlspecialchars($_POST['mac_adresse']) : ''; ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>RAM (GB)</label>
+                        <input type="number" name="ram" class="form-control" placeholder="z.B. 16" value="<?php echo isset($_POST['ram']) ? htmlspecialchars($_POST['ram']) : ''; ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>SSD-Größe (GB)</label>
+                        <input type="number" name="ssd_size" class="form-control" placeholder="z.B. 512" value="<?php echo isset($_POST['ssd_size']) ? htmlspecialchars($_POST['ssd_size']) : ''; ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>Cores (Kerne)</label>
+                        <input type="number" name="cores" class="form-control" placeholder="z.B. 8" value="<?php echo isset($_POST['cores']) ? htmlspecialchars($_POST['cores']) : ''; ?>">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>OS / Betriebssystem</label>
+                        <input type="text" name="os_version" class="form-control" style="width: 50%;" placeholder="z.B. Windows 11 / Android 14" value="<?php echo isset($_POST['os_version']) ? htmlspecialchars($_POST['os_version']) : ''; ?>">
+                    </div>
                 </div>
 
                 <div style="margin-top: 2rem;">
@@ -261,6 +313,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $('select.form-control').select2({
                 width: '100%'
             });
+
+            // Toggle Zusatzfelder
+            function toggleExtraFields() {
+                const selected = $('select[name="model_id"]').find(':selected');
+                const sim = selected.data('sim') == 1;
+                const hardware = selected.data('hardware') == 1;
+
+                $('#group-sim').toggle(sim);
+                $('#group-hardware').toggle(hardware);
+            }
+
+            $('select[name="model_id"]').on('change', function() {
+                toggleExtraFields();
+            });
+
+            // Initialer Trigger nach kurzer Verzögerung für Select2 Render
+            setTimeout(toggleExtraFields, 300);
 
             // Seriennummer in Großbuchstaben umwandeln
             const serialInput = document.querySelector('input[name="serial"]');

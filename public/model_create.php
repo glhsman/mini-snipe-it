@@ -17,10 +17,12 @@ $error = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
-        'name'            => $_POST['name'] ?? '',
-        'manufacturer_id' => !empty($_POST['manufacturer_id']) ? (int)$_POST['manufacturer_id'] : null,
-        'category_id'     => !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null,
-        'model_number'    => $_POST['model_number'] ?? ''
+        'name'                => $_POST['name'] ?? '',
+        'manufacturer_id'     => !empty($_POST['manufacturer_id']) ? (int)$_POST['manufacturer_id'] : null,
+        'category_id'         => !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null,
+        'model_number'        => $_POST['model_number'] ?? '',
+        'has_sim_fields'      => isset($_POST['has_sim_fields']) ? 1 : 0,
+        'has_hardware_fields' => isset($_POST['has_hardware_fields']) ? 1 : 0
     ];
 
     if (empty($data['name']) || empty($data['manufacturer_id']) || empty($data['category_id'])) {
@@ -111,7 +113,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" name="model_number" class="form-control" placeholder="z.B. A2442" value="<?php echo htmlspecialchars($_POST['model_number'] ?? ''); ?>">
                     </div>
 
+                    <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="checkbox" name="has_sim_fields" id="has_sim_fields" value="1" <?php echo isset($_POST['has_sim_fields']) ? 'checked' : ''; ?>>
+                        <label for="has_sim_fields" style="margin-bottom:0; cursor:pointer;">Beinhaltet SIM-Daten (PIN, PUK, Rufnummer)</label>
+                    </div>
 
+                    <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="checkbox" name="has_hardware_fields" id="has_hardware_fields" value="1" <?php echo isset($_POST['has_hardware_fields']) ? 'checked' : ''; ?>>
+                        <label for="has_hardware_fields" style="margin-bottom:0; cursor:pointer;">Beinhaltet Hardware-Daten (RAM, SSD, Cores, OS)</label>
+                    </div>
                 </div>
 
                 <div style="margin-top: 1rem;">

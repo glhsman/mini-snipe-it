@@ -173,3 +173,18 @@ DEALLOCATE PREPARE stmt_add_uq_serial;
 
 -- 10) assets.asset_tag auf NULL erlauben (für Verbrauchsmaterialien)
 ALTER TABLE assets MODIFY COLUMN asset_tag VARCHAR(100) NULL;
+
+-- 11) Zusatzfelder für SIM und Hardware
+ALTER TABLE asset_models 
+    ADD COLUMN has_sim_fields BOOLEAN DEFAULT 0,
+    ADD COLUMN has_hardware_fields BOOLEAN DEFAULT 0;
+
+ALTER TABLE assets 
+    ADD COLUMN pin VARCHAR(4) NULL,
+    ADD COLUMN puk VARCHAR(8) NULL,
+    ADD COLUMN rufnummer VARCHAR(20) NULL,
+    ADD COLUMN mac_adresse VARCHAR(17) NULL,
+    ADD COLUMN ram INT NULL,
+    ADD COLUMN ssd_size INT NULL,
+    ADD COLUMN cores INT NULL,
+    ADD COLUMN os_version VARCHAR(100) NULL;

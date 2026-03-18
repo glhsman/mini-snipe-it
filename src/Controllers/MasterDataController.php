@@ -83,24 +83,28 @@ class MasterDataController {
 
     // --- Asset Models ---
     public function addAssetModel($data) {
-        $sql = "INSERT INTO asset_models (name, manufacturer_id, category_id, model_number) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO asset_models (name, manufacturer_id, category_id, model_number, has_sim_fields, has_hardware_fields) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $data['name'], 
             $data['manufacturer_id'] ?: null, 
             $data['category_id'] ?: null, 
-            $data['model_number'] ?? null
+            $data['model_number'] ?? null,
+            $data['has_sim_fields'] ?? 0,
+            $data['has_hardware_fields'] ?? 0
         ]);
     }
 
     public function updateAssetModel($id, $data) {
-        $sql = "UPDATE asset_models SET name = ?, manufacturer_id = ?, category_id = ?, model_number = ? WHERE id = ?";
+        $sql = "UPDATE asset_models SET name = ?, manufacturer_id = ?, category_id = ?, model_number = ?, has_sim_fields = ?, has_hardware_fields = ? WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $data['name'], 
             $data['manufacturer_id'] ?: null, 
             $data['category_id'] ?: null, 
             $data['model_number'] ?? null, 
+            $data['has_sim_fields'] ?? 0,
+            $data['has_hardware_fields'] ?? 0,
             $id
         ]);
     }

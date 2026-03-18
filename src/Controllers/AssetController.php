@@ -92,24 +92,31 @@ class AssetController {
     }
 
     public function createAsset($data) {
-        $sql = "INSERT INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id, purchase_date, notes) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id, purchase_date, notes, pin, puk, rufnummer, mac_adresse, ram, ssd_size, cores, os_version) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $data['name'], $data['asset_tag'], $data['serial'], $data['model_id'], 
             $data['status_id'], $data['location_id'], $data['user_id'] ?? null, 
-            $data['purchase_date'], $data['notes']
+            $data['purchase_date'], $data['notes'],
+            $data['pin'] ?? null, $data['puk'] ?? null, $data['rufnummer'] ?? null,
+            $data['mac_adresse'] ?? null, $data['ram'] ?? null, $data['ssd_size'] ?? null,
+            $data['cores'] ?? null, $data['os_version'] ?? null
         ]);
     }
 
     public function updateAsset($id, $data) {
-        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, model_id=?, status_id=?, location_id=?, user_id=?, purchase_date=?, notes=? 
+        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, model_id=?, status_id=?, location_id=?, user_id=?, purchase_date=?, notes=?, pin=?, puk=?, rufnummer=?, mac_adresse=?, ram=?, ssd_size=?, cores=?, os_version=? 
                 WHERE id=?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $data['name'], $data['asset_tag'], $data['serial'], $data['model_id'], 
             $data['status_id'], $data['location_id'], $data['user_id'] ?? null, 
-            $data['purchase_date'], $data['notes'], $id
+            $data['purchase_date'], $data['notes'],
+            $data['pin'] ?? null, $data['puk'] ?? null, $data['rufnummer'] ?? null,
+            $data['mac_adresse'] ?? null, $data['ram'] ?? null, $data['ssd_size'] ?? null,
+            $data['cores'] ?? null, $data['os_version'] ?? null,
+            $id
         ]);
     }
 
