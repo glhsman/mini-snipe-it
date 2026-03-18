@@ -143,7 +143,8 @@ $statusClasses = [
                 <h2>Zuletzt erfasste Assets</h2>
                 <a href="assets.php" style="color: var(--primary-color); text-decoration: none; font-size: 0.875rem;">Alle ansehen</a>
             </div>
-            <table class="data-table">
+            <div style="overflow-x: auto; width: 100%;">
+                <table class="data-table">
                 <thead>
                     <tr>
                         <th>Asset Tag</th>
@@ -205,6 +206,7 @@ $statusClasses = [
                     <?php endif; ?>
                 </tbody>
             </table>
+            </div>
         </div>
     </main>
 

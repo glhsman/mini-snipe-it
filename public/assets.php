@@ -156,7 +156,9 @@ $statusClasses = [
                     <?php endforeach; ?>
                 </div>
             </div>
-            <table class="data-table">
+            
+            <div style="overflow-x: auto; width: 100%;">
+                <table class="data-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -222,6 +224,7 @@ $statusClasses = [
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
 
             <?php if ($totalPages > 1): ?>
             <div style="display:flex; justify-content:center; align-items:center; gap: 0.4rem; padding: 1.5rem 0 0.5rem;">
