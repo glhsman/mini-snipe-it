@@ -106,6 +106,23 @@ $statusClasses = [
             </a>
         </div>
 
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 1.5rem;">
+            <a href="assets.php" class="card stats-card" style="text-decoration: none; color: inherit;">
+                <div class="card-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald);"><i class="fas fa-check-circle"></i></div>
+                <div class="stats-content">
+                    <div class="value"><?php echo $stats['status_counts']['Einsatzbereit'] ?? 0; ?></div>
+                    <div class="label">Einsatzbereit</div>
+                </div>
+            </a>
+            <a href="assets.php" class="card stats-card" style="text-decoration: none; color: inherit;">
+                <div class="card-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-arrow-circle-right"></i></div>
+                <div class="stats-content">
+                    <div class="value"><?php echo $stats['status_counts']['Ausgegeben'] ?? 0; ?></div>
+                    <div class="label">Ausgegeben</div>
+                </div>
+            </a>
+        </div>
+
         <div class="charts-grid">
             <div class="card chart-card">
                 <h3>Geräteverteilung nach Typ</h3>

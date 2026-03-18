@@ -27,11 +27,16 @@ class DashboardController {
         $stmt = $this->db->query("SELECT COUNT(*) FROM users");
         $totalUsers = $stmt->fetchColumn();
 
+        // 5. Status-Zähler (Einsatzbereit, Ausgegeben, etc.)
+        $stmt = $this->db->query("SELECT s.name, COUNT(a.id) as count FROM assets a JOIN status_labels s ON a.status_id = s.id GROUP BY s.name");
+        $statusCounts = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
         return [
             'total_assets' => $totalAssets,
             'total_categories' => $totalCategories,
             'total_manufacturers' => $totalManufacturers,
-            'total_users' => $totalUsers
+            'total_users' => $totalUsers,
+            'status_counts' => $statusCounts
         ];
     }
 
