@@ -176,17 +176,19 @@ ALTER TABLE assets MODIFY COLUMN asset_tag VARCHAR(100) NULL;
 
 -- 11) Zusatzfelder für SIM und Hardware
 ALTER TABLE asset_models 
-    ADD COLUMN has_sim_fields BOOLEAN DEFAULT 0,
-    ADD COLUMN has_hardware_fields BOOLEAN DEFAULT 0;
+    ADD COLUMN IF NOT EXISTS has_sim_fields BOOLEAN DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS has_hardware_fields BOOLEAN DEFAULT 0;
 
 ALTER TABLE assets 
-    ADD COLUMN pin VARCHAR(4) NULL,
-    ADD COLUMN puk VARCHAR(8) NULL,
-    ADD COLUMN rufnummer VARCHAR(20) NULL,
-    ADD COLUMN mac_adresse VARCHAR(17) NULL,
-    ADD COLUMN ram INT NULL,
-    ADD COLUMN ssd_size INT NULL,
-    ADD COLUMN cores INT NULL,
+    ADD COLUMN IF NOT EXISTS pin VARCHAR(4) NULL,
+    ADD COLUMN IF NOT EXISTS puk VARCHAR(8) NULL,
+    ADD COLUMN IF NOT EXISTS rufnummer VARCHAR(20) NULL,
+    ADD COLUMN IF NOT EXISTS mac_adresse VARCHAR(17) NULL,
+    ADD COLUMN IF NOT EXISTS ram INT NULL,
+    ADD COLUMN IF NOT EXISTS ssd_size INT NULL,
+    ADD COLUMN IF NOT EXISTS cores INT NULL,
+    ADD COLUMN IF NOT EXISTS os_version VARCHAR(100) NULL;
+
 -- 12) Status labels erweitern (Defekt & Ausgegeben)
 INSERT INTO status_labels (name, status_type)
 SELECT 'Defekt', 'undeployable' FROM (SELECT 1) AS tmp
