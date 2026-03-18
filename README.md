@@ -4,7 +4,7 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 
 ## Features
 
--   **Dashboard**: Schneller Überblick über Gesamtzahl, zugewiesene und verfügbare Assets.
+-   **Dashboard**: Schneller Überblick über Gesamtzahl, zugewiesene und verfügbare Assets sowie detaillierte Status-Zähler (z.B. "Einsatzbereit", "Ausgegeben").
 -   **Asset-Management**: Anlegen, Bearbeiten und Löschen von Assets mit Seriennummern, Kaufdatum und Notizen.
 -   **Automatische Asset-Tags**: Generierung von Tags basierend auf Standort- und Kategorie-Kürzeln (z.B. `MUNB0001`).
 -   **Stammdatenverwaltung**:
@@ -15,9 +15,12 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 -   **Benutzerverwaltung**: Rollenbasiertes System (Admin, Editor, User) mit wählbarer Rolle und optionalem Web-Login bei der Erstellung.
 -   **Asset Check-in / Check-out**: Assets direkt aus Dashboard und Assetliste einem Benutzer zuweisen (Check-out) oder die Zuweisung aufheben (Check-in).
 -   **Asset-Suche & Filter**: Freitextsuche nach Asset-Tag, Seriennummer und Name sowie Filterung nach Asset-Modell in der Assetliste.
+-   **Profilverwaltung & Designs**:
+    -   **Dark & Light Mode**: Modernes Design mit standardmäßigem Dark Mode, umschaltbar auf Light Mode.
+    -   **Profilseite**: Benutzer können ihr eigenes Passwort ändern und das Design-Theme auswählen.
 -   **CSV-Importcenter in den Einstellungen**:
-    -   Import fuer Standorte, Benutzer und Assets
-    -   Robuste Imports mit Update-Logik bei Duplikaten (Matchen über Serial/Tag oder Username)
+    -   Import für Standorte, Benutzer und Assets
+    -   Robuste Imports mit Update-Logik bei Duplikaten (Matchen über Seriennummer/Tag oder Username)
 -   **Pagination in Listenansichten**:
     -   Asset-Verwaltung: 25/50/100/250 pro Seite
     -   Benutzer-Verwaltung: 25/50/100/250 pro Seite
