@@ -1,4 +1,4 @@
-asset_tag;name;serial;model_name;manufacturer_name;category_name;status_name;location_name;assigned_username;assigned_first_name;assigned_last_name
-SZMO0002;HP Q24 G5;SN-HP-20240001;HP Q24 G5;HP;Monitor;Einsatzbereit;SLH - Zwickau;max.mustermann;Max;Mustermann
-WDMO0002;iPhone 14;SN-APL-20240002;iPhone 14;Apple;Smartphone;Einsatzbereit;Weidlich - Dortmund;erika.muster;Erika;Muster
-BDIP0002;MacBook Pro 16;SN-APL-20240003;MacBook Pro 16;Apple;Notebook;Einsatzbereit;SLH - Zwickau;;;
+asset_tag;name;serial;model_name;manufacturer_name;category_name;status_name;location_name;assigned_username;assigned_first_name;assigned_last_name;mac;pin;puk;rufnummer;ram;ssd;kerne;windows
+SZMO0002;HP Q24 G5;SN-HP-20240001;HP Q24 G5;HP;Monitor;Einsatzbereit;SLH - Zwickau;max.mustermann;Max;Mustermann;;;;;;;;
+WDMO0002;iPhone 14;SN-APL-20240002;iPhone 14;Apple;Smartphone;Einsatzbereit;Weidlich - Dortmund;erika.muster;Erika;Muster;;1234;56789012;+491510000000;;;;iOS 17
+BDIP0002;MacBook Pro 16;SN-APL-20240003;MacBook Pro 16;Apple;Notebook;Einsatzbereit;SLH - Zwickau;;;;00:11:22:33:44:55;;;;16;512;10;macOS 14

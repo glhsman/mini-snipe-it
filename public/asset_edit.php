@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'user_id'       => !empty($_POST['user_id']) ? (int)$_POST['user_id'] : null,
         'purchase_date' => !empty($_POST['purchase_date']) ? $_POST['purchase_date'] : null,
         'notes'         => $_POST['notes'] ?? '',
-        'name'          => '',
+        'name'          => $asset['name'] ?? '',
         'pin'           => !empty($_POST['pin']) ? trim($_POST['pin']) : (!empty($_POST) ? null : ($asset['pin'] ?? null)),
         'puk'           => !empty($_POST['puk']) ? trim($_POST['puk']) : (!empty($_POST) ? null : ($asset['puk'] ?? null)),
         'rufnummer'     => !empty($_POST['rufnummer']) ? trim($_POST['rufnummer']) : (!empty($_POST) ? null : ($asset['rufnummer'] ?? null)),

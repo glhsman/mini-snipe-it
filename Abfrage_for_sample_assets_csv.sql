@@ -12,11 +12,13 @@ SELECT s.inventarnr AS asset_tag,
        g.name_of AS location_name,
        u.winname AS assigned_username,
        u.vname AS assigned_first_name,
-       u.zname AS assigned_last_name
+       u.zname AS assigned_last_name,
+       s.mac,s.pin, s.puk,s.rufnummer,s.ram, s.ssd,s.kerne,o.text
 FROM sn s
 INNER JOIN assets a ON a.assetid = s.assetref
 INNER JOIN hersteller h ON h.herstellerid = a.herstellerref
 INNER JOIN devicegroup k ON k.deviceid = a.groupref
 INNER JOIN user u ON u.userid = s.userref
 INNER JOIN gfgh g ON g.gfghid = s.gfghref
+INNER JOIN os_version o ON o.wert=s.windows
 ;
