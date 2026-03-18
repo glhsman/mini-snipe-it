@@ -60,6 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
         if (($handle = fopen($file, "r")) !== FALSE) {
             $header = fgetcsv($handle, 1000, $delimiter, '"', "");
+            $map = [];
+            if ($header) {
+                foreach ($header as $idx => $name) {
+                    $map[strtolower(trim($name))] = $idx;
+                }
+            }
             
             if (!$header || count($header) < 5) {
                 $error = "Ungültiges CSV-Format. Erkannt: " . ($header ? count($header) : 0) . " Spalte(n). " .
@@ -74,20 +80,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         $failed++; $report[] = "Zeile $rowCount: Unzureichende Spaltenanzahl."; continue;
                     }
 
-                    $assetTag = trim($row[0]);
-                    $assetName = trim($row[1]);
-                    $serial = isset($row[2]) ? trim($row[2]) : null;
-                    $modelName = trim($row[3]);
-                    $manufacturerName = isset($row[4]) ? trim($row[4]) : '';
-                    $categoryName = isset($row[5]) ? trim($row[5]) : '';
-                    $statusName = isset($row[6]) ? trim($row[6]) : '';
-                    $locationName = isset($row[7]) ? trim($row[7]) : '';
-                    $assignedUsername  = isset($row[8]) ? trim($row[8]) : '';
-                    $assignedFirstName = isset($row[9]) ? trim($row[9]) : '';
-                    $assignedLastName  = isset($row[10]) ? trim($row[10]) : '';
+                    // Dynamisches Auslesen über Header-Namen oder Index-Fallback
+                    $getVal = function($keys, $fallbackIdx) use ($row, $map) {
+                        foreach ($keys as $k) {
+                            $kLower = strtolower(trim($k));
+                            if (isset($map[$kLower])) {
+                                return trim($row[$map[$kLower]] ?? '');
+                            }
+                        }
+                        return isset($row[$fallbackIdx]) ? trim($row[$fallbackIdx]) : '';
+                    };
+
+                    $assetTag = $getVal(['asset_tag', 'inventarnr'], 0);
+                    $assetName = $getVal(['name'], 1);
+                    $serial = $getVal(['serial', 'sn'], 2);
+                    $modelName = $getVal(['model', 'modell'], 3);
+                    $manufacturerName = $getVal(['manufacturer', 'hersteller'], 4);
+                    $categoryName = $getVal(['category', 'kategorie', 'typ'], 5);
+                    $statusName = $getVal(['status'], 6);
+                    $locationName = $getVal(['location', 'standort', 'raum'], 7);
+                    $assignedUsername  = $getVal(['username', 'userref', 'nutzer'], 8);
+                    $assignedFirstName = $getVal(['first_name', 'vorname'], 9);
+                    $assignedLastName  = $getVal(['last_name', 'nachname'], 10);
+
+                    // Neue Zusatzfelder
+                    $macAddress = $getVal(['mac_adresse', 'mac'], 11);
+                    $pin = $getVal(['pin'], 12);
+                    $puk = $getVal(['puk'], 13);
+                    $rufnummer = $getVal(['rufnummer'], 14);
+                    $ram = $getVal(['ram'], 15);
+                    $ssd = $getVal(['ssd_size', 'ssd'], 16);
+                    $cores = $getVal(['cores', 'kerne'], 17);
+                    $osVersion = $getVal(['os_version', 'windows'], 18);
 
                     if (empty($assetName)) {
-                        $failed++; $report[] = "Zeile $rowCount: Asset Name fehlt."; continue;
+                        // Namen-Fallback aus Modell oder Typ
+                        $assetName = !empty($modelName) ? $modelName : (!empty($serial) ? "Asset " . $serial : "Asset " . ($assetTag ?: $rowCount));
                     }
 
                     // --- Dynamic Creation or Lookup ---
@@ -204,7 +232,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         'location_id' => $locationId,
                         'user_id' => $userId,
                         'purchase_date' => null,
-                        'notes' => 'Importiert am ' . date('d.m.Y')
+                        'notes' => 'Importiert am ' . date('d.m.Y'),
+                        'pin' => !empty($pin) ? $pin : null,
+                        'puk' => !empty($puk) ? $puk : null,
+                        'rufnummer' => !empty($rufnummer) ? $rufnummer : null,
+                        'mac_adresse' => !empty($macAddress) ? $macAddress : null,
+                        'ram' => !empty($ram) ? (int)$ram : null,
+                        'ssd_size' => !empty($ssd) ? (int)$ssd : null,
+                        'cores' => !empty($cores) ? (int)$cores : null,
+                        'os_version' => !empty($osVersion) ? $osVersion : null
                     ];
 
                     try {
