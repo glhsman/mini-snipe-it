@@ -112,12 +112,26 @@ class MasterDataController {
 
     // --- Categories ---
     public function createCategory($data) {
-        $stmt = $this->db->prepare("INSERT INTO categories (name, kuerzel) VALUES (?, ?)");
-        return $stmt->execute([$data['name'], strtoupper($data['kuerzel'] ?? '')]);
+        try {
+            $stmt = $this->db->prepare("INSERT INTO categories (name, kuerzel) VALUES (?, ?)");
+            return $stmt->execute([$data['name'], strtoupper($data['kuerzel'] ?? '')]);
+        } catch (\PDOException $e) {
+            if (strpos($e->getMessage(), '1062') !== false) {
+                throw new \Exception("Das Kürzel '" . strtoupper($data['kuerzel']) . "' wird bereits von einer anderen Kategorie verwendet.");
+            }
+            throw $e;
+        }
     }
     public function updateCategory($id, $data) {
-        $stmt = $this->db->prepare("UPDATE categories SET name = ?, kuerzel = ? WHERE id = ?");
-        return $stmt->execute([$data['name'], strtoupper($data['kuerzel'] ?? ''), $id]);
+        try {
+            $stmt = $this->db->prepare("UPDATE categories SET name = ?, kuerzel = ? WHERE id = ?");
+            return $stmt->execute([$data['name'], strtoupper($data['kuerzel'] ?? ''), $id]);
+        } catch (\PDOException $e) {
+            if (strpos($e->getMessage(), '1062') !== false) {
+                throw new \Exception("Das Kürzel '" . strtoupper($data['kuerzel']) . "' wird bereits von einer anderen Kategorie verwendet.");
+            }
+            throw $e;
+        }
     }
     public function deleteCategory($id) {
         $stmt = $this->db->prepare("DELETE FROM categories WHERE id = ?");

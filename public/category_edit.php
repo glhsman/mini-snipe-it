@@ -36,11 +36,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!empty($data['kuerzel']) && !preg_match('/^[A-Z]{2}$/', $data['kuerzel'])) {
         $error = "Das Kürzel muss aus genau 2 Großbuchstaben bestehen.";
     } else {
-        if ($masterData->updateCategory($id, $data)) {
-            header('Location: settings.php?success=' . urlencode('Kategorie erfolgreich aktualisiert.'));
-            exit;
-        } else {
-            $error = "Fehler beim Aktualisieren der Kategorie.";
+        try {
+            if ($masterData->updateCategory($id, $data)) {
+                header('Location: settings.php?success=' . urlencode('Kategorie erfolgreich aktualisiert.'));
+                exit;
+            } else {
+                $error = "Fehler beim Aktualisieren der Kategorie.";
+            }
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
         }
     }
 }

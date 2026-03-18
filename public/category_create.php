@@ -23,11 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!empty($data['kuerzel']) && !preg_match('/^[A-Z]{2}$/', $data['kuerzel'])) {
         $error = "Das Kürzel muss aus genau 2 Großbuchstaben bestehen.";
     } else {
-        if ($masterData->createCategory($data)) {
-            header('Location: settings.php');
-            exit;
-        } else {
-            $error = "Fehler beim Anlegen der Kategorie.";
+        try {
+            if ($masterData->createCategory($data)) {
+                header('Location: settings.php');
+                exit;
+            } else {
+                $error = "Fehler beim Anlegen der Kategorie.";
+            }
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
         }
     }
 }
