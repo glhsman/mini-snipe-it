@@ -193,7 +193,6 @@ function renderPagination($page, $totalPages, $perPage) {
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th><a href="<?php echo sortUrl('name'); ?>" style="color:white; text-decoration:none;">Name <i class="fas <?php echo ($sort === 'name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
                         <th><a href="<?php echo sortUrl('asset_tag'); ?>" style="color:white; text-decoration:none;">Tag <i class="fas <?php echo ($sort === 'asset_tag') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
                         <th>Seriennummer</th>
                         <th><a href="<?php echo sortUrl('model_name'); ?>" style="color:white; text-decoration:none;">Modell <i class="fas <?php echo ($sort === 'model_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
@@ -208,7 +207,6 @@ function renderPagination($page, $totalPages, $perPage) {
                     <?php foreach ($assets as $asset): ?>
                     <tr>
                         <td><?php echo $asset['id']; ?></td>
-                        <td><?php echo htmlspecialchars($asset['name']); ?></td>
                         <td><strong><?php echo htmlspecialchars($asset['asset_tag']); ?></strong></td>
                         <td><?php echo htmlspecialchars($asset['serial'] ?? '-'); ?></td>
                         <td><?php echo htmlspecialchars($asset['model_name'] ?? '-'); ?></td>

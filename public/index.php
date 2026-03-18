@@ -148,7 +148,6 @@ $statusClasses = [
                 <thead>
                     <tr>
                         <th>Asset Tag</th>
-                        <th>Name</th>
                         <th>Modell</th>
                         <th>Status</th>
                         <th>Benutzer</th>
@@ -162,7 +161,6 @@ $statusClasses = [
                         <?php foreach ($recentAssets as $asset): ?>
                         <tr>
                             <td><strong><?php echo htmlspecialchars($asset['asset_tag']); ?></strong></td>
-                            <td><?php echo htmlspecialchars($asset['name']); ?></td>
                             <td><?php echo htmlspecialchars($asset['model_name'] ?? 'Unbekannt'); ?></td>
                             <td>
                                 <?php 
