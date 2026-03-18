@@ -33,15 +33,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             $locationMap[strtolower(trim($loc['name']))] = $loc['id'];
         }
 
+        // User für Lookup laden (für UPDATE statt INSERT bei Duplikaten)
+        $users = $userController->getAllUsers();
+        $userMap = [];
+        foreach ($users as $u) {
+            $userMap[strtolower(trim($u['username']))] = $u['id'];
+        }
+
         if (($handle = fopen($file, "r")) !== FALSE) {
             // Kopfzeile überspringen / lesen
             $header = fgetcsv($handle, 1000, $delimiter, '"', "");
             
             if (!$header || count($header) < 4) {
-                $error = "Ungültiges CSV-Format. Die Datei muss mindestens 4 Spalten haben (username, email, vorname, nachname).";
+                $error = "Ungültiges CSV-Format. Erkannt: " . ($header ? count($header) : 0) . " Spalte(n). " .
+                         "Inhalt: '" . htmlspecialchars($header[0] ?? '-') . "'. " .
+                         "Tipp: Datei-Trennzeichen prüfen! (Erwartet: username, email, first_name, last_name)";
             } else {
                 $rowCount = 0;
                 $inserted = 0;
+                $updated = 0;
                 $failed = 0;
 
                 while (($row = fgetcsv($handle, 1000, $delimiter, '"', "")) !== FALSE) {
@@ -89,11 +99,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     ];
 
                     try {
-                        if ($userController->createUser($userData)) {
-                            $inserted++;
+                        $uKey = strtolower($username);
+                        if (isset($userMap[$uKey])) {
+                            // Update
+                            $userId = $userMap[$uKey];
+                            if ($userController->updateUser($userId, $userData)) {
+                                $updated++;
+                            } else {
+                                $failed++;
+                                $report[] = "Zeile $rowCount: Fehler beim Aktualisieren von '$username'.";
+                            }
                         } else {
-                            $failed++;
-                            $report[] = "Zeile $rowCount: Fehler beim Erstellen von '$username'. Möglicherweise existiert er bereits.";
+                            // Insert
+                            if ($userController->createUser($userData)) {
+                                $inserted++;
+                                $userMap[$uKey] = $db->lastInsertId();
+                            } else {
+                                $failed++;
+                                $report[] = "Zeile $rowCount: Fehler beim Erstellen von '$username'.";
+                            }
                         }
                     } catch (\Exception $e) {
                         $failed++;
@@ -101,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     }
                 }
                 fclose($handle);
-                $success = "Import abgeschlossen. Erstellt: $inserted, Fehlgeschlagen: $failed.";
+                $success = "Import abgeschlossen. Erstellt: $inserted, Aktualisiert: $updated, Fehlgeschlagen: $failed.";
             }
         } else {
             $error = "Datei konnte nicht geöffnet werden.";
@@ -163,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                 <div style="margin-bottom: 2rem;">
                     <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">CSV Datei auswählen</label>
                     <input type="file" name="csv_file" accept=".csv" required style="display: block; width: 100%; padding: 0.75rem; border: 1px dashed var(--glass-border); border-radius: 0.5rem; background: rgba(0,0,0,0.1); color: var(--text-muted); cursor: pointer;">
-                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Erwarteter Aufbau: <code>username; email; vorname; nachname; standortName</code></p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Erwarteter Aufbau: <code>username; email; first_name; last_name; location_name</code></p>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-file-import"></i> Hochladen & Importieren</button>

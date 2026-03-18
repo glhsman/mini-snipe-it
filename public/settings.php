@@ -169,10 +169,26 @@ $models = $masterData->getAssetModels();
             <div class="settings-header">
                 <h2>Datenimport (CSV)</h2>
             </div>
+
+            <!-- Import Order Hint -->
+            <div class="alert" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.75rem; padding: 1.25rem;">
+                <i class="fas fa-info-circle" style="font-size: 1.25rem; margin-top: 0.15rem;"></i>
+                <div>
+                    <strong style="display: block; margin-bottom: 0.25rem;">Empfohlene Import-Reihenfolge bei neuer Datenbank:</strong>
+                    <p style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 0.5rem;">
+                        1. <strong>Standorte</strong> &rarr; 2. <strong>Benutzer</strong> &rarr; 3. <strong>Assets</strong>
+                    </p>
+                    <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4;">
+                        Da Benutzer und Assets auf Standorte verweisen (und Assets auf Benutzer), sollten diese Grunddaten zuerst existieren.<br>
+                        <em>Hinweis:</em> Hersteller, Kategorien und Modelle werden beim Asset-Import automatisch erstellt, falls sie fehlen.
+                    </p>
+                </div>
+            </div>
+
             <div class="card" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; padding: 2rem;">
                 <div>
                     <h3 style="color: var(--text-main); margin-bottom: 1rem;"><i class="fas fa-map-marker-alt" style="margin-right: 0.5rem; color: #06b6d4;"></i> Standorte Importieren</h3>
-                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Lade deine Standorte hoch. Dies sollte vor dem Benutzer- und Asset-Import erfolgen.</p>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Lade deine Standorte hoch. Dies sollte vor dem Benutzer- und Asset-Import erfolgen.<br><code style="font-size: 0.75rem; color: #06b6d4; background: rgba(6, 182, 212, 0.1); padding: 0.2rem 0.4rem; border-radius: 0.25rem; display: inline-block; margin-top: 0.5rem;">Spalten: name, address, city, kuerzel</code></p>
                     <div style="display: flex; gap: 1rem;">
                         <a href="import_locations.php" class="btn btn-primary" style="background: #06b6d4;"><i class="fas fa-upload"></i> Importieren</a>
                         <a href="downloads/sample_locations.csv" download class="btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);"><i class="fas fa-download"></i> Muster CSV</a>
@@ -180,7 +196,7 @@ $models = $masterData->getAssetModels();
                 </div>
                 <div style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
                     <h3 style="color: var(--text-main); margin-bottom: 1rem;"><i class="fas fa-users" style="margin-right: 0.5rem; color: var(--primary-color);"></i> Benutzer Importieren</h3>
-                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Erstelle mehrere Benutzerkonten auf einmal. Du kannst Daten für Standorte automatisch zuordnen lassen.</p>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Erstelle mehrere Benutzerkonten auf einmal. Du kannst Daten für Standorte automatisch zuordnen lassen.<br><code style="font-size: 0.75rem; color: var(--primary-color); background: rgba(99, 102, 241, 0.1); padding: 0.2rem 0.4rem; border-radius: 0.25rem; display: inline-block; margin-top: 0.5rem;">Spalten: username, email, first_name, last_name, location_name</code></p>
                     <div style="display: flex; gap: 1rem;">
                         <a href="import_users.php" class="btn btn-primary"><i class="fas fa-upload"></i> Importieren</a>
                         <a href="downloads/sample_users.csv" download class="btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);"><i class="fas fa-download"></i> Muster CSV</a>
@@ -188,7 +204,7 @@ $models = $masterData->getAssetModels();
                 </div>
                 <div style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
                     <h3 style="color: var(--text-main); margin-bottom: 1rem;"><i class="fas fa-laptop" style="margin-right: 0.5rem; color: #a855f7;"></i> Assets Importieren</h3>
-                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Lade deine Asset-Liste hoch. Fehlende Modelle, Hersteller und Kategorien können automatisch erstellt werden.</p>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">Lade deine Asset-Liste hoch. Fehlende Modelle, Hersteller und Kategorien können automatisch erstellt werden.<br><code style="font-size: 0.75rem; color: #a855f7; background: rgba(168, 85, 247, 0.1); padding: 0.2rem 0.4rem; border-radius: 0.25rem; display: inline-block; margin-top: 0.5rem;">Spalten: asset_tag, name, serial, model_name, ...</code></p>
                     <div style="display: flex; gap: 1rem;">
                         <a href="import_assets.php" class="btn btn-primary" style="background: #a855f7;"><i class="fas fa-upload"></i> Importieren</a>
                         <a href="downloads/sample_assets.csv" download class="btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);"><i class="fas fa-download"></i> Muster CSV</a>
@@ -197,44 +213,7 @@ $models = $masterData->getAssetModels();
             </div>
         </div>
 
-        <div class="settings-section">
-            <div class="settings-header">
-                <h2>Beispiel-Dateien herunterladen</h2>
-            </div>
-            <div class="card" style="padding: 2rem;">
-                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
-                    <strong>Hinweis:</strong> Verwende diese Beispiel-CSV-Dateien als Vorlage für deine eigenen Importdateien. Sie zeigen die korrekte Spaltenstruktur und Formatierung.
-                </p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--glass-border);">
-                        <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
-                            <i class="fas fa-map-marker-alt" style="color: #06b6d4; margin-right: 0.5rem;"></i>
-                            <strong style="color: var(--text-main);">Standorte</strong>
-                        </div>
-                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">Spalten: name, address, city, kuerzel</p>
-                        <a href="downloads/sample_locations.csv" download class="btn btn-primary" style="width: 100%; text-align: center;"><i class="fas fa-download"></i> CSV herunterladen</a>
-                    </div>
 
-                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--glass-border);">
-                        <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
-                            <i class="fas fa-users" style="color: var(--primary-color); margin-right: 0.5rem;"></i>
-                            <strong style="color: var(--text-main);">Benutzer</strong>
-                        </div>
-                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">Spalten: username, email, first_name, last_name, location_name</p>
-                        <a href="downloads/sample_users.csv" download class="btn btn-primary" style="width: 100%; text-align: center;"><i class="fas fa-download"></i> CSV herunterladen</a>
-                    </div>
-
-                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--glass-border);">
-                        <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
-                            <i class="fas fa-laptop" style="color: #a855f7; margin-right: 0.5rem;"></i>
-                            <strong style="color: var(--text-main);">Assets</strong>
-                        </div>
-                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">Spalten: asset_tag, name, serial, model_name, ...</p>
-                        <a href="downloads/sample_assets.csv" download class="btn btn-primary" style="width: 100%; text-align: center;"><i class="fas fa-download"></i> CSV herunterladen</a>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <!-- Modal für Asset Modelle -->

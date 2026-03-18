@@ -48,14 +48,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
         $users = $userController->getAllUsers();
         $userMap = []; foreach ($users as $u) $userMap[strtolower(trim($u['username']))] = $u['id'];
+        
+        // Assets für Lookup (UPDATE statt INSERT bei Duplikaten)
+        $assets = $assetController->getAllAssets();
+        $assetTagMap = [];
+        $assetSerialMap = [];
+        foreach ($assets as $a) {
+            if (!empty($a['asset_tag'])) $assetTagMap[strtolower(trim($a['asset_tag']))] = $a['id'];
+            if (!empty($a['serial'])) $assetSerialMap[strtolower(trim($a['serial']))] = $a['id'];
+        }
 
         if (($handle = fopen($file, "r")) !== FALSE) {
             $header = fgetcsv($handle, 1000, $delimiter, '"', "");
             
             if (!$header || count($header) < 5) {
-                $error = "Ungültiges CSV-Format. Erwartete Spalten: asset_tag, name, model_name, manufacturer_name, category_name ...";
+                $error = "Ungültiges CSV-Format. Erkannt: " . ($header ? count($header) : 0) . " Spalte(n). " .
+                         "Inhalt: '" . htmlspecialchars($header[0] ?? '-') . "'. " .
+                         "Tipp: Datei-Trennzeichen prüfen! (Erwartet: asset_tag, name, model, manufacturer, category)";
             } else {
-                $rowCount = 0; $inserted = 0; $skipped = 0; $failed = 0;
+                $rowCount = 0; $inserted = 0; $updated = 0; $failed = 0;
 
                 while (($row = fgetcsv($handle, 1000, $delimiter, '"', "")) !== FALSE) {
                     $rowCount++;
@@ -75,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     $assignedFirstName = isset($row[9]) ? trim($row[9]) : '';
                     $assignedLastName  = isset($row[10]) ? trim($row[10]) : '';
 
-                    if (empty($assetTag) || empty($assetName)) {
-                        $failed++; $report[] = "Zeile $rowCount: Asset Tag oder Name fehlt."; continue;
+                    if (empty($assetName)) {
+                        $failed++; $report[] = "Zeile $rowCount: Asset Name fehlt."; continue;
                     }
 
                     // --- Dynamic Creation or Lookup ---
@@ -125,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                                         $suffix++;
                                         if ($suffix > 9) {
                                             $failed++; $report[] = "Zeile $rowCount: Kategorie '$categoryName' konnte nicht erstellt werden (kein freies Kürzel)."; 
-                                            continue 3;
+                                            continue 2;
                                         }
                                     }
                                 }
@@ -186,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     // --- Asset Bauen ---
                     $assetData = [
                         'name' => $assetName,
-                        'asset_tag' => $assetTag,
+                        'asset_tag' => !empty($assetTag) ? $assetTag : null,
                         'serial' => !empty($serial) ? $serial : null,
                         'model_id' => $modelId,
                         'status_id' => $statusId,
@@ -197,22 +208,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     ];
 
                     try {
-                        if ($assetController->createAsset($assetData)) {
-                            $inserted++;
+                        $matchId = null;
+                        $sKey = !empty($serial) ? strtolower(trim($serial)) : '';
+                        $tKey = strtolower(trim($assetTag));
+
+                        if (!empty($sKey) && isset($assetSerialMap[$sKey])) {
+                            $matchId = $assetSerialMap[$sKey];
+                        } elseif (!empty($tKey) && isset($assetTagMap[$tKey])) {
+                            $matchId = $assetTagMap[$tKey];
+                        }
+
+                        if ($matchId !== null) {
+                            if ($assetController->updateAsset($matchId, $assetData)) {
+                                $updated++;
+                                if (!empty($tKey)) $assetTagMap[$tKey] = $matchId;
+                                if (!empty($sKey)) $assetSerialMap[$sKey] = $matchId;
+                            } else {
+                                $failed++; $report[] = "Zeile $rowCount: DB-Fehler beim Aktualisieren von '$assetTag'.";
+                            }
                         } else {
-                            $failed++; $report[] = "Zeile $rowCount: DB-Fehler beim Erstellen von '$assetTag'.";
+                            if ($assetController->createAsset($assetData)) {
+                                $inserted++;
+                                $lastId = $db->lastInsertId();
+                                if (!empty($tKey)) $assetTagMap[$tKey] = $lastId;
+                                if (!empty($sKey)) $assetSerialMap[$sKey] = $lastId;
+                            } else {
+                                $failed++; $report[] = "Zeile $rowCount: DB-Fehler beim Erstellen von '$assetTag'.";
+                            }
                         }
                     } catch (\Exception $e) {
-                        // Duplikat asset_tag sauber abfangen
-                        if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'asset_tag') !== false) {
-                            $skipped++; $report[] = "Zeile $rowCount: Asset Tag '$assetTag' existiert bereits – übersprungen.";
+                        if (strpos($e->getMessage(), '1062') !== false) {
+                            $failed++; $report[] = "Zeile $rowCount: Duplikat (Seriennummer oder Asset-Tag Konflikt).";
                         } else {
                             $failed++; $report[] = "Zeile $rowCount: " . $e->getMessage();
                         }
                     }
                 }
                 fclose($handle);
-                $success = "Import abgeschlossen. Erstellt: $inserted, Übersprungen (Duplikat): $skipped, Fehlgeschlagen: $failed.";
+                $success = "Import abgeschlossen. Erstellt: $inserted, Aktualisiert: $updated, Fehlgeschlagen: $failed.";
             }
         } else {
             $error = "Datei konnte nicht geöffnet werden.";

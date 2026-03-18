@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS manufacturers (
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    kuerzel VARCHAR(2), -- 2-Buchstaben-Kuerzel fuer Asset-Tag-Generierung
+    kuerzel VARCHAR(2) UNIQUE, -- 2-Buchstaben-Kuerzel fuer Asset-Tag-Generierung
     category_type ENUM('asset', 'accessory', 'consumable', 'component') DEFAULT 'asset',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS asset_models (
     manufacturer_id INT,
     category_id INT,
     model_number VARCHAR(100),
-    kuerzel VARCHAR(2), -- NEU: 2-Buchstaben-Kürzel
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(id) ON DELETE SET NULL,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
@@ -56,7 +55,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
-    email VARCHAR(255) UNIQUE,
+    email VARCHAR(255),
     username VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255),
     can_login TINYINT(1) NOT NULL DEFAULT 1,
@@ -70,8 +69,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS assets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255),
-    asset_tag VARCHAR(100) UNIQUE NOT NULL,
-    serial VARCHAR(100),
+    asset_tag VARCHAR(100) UNIQUE,
+    serial VARCHAR(100) UNIQUE,
     model_id INT,
     status_id INT,
     location_id INT,
@@ -87,7 +86,7 @@ CREATE TABLE IF NOT EXISTS assets (
 );
 
 -- Initiale Testdaten
-INSERT INTO locations (name, city) VALUES ('Hauptquartier', 'Berlin'), ('Zweigstelle Süd', 'München');
+INSERT INTO locations (name, city, kuerzel) VALUES ('Hauptquartier', 'Berlin', 'HQ'), ('Zweigstelle Süd', 'München', 'ZS');
 INSERT INTO status_labels (name, status_type) VALUES ('Einsatzbereit', 'deployable'), ('In Reparatur', 'pending'), ('Ausgemustert', 'archived');
 INSERT INTO categories (name, kuerzel) VALUES ('Laptops', 'LP'), ('Smartphones', 'SP'), ('Monitore', 'MN');
 INSERT INTO manufacturers (name) VALUES ('Apple'), ('Dell'), ('Lenovo');

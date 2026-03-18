@@ -67,7 +67,26 @@ PREPARE stmt_add_uq FROM @sql_add_uq;
 EXECUTE stmt_add_uq;
 DEALLOCATE PREPARE stmt_add_uq;
 
--- 4) users.can_login nur anlegen, falls die Spalte fehlt
+-- 4) locations.kuerzel nur anlegen, falls sie fehlt
+SET @has_loc_kuerzel_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'locations'
+      AND COLUMN_NAME = 'kuerzel'
+);
+
+SET @sql_add_loc_kuerzel := IF(
+    @has_loc_kuerzel_col = 0,
+    'ALTER TABLE locations ADD COLUMN kuerzel VARCHAR(2) NULL AFTER city',
+    'SELECT ''Spalte locations.kuerzel existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_loc_kuerzel FROM @sql_add_loc_kuerzel;
+EXECUTE stmt_add_loc_kuerzel;
+DEALLOCATE PREPARE stmt_add_loc_kuerzel;
+
+-- 5) users.can_login nur anlegen, falls die Spalte fehlt
 SET @has_can_login_col := (
     SELECT COUNT(*)
     FROM information_schema.COLUMNS
@@ -86,7 +105,7 @@ PREPARE stmt_add_can_login_col FROM @sql_add_can_login_col;
 EXECUTE stmt_add_can_login_col;
 DEALLOCATE PREPARE stmt_add_can_login_col;
 
--- 5) users.password auf NULL erlauben um Benutzer ohne Web-Login zu unterstuetzen
+-- 6) users.password auf NULL erlauben um Benutzer ohne Web-Login zu unterstuetzen
 SET @users_password_nullable := (
     SELECT IS_NULLABLE
     FROM information_schema.COLUMNS
@@ -106,8 +125,51 @@ PREPARE stmt_password_nullable FROM @sql_password_nullable;
 EXECUTE stmt_password_nullable;
 DEALLOCATE PREPARE stmt_password_nullable;
 
--- 6) Konsistenz herstellen: ohne Passwort kein Web-Login
+-- 7) Konsistenz herstellen: ohne Passwort kein Web-Login
 UPDATE users
 SET can_login = 0
 WHERE (password IS NULL OR password = '')
   AND can_login = 1;
+
+-- 8) users.email Unique-Constraint entfernen um Sammelpostfaecher zu erlauben
+SET @has_uq_email := (
+    SELECT COUNT(*)
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'users'
+      AND INDEX_NAME = 'email'
+);
+
+SET @sql_drop_uq_email := IF(
+    @has_uq_email > 0,
+    'ALTER TABLE users DROP INDEX email',
+    'SELECT ''Unique-Index email existiert nicht oder wurde bereits geloescht'' AS info'
+);
+
+PREPARE stmt_drop_uq_email FROM @sql_drop_uq_email;
+EXECUTE stmt_drop_uq_email;
+DEALLOCATE PREPARE stmt_drop_uq_email;
+
+-- 9) assets.serial Unique-Constraint hinzufügen (nach Bereinigung von leeren Werten)
+UPDATE assets SET serial = NULL WHERE TRIM(serial) = '';
+
+SET @has_uq_serial := (
+    SELECT COUNT(*) 
+    FROM information_schema.STATISTICS 
+    WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'assets' 
+      AND INDEX_NAME = 'uq_assets_serial'
+);
+
+SET @sql_add_uq_serial := IF(
+    @has_uq_serial = 0,
+    'ALTER TABLE assets ADD CONSTRAINT uq_assets_serial UNIQUE (serial)',
+    'SELECT ''Unique-Index uq_assets_serial existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_uq_serial FROM @sql_add_uq_serial;
+EXECUTE stmt_add_uq_serial;
+DEALLOCATE PREPARE stmt_add_uq_serial;
+
+-- 10) assets.asset_tag auf NULL erlauben (für Verbrauchsmaterialien)
+ALTER TABLE assets MODIFY COLUMN asset_tag VARCHAR(100) NULL;

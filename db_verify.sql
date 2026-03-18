@@ -27,6 +27,14 @@ SELECT 'Spalte categories.kuerzel vorhanden' AS check_name,
              AND COLUMN_NAME = 'kuerzel'
        ), 'OK', 'FEHLT') AS result;
 
+SELECT 'Spalte locations.kuerzel vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'locations'
+             AND COLUMN_NAME = 'kuerzel'
+       ), 'OK', 'FEHLT') AS result;
+
 SELECT 'Spalte users.role vorhanden' AS check_name,
        IF(EXISTS(
            SELECT 1 FROM information_schema.COLUMNS
@@ -134,3 +142,4 @@ WHERE u.location_id IS NOT NULL
 -- 6) Optional: Detailausgabe bei Problemen (auskommentiert)
 -- SELECT * FROM categories WHERE kuerzel IS NULL OR kuerzel = '' OR kuerzel NOT REGEXP '^[A-Z]{2}$';
 -- SELECT u.* FROM users u LEFT JOIN locations l ON l.id = u.location_id WHERE u.location_id IS NOT NULL AND l.id IS NULL;
+assets

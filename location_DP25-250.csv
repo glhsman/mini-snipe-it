@@ -1,0 +1,251 @@
+username;email;first_name;last_name;location_name
+KGARBE;K.Garbe@bb-services.de;Katja;Garbe;Beverage Business Services
+EBAUMANN;E.Baumann@bb-services.de;Elena;Baumann;Beverage Business Services
+MCARTA;M.Carta@bb-services.de;Maximiliano;Carta;Beverage Business Services
+AGERLICH;A.Gerlich@bb-services.de;Anna;Gerlich;Beverage Business Services
+HSCHAUMANN;H.Schaumann@bb-services.de;Heidi;Schaumann;Beverage Business Services
+EYASAR;E.Yasar@bb-services.de;Ebru;Yasar;Beverage Business Services
+ITHEODORIDOU;I.Theodoridou-Knappe@bb-services.de;Ioanna;Theodoridou-Knappe;Beverage Business Services
+IGRIESE;I.Griese@bb-services.de;Inga;Griese;Beverage Business Services
+AOBERHAUS;A.Oberhaus@bb-services.de;Anastasia;Oberhaus;Beverage Business Services
+DMERFELD;D.Merfeld@bb-services.de;Deniz;Merfeld;Beverage Business Services
+JSCHEMMANN;J.Schemmann@bb-services.de;Jaqueline;Schemmann;Beverage Business Services
+AZIMMER;A.Zimmer@bb-services.de;Alex;Zimmer;Beverage Business Services
+SMESTANEK;S.Mestanek@bb-services.de;Sarah;Mestanek;Beverage Business Services
+LLUEDICKE;L.Luedicke@bb-services.de;Leonie;Lüdicke;Beverage Business Services
+DEMER;d.emer@bb-services.de;Daniel;Emer;Beverage Business Services
+PNITSCH;p.nitsch@bb-services.de;Paula;Nitsch;Beverage Business Services
+EDHIMA;E.Dhima@bb-services.de;Elda;Dhima;Beverage Business Services
+AAHUJA;A.Ahuja@bb-services.de;Arbit;Ahuja;Beverage Business Services
+KPYSSA;K.Pyssa@bb-services.de;Kim;Pyssa;Beverage Business Services
+SBENZ;s.benz@bb-services.de;Stefan;Benz;Beverage Business Services
+VLITTAU;V.Littau@bb-services.de;Veronika;Littau;Beverage Business Services
+AP-BBS;;Ap;Bbs;Beverage Business Services
+IT-ESG;;It;Esg;ESG: Kabelsketal
+CHOYER;C.Hoyer@esg-getraenke.de;Christine;Hoyer;ESG: Kabelsketal
+SRAMMELT;S.Rammelt@esg-getraenke.de;Stephan;Rammelt;ESG: Kabelsketal
+EHELLER;E.Heller@esg-getraenke.de;Erika;Heller;ESG: Kabelsketal
+KSPRINGER;K.Springer@esg-getraenke.de;Konstanze;Springer;ESG: Kabelsketal
+ATRAUTWEIN;A.Trautwein@esg-getraenke.de;Antje;Trautwein;ESG: Kabelsketal
+AENSLIN;A.Enslin@esg-getraenke.de;Angelika;Enslin;ESG: Kabelsketal
+JSANDER;J.Sander@esg-getraenke.de;Jürgen;Sander;ESG: Kabelsketal
+MWEILE;M.Weile@esg-getraenke.de;Matthias;Weile;ESG: Kabelsketal
+KLISKER;K.Lisker@esg-getraenke.de;Kevin;Lisker;ESG: Kabelsketal
+HWINTER;H.Winter@esg-getraenke.de;Holger;Winter;ESG: Kabelsketal
+NHAUPT;N.Haupt@esg-getraenke.de;Nico;Haupt;ESG: Kabelsketal
+MKOCH3;M.Koch@esg-getraenke.de;Michael;Koch;ESG: Kabelsketal
+JBOROWITZA;J.Borowitza@esg-getraenke.de;Jacqueline;Borowitza;ESG: Kabelsketal
+TMANN;T.Mann@esg-getraenke.de;Thomas;Mann;ESG: Kabelsketal
+ASILBERNAGEL;A.Silbernagel@esg-getraenke.de;Anke;Silbernagel;ESG: Kabelsketal
+RWERNICKE;R.Wernicke@esg-getraenke.de;Roland;Wernicke;ESG: Kabelsketal
+MSCHNELL;M.Schnell@esg-getraenke.de;Mike;Schnell;ESG: Kabelsketal
+CHEISE;C.Heise@esg-getraenke.de;Cornelia;Heise;ESG: Kabelsketal
+TKLOSKA;t.kloska@esg-getraenke.de;Thomas;Kloska;ESG: Kabelsketal
+MBESOKE;M.Besoke@esg-getraenke.de;Mario;Besoke;ESG: Kabelsketal
+NBRAUER;N.Brauer@esg-getraenke.de;Nadine;Brauer;ESG: Kabelsketal
+SBOOST;S.Boost@esg-getraenke.de;Simon;Boost;ESG: Kabelsketal
+SERNST;S.Ernst@esg-getraenke.de;Susanne;Ernst;ESG: Kabelsketal
+ESG-SU-INVENTUR;;Inventur;Esg-Sammeluser;ESG: Kabelsketal
+IT-HFS;;It;Hfs;HFS: Radebeul
+KBOHN;Kay.Bohn@hfs-getraenke.de;Kay;Bohn;HFS: Radebeul
+UZANGE;Ulf.Zange@hfs-getraenke.de;Ulf;Zange;HFS: Radebeul
+JKROSCHWALD;Joerg.Kroschwald@hfs-getraenke.de;Jörg;Kroschwald;HFS: Radebeul
+MMAI;Marcus.Mai@hfs-getraenke.de;Marcus;Mai;HFS: Radebeul
+ABERGE;Andreas.Berge@hfs-getraenke.de;Andreas;Berge;HFS: Radebeul
+JGUENSEL;Jack.Guensel@hfs-getraenke.de;Jack;Günsel;HFS: Radebeul
+RHERRMANN;Ralph.Herrmann@hfs-getraenke.de;Ralph;Herrmann;HFS: Radebeul
+BBIALLAS;Birgit.Biallas@hfs-getraenke.de;Birgit;Biallas;HFS: Radebeul
+TJENTSCH;Tina.Jentsch@hfs-getraenke.de;Tina;Jentsch;HFS: Radebeul
+RMITTAG2;Rene.Mittag@hfs-getraenke.de;Rene;Mittag;HFS: Radebeul
+RSCHMIDT;Romy.Schmidt@hfs-getraenke.de;Romy;Schmidt;HFS: Radebeul
+ESCHNEIDER;Erik.Schneider@hfs-getraenke.de;Erik;Schneider;HFS: Radebeul
+HJUNGCLAUS;Heiner.Jungclaus@hfs-getraenke.de;Heiner;Jungclaus;HFS: Radebeul
+JBUCHHEIM;Joern.Buchheim@hfs-getraenke.de;Jörn;Buchheim;HFS: Radebeul
+FMARTEN;offboarding-8XKM1GB-Ferry.Marten@hfs-getraenke.de;Ferry;Marten;HFS: Radebeul
+MSCHUMANN2;Marlen.Schumann@hfs-getraenke.de;Marlen;Schumann;HFS: Radebeul
+JMEYER;Jens.Meyer@hfs-getraenke.de;Jens;Meyer;HFS: Radebeul
+TWAURICH;Tommy.Waurich@hfs-getraenke.de;Tommy;Waurich;HFS: Radebeul
+TMICHEL;Thomas.Michel@hfs-getraenke.de;Thomas;Michel;HFS: Radebeul
+DGROSS;David.Gross@hfs-getraenke.de;David;Groß;HFS: Radebeul
+DGRAF;Dana.Graf@hfs-getraenke.de;Dana;Graf;HFS: Radebeul
+AFUTSCHIK;Andrea.Futschik@hfs-getraenke.de;Andrea;Futschik;HFS: Radebeul
+HDIETRICH2;Hendrik.Dietrich@hfs-getraenke.de;Hendrik;Dietrich;HFS: Radebeul
+JKOENITZ;Josefine.Koenitz@hfs-getraenke.de;Josefine;Koenitz;HFS: Radebeul
+JPATZIG;Joerg.Patzig@hfs-getraenke.de;Jörg;Patzig;HFS: Radebeul
+SDIETRICH;Steffen.Dietrich@hfs-getraenke.de;Steffen;Dietrich;HFS: Radebeul
+JPIETZSCH;Jens.Pietzsch@hfs-getraenke.de;Jens;Pietzsch;HFS: Radebeul
+UCZAIKOWSKI;Uwe.Czaikowski@hfs-getraenke.de;Uwe;Czaikowski;HFS: Radebeul
+DHOYER;Denis.Hoyer@hfs-getraenke.de;Denis;Hoyer;HFS: Radebeul
+RKOBAN;Romy.Koban@hfs-getraenke.de;Romy;Koban;HFS: Radebeul
+RSCHMIDT3;Robert.Schmidt@hfs-getraenke.de;Robert;Schmidt;HFS: Radebeul
+VMALT;Vicki.Malt@hfs-getraenke.de;Vicki;Malt;HFS: Radebeul
+DHECKERBURR;Dagmar.Hecker-Burr@hfs-getraenke.de;Dagmar;Hecker-Burr;HFS: Radebeul
+SSCHMIDT5;Steffen.Schmidt@hfs-getraenke.de;Steffen;Schmidt;HFS: Radebeul
+SJANTKE;Steffen.Jantke@hfs-getraenke.de;Steffen;Jantke;HFS: Radebeul
+KWULFF;Karen.Wulff@hfs-getraenke.de;Karen;Wulff;HFS: Radebeul
+LVIRDIS;Luca.Virdis@hfs-getraenke.de;Luca;Virdis;HFS: Radebeul
+KPAESSLER;Kai.Paessler@hfs-getraenke.de;Kai;Päßler;HFS: Radebeul
+SHOEPPNER;Sandro.Hoeppner@hfs-getraenke.de;Sandro;Höppner;HFS: Radebeul
+RFANDEL;Rene.Fandel@hfs-getraenke.de;Rene;Fandel;HFS: Radebeul
+JWOLF;Joerg.Wolf@hfs-getraenke.de;Jörg;Wolf;HFS: Radebeul
+CHEIDE;Carola.Heide@hfs-getraenke.de;Carola;Heide;HFS: Radebeul
+CWOIGK;Cornelia.Woigk@hfs-getraenke.de;Cornelia;Woigk;HFS: Radebeul
+CLEHMANN2;Christiane.Lehmann@hfs-getraenke.de;Christiane;Lehmann;HFS: Radebeul
+JHORST;Jens-Uwe.Horst@hfs-getraenke.de;Jens-Uwe;Horst;HFS: Radebeul
+SWACHS;Sebastian.Wachs@hfs-getraenke.de;Sebastian;Wachs;HFS: Radebeul
+NBESSER;Nicole.Besser@hfs-getraenke.de;Nicole;Besser;HFS: Radebeul
+JPINTHER;offboarding-MKT5EL0-Justin.Pinther@hfs-getraenke.de;Justin;Pinther;HFS: Radebeul
+SHOLZAEPFEL;Stacie.Holzaepfel@hfs-getraenke.de;Stacie;Holzäpfel;HFS: Radebeul
+KGNERLICH;Kathrin.Gnerlich@hfs-getraenke.de;Kathrin;Gnerlich;HFS: Radebeul
+KSCHROEDER;Kathrin.Schroeder@hfs-getraenke.de;Kathrin;Schröder;HFS: Radebeul
+KREHWALD;Katrin.Rehwald@hfs-getraenke.de;Katrin;Rehwald;HFS: Radebeul
+RENGEL;Rene.Engel@hfs-getraenke.de;Rene;Engel;HFS: Radebeul
+SSCHULZE2;Sebastian.Schulze@hfs-getraenke.de;Sebastian;Schulze;HFS: Radebeul
+FGRZECHCAPOH;Franziska.Grzechca-Pohle@hfs-getraenke.de;Franziska;Grzechca-Pohle;HFS: Radebeul
+GSCHNEIDER;Gunther.Schneider@hfs-getraenke.de;Gunther;Schneider;HFS: Radebeul
+ASCHNEIDER;Axel.Schneider@hfs-getraenke.de;Axel;Schneider;HFS: Radebeul
+SPETZOLD;Sabine.Petzold@hfs-getraenke.de;Sabine;Petzold;HFS: Radebeul
+RMUELLER3;Roman.Mueller@hfs-getraenke.de;Roman;Müller;HFS: Radebeul
+AFANTA;Anezka.Fanta@hfs-getraenke.de;Anezka;Fanta;HFS: Radebeul
+HTRAN;HuyLoc.Tran@hfs-getraenke.de;Huy Loc;Tran;HFS: Radebeul
+HNGUYEN;HoangAnh.Nguyen@hfs-getraenke.de;Hoang Anh;Nguyen;HFS: Radebeul
+AGROSSMANN;Andreas.Grossmann@hfs-getraenke.de;Andreas;Großmann;HFS: Radebeul
+KPETZOLD;Kerstin.Petzold@hfs-getraenke.de;Kerstin;Petzold;HFS: Radebeul
+SKIRSCHNER;Stefan.Kirschner@hfs-getraenke.de;Stefan;Kirschner;HFS: Radebeul
+TSCHROEDER;T.Schroeder@getraenke-pm.de;Thomas;Schröder;Preuss: Berlin
+IT-PB;;It;Pb;Preuss: Berlin
+RLANGER;;Rene;Langer;Preuss: Berlin
+FKAUTZ;F.Kautz@getraenke-pm.de;Frank;Kautz;Preuss: Berlin
+JPALLAVICINI;J.Pallavicini@getraenke-pm.de;Jessica;Pallavicini;Preuss: Berlin
+AHERRMANN;;Andreas;Herrmann;Preuss: Berlin
+JMIETH;J.Mieth@getraenke-pm.de;Jörg;Mieth;Preuss: Berlin
+GSCHNEIDER3;G.Schneider@getraenke-pm.de;Giorgio;Schneider;Preuss: Berlin
+MMATTHEI;M.Matthei@getraenke-pm.de;Myriam;Matthei;Preuss: Berlin
+TPOEHLAND;T.Poehland@getraenke-pm.de;Tim;Pöhland;Preuss: Berlin
+THOFFMANN;T.Hoffmann@getraenke-pm.de;Thomas;Hoffmann;Preuss: Berlin
+FTHIER;F.Thier@getraenke-pm.de;Frank;Thier;Preuss: Berlin
+BEBEL;B.Ebel@getraenke-pm.de;Beate;Ebel;Preuss: Berlin
+HSCHWARZ2;h-m.schwarz@getraenke-pm.de;Hans-Martin;Schwarz;Preuss: Berlin
+SBURMEISTER;S.Remus@getraenke-pm.de;Susanne;Burmeister;Preuss: Berlin
+LSTARK;L.Stark@getraenke-pm.de;Lothar;Stark;Preuss: Berlin
+TPLAGGE;t.plagge@getraenke-pm.de;Thomas;Plagge;Preuss: Berlin
+GKUNZENDORF;G.Kunzendorf@getraenke-pm.de;Gabriele;Kunzendorf;Preuss: Berlin
+SKATTNER;S.Kattner@getraenke-pm.de;Steffen;Kattner;Preuss: Berlin
+RBILSING;R.Bilsing@getraenke-pm.de;Rene;Bilsing;Preuss: Berlin
+BSCHULZE;B.Schulze@getraenke-pm.de;Bärbel;Schulze;Preuss: Berlin
+NKIENKER;N.Kienker@getraenke-pm.de;Nicole;Kienker;Preuss: Berlin
+MNEUBAUER2;M.Neubauer@getraenke-pm.de;Mario;Neubauer;Preuss: Berlin
+HJESCHKE;H.Jeschke@getraenke-pm.de;Holger;Jeschke;Preuss: Berlin
+TDOHNOW;T.Dohnow@getraenke-pm.de;Thomas;Dohnow;Preuss: Berlin
+RLANGNER;R.Langner@getraenke-pm.de;Rene;Langner;Preuss: Berlin
+RKRUEGER;R.Krueger@getraenke-pm.de;Ringo;Krüger;Preuss: Berlin
+BBODE;B.Bode@getraenke-pm.de;Birgit;Bode;Preuss: Berlin
+RDITTRICH;R.Dittrich@getraenke-pm.de;Rene;Dittrich;Preuss: Berlin
+AOLM;A.Olm@getraenke-pm.de;Andy;Olm;Preuss: Berlin
+CANDERS;C.Anders@getraenke-pm.de;Carsten;Anders;Preuss: Berlin
+CWALTER;C.Walter@getraenke-pm.de;Christina;Walter;Preuss: Berlin
+TSCHAFFARCZY;T.Schaffarczyk@getraenke-pm.de;Thomas;Schaffarczyk;Preuss: Berlin
+AHEINZ;A.Heinz@getraenke-pm.de;Andreas;Heinz;Preuss: Berlin
+EROSENTHAL;E.Rosenthal@getraenke-pm.de;Elke;Rosenthal;Preuss: Berlin
+MWAGENER;M.Wegener@getraenke-pm.de;Michael;Wegener;Preuss: Berlin
+BLUCKE;B.Lucke@getraenke-pm.de;Bärbel;Lucke;Preuss: Berlin
+MLOEBE;M.Loebe@getraenke-pm.de;Max;Loebe;Preuss: Berlin
+THEGER;t.heger@getraenke-pm.de;Tino;Heger;Preuss: Berlin
+MKOALLICK;M.Koallick@getraenke-pm.de;Michael;Koallick;Preuss: Berlin
+SDOHNOW;S.Dohnow@getraenke-pm.de;Sebastian;Dohnow;Preuss: Berlin
+MSTEINBACH;m.steinbach@getraenke-pm.de;Michael;Steinbach;Preuss: Berlin
+MSCHULZ3;M.Schulz@getraenke-pm.de;Maik;Schulz;Preuss: Berlin
+BWOHLERT;B.Wohlert@getraenke-pm.de;Bernd;Wohlert;Preuss: Berlin
+SSCHMIDT9;S.Schmidt@getraenke-pm.de;Sven;Schmidt;Preuss: Berlin
+SSCHULZ2;S.Schulz@getraenke-pm.de;Sascha;Schulz;Preuss: Berlin
+PGRAU;p.grau@getraenke-pm.de;Paul;Grau;Preuss: Berlin
+DKELLER;D.Keller@getraenke-pm.de;Dirk;Keller;Preuss: Berlin
+DMUELLER;D.Mueller@getraenke-pm.de;Denny;Müller;Preuss: Berlin
+MKLEIN2;m.klein@getraenke-pm.de;Melvin;Klein;Preuss: Berlin
+MDAPRILE;M.dAprile@getraenke-pm.de;Michael Guiseppe;Aprile;Preuss: Berlin
+DNOACK;D.Noack@getraenke-pm.de;Denny;Noack;Preuss: Berlin
+SLIPKA;S.Lipka@getraenke-pm.de;Silvio;Lipka;Preuss: Berlin
+MKOZLIK;M.Kozlik@getraenke-pm.de;Marcin Pawel;Kozlik;Preuss: Berlin
+RTIEFENBECK;R.Tiefenbeck@getraenke-pm.de;Robert;Tiefenbeck;Preuss: Berlin
+SGAMM;S.Gamm@getraenke-pm.de;Sergej;Gamm;Preuss: Berlin
+HGROSSMANN;H.Grossmann@getraenke-pm.de;Heike;Großmann;Preuss: Berlin
+BTESKE;B.Teske@getraenke-pm.de;Bettina;Teske;Preuss: Berlin
+CSCHMIDT2;C.Schmidt@getraenke-pm.de;Christian;Schmidt;Preuss: Berlin
+TSUGINT;T.Sugint@getraenke-pm.de;Till;Sugint;Preuss: Berlin
+IMICHAELSEN;I.Michaelsen@getraenke-pm.de;Isabell;Michaelsen;Preuss: Berlin
+KWUENSCHIG;K.Wuenschig@getraenke-pm.de;Katja;Wünschig;Preuss: Berlin
+MSIEMUND;M.Siemund@getraenke-pm.de;Maria;Siemund;Preuss: Berlin
+OFLUCH;O.Fluch@getraenke-pm.de;Ole;Fluch;Preuss: Berlin
+PNEUMANN;P.Neumann@getraenke-pm.de;Patrick;Neumann;Preuss: Berlin
+STRILL;S.Trill@getraenke-pm.de;Stefan;Trill;Preuss: Berlin
+DDOMMENZ;D.Dommenz@getraenke-pm.de;Danilo;Dommenz;Preuss: Berlin
+PGARBRECHT;P.Garbrecht@getraenke-pm.de;Peter;Garbrecht;Preuss: Berlin
+MSCHETTLER;M.Schettler@getraenke-pm.de;Matthias;Schettler;Preuss: Berlin
+MRIEGAMMER;M.Riegammer@getraenke-pm.de;Mike;Riegammer;Preuss: Berlin
+PCHRISSIDOUM;P.Chrissidou-Martino@getraenke-pm.de;Pelagia;Chrissidou-Martino;Preuss: Berlin
+DRITTER;d.ritter@getraenke-pm.de;Desiree;Ritter;Preuss: Berlin
+SLEHMANN;s.lehmann@getraenke-pm.de;Steffi;Lehmann;Preuss: Berlin
+MTHIEL;M.Thiel@getraenke-pm.de;Marco;Thiel;Preuss: Berlin
+GKIRCHNER;G.Kirchner@getraenke-pm.de;Gottfried;Kirchner;Preuss: Berlin
+MDUDA;m.duda@getraenke-pm.de;Mike;Duda;Preuss: Berlin
+SKREUZER;S.Kreuzer@getraenke-pm.de;Sven;Kreuzer;Preuss: Berlin
+TWESCH;T.Wesch@getraenke-pm.de;Thomas;Wesch;Preuss: Berlin
+EKLEEMANN;E.Kleemann@getraenke-pm.de;Emily Ann;Kleemann;Preuss: Berlin
+KHOIDIS;K.Hoidis@getraenke-pm.de;Kevin;Hoidis;Preuss: Berlin
+ARETTS;A.Retts@getraenke-pm.de;Alisa;Retts;Preuss: Berlin
+AP-PB;;Ap;Pb;Preuss: Berlin
+RBERG;R.Berg@getraenke-pm.de;Rainer;Berg;Preuss: Berlin
+NROSS;;Nicola;Ross;Preuss: Berlin
+AFROEHLICH;A.Froehlich@getraenke-pm.de;Andreas;Fröhlich;Preuss: Berlin
+NHASELOFF;N.Haseloff@getraenke-pm.de;Nadine;Haseloff;Preuss: Berlin
+NKRAMER;N.Kramer@getraenke-pm.de;Nicole;Kramer;Preuss: Berlin
+MTHUEMMLER;M.Thuemmler@slh-getraenke.de;Mario;Thümmler;SLH: Senftenberg
+TABROMEIT;T.Abromeit@slh-getraenke.de;Tim;Abromeit;SLH: Senftenberg
+TSCHENKER;T.Schenker@slh-getraenke.de;Tilo;Schenker;SLH: Senftenberg
+SORLIKOWSKI;S.Orlikowski@slh-getraenke.de;Susann;Orlikowski;SLH: Senftenberg
+ELEWANDOWSKY;E.Lewandowsky@slh-getraenke.de;Elgin;Lewandowsky;SLH: Senftenberg
+HDUBIEL;H.Dubiel@slh-getraenke.de;Heike;Dubiel;SLH: Senftenberg
+UGRIEGER;U.Grieger@slh-getraenke.de;Ute;Grieger;SLH: Senftenberg
+JSCHMIDT3;J.Schmidt@slh-getraenke.de;Jana;Schmidt;SLH: Senftenberg
+MGROCH;M.Groch@slh-getraenke.de;Martin;Groch;SLH: Senftenberg
+DLODE;D.Lode@slh-getraenke.de;Daniela;Lode;SLH: Senftenberg
+MBEHRENDT;M.Behrendt@slh-getraenke.de;Madlen;Behrendt;SLH: Senftenberg
+TWAERZNER;T.Waerzner@slh-getraenke.de;Thomas;Wärzner;SLH: Senftenberg
+SMUELLER;S.Mueller@slh-getraenke.de;Sabine;Müller;SLH: Senftenberg
+SKOENIG2;S.koenig@slh-getraenke.de;Sarah;König;SLH: Senftenberg
+KHERRMANN;K.Herrmann@slh-getraenke.de;Katja;Herrmann;SLH: Senftenberg
+AWAERZNER;A.Waerzner@slh-getraenke.de;Andreas;Wärzner;SLH: Senftenberg
+HKOLBE;H.Kolbe@slh-getraenke.de;Holger;Kolbe;SLH: Senftenberg
+MSAWICKI;M.Sawicki@slh-getraenke.de;Michael;Sawicki;SLH: Senftenberg
+CKRETSCHMER;C.Kretschmer@slh-getraenke.de;Cornelia;Kretschmer;SLH: Senftenberg
+MWALTER2;M.Walter@slh-getraenke.de;Michaela;Walter;SLH: Senftenberg
+JHILLE;J.Hille@slh-getraenke.de;Jeannette;Hille;SLH: Senftenberg
+LLAUTERBACH;L.Lauterbach@slh-getraenke.de;Lisa;Lauterbach;SLH: Senftenberg
+LWINDIRSCH;L.Windirsch@slh-getraenke.de;Luisa;Windirsch;SLH: Senftenberg
+DLEHNIGK;D.Lehnigk@slh-getraenke.de;Detlef;Lehnigk;SLH: Senftenberg
+RGRAF;R.Graf@slh-getraenke.de;Regina;Graf;SLH: Senftenberg
+TDEGEN;T.Degen@slh-getraenke.de;Torsten;Degen;SLH: Senftenberg
+HRENZ;H.Renz@slh-getraenke.de;Heike;Renz;SLH: Senftenberg
+DREICHART;D.Reichart@slh-getraenke.de;Damian;Reichart;SLH: Senftenberg
+MULLRICH;M.Ullrich@slh-getraenke.de;Mario;Ullrich;SLH: Senftenberg
+DLOSSACK;D.Lossack@slh-getraenke.de;Daniel;Lossack;SLH: Senftenberg
+CSIMROTH;C.Simroth@slh-getraenke.de;Carmen;Simroth;SLH: Senftenberg
+MMITTELSTAED;M.Mittelstaedt@slh-getraenke.de;Madeleine;Mittelstädt;SLH: Senftenberg
+MQUITTEL;M.Quittel@slh-getraenke.de;Meggie;Quittel;SLH: Senftenberg
+ALUDING;A.Luding@slh-getraenke.de;Andrea;Luding;SLH: Senftenberg
+KMERGNER;K.Mergner@slh-getraenke.de;Karin;Mergner;SLH: Senftenberg
+YARZT;Y.Arzt@slh-getraenke.de;Yvonne;Arzt;SLH: Senftenberg
+JOSCHATZ;j.oschatz@slh-getraenke.de;Jens;Oschatz;SLH: Senftenberg
+NYILDIRIM;N.Yildirim@slh-getraenke.de;Neslihan;Yildirim;SLH: Senftenberg
+DSCHOLZ;D.Scholz@slh-getraenke.de;Dominik;Scholz;SLH: Senftenberg
+CHECKMANN;C.Heckmann@slh-getraenke.de;Clemens;Heckmann;SLH: Senftenberg
+BHEINZE;b.heinze@slh-getraenke.de;Bettina;Heinze;SLH: Senftenberg
+IT-SLH-SC;;It;Slh;SLH: Senftenberg
+TKNISCHKA;t.knischka@slh-getraenke.de;Thomas;Knischka;SLH: Senftenberg
+MKRUEGER2;m.krueger@slh-getraenke.de;Maxim;Krüger;SLH: Senftenberg
+FKRUSCHINSKI;F.Kruschinski@slh-getraenke.de;Frank-Dietrich;Kruschinski;SLH: Senftenberg
+OLANGER;Langer@getraenke-weidlich.de;Olaf;Langer;Weidlich: Dortmund
+TAHLAND;Ahland@getraenke-weidlich.de;Tobias;Ahland;Weidlich: Dortmund
+MBOECKELMANN;Boeckelmann@getraenke-weidlich.de;Matthias;Böckelmann;Weidlich: Dortmund
+DBOHNENKAMP;Bohnenkamp@getraenke-weidlich.de;Dennis;Bohnenkamp;Weidlich: Dortmund
+DIENSTKONTO;;Dienst;Dienstkonto;Weidlich: Dortmund
