@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS manufacturers (
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    kuerzel VARCHAR(2), -- 2-Buchstaben-Kuerzel fuer Asset-Tag-Generierung
     category_type ENUM('asset', 'accessory', 'consumable', 'component') DEFAULT 'asset',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -57,7 +58,8 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(100),
     email VARCHAR(255) UNIQUE,
     username VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255),
+    can_login TINYINT(1) NOT NULL DEFAULT 1,
     role ENUM('admin', 'editor', 'user') DEFAULT 'user',
     location_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -87,10 +89,10 @@ CREATE TABLE IF NOT EXISTS assets (
 -- Initiale Testdaten
 INSERT INTO locations (name, city) VALUES ('Hauptquartier', 'Berlin'), ('Zweigstelle Süd', 'München');
 INSERT INTO status_labels (name, status_type) VALUES ('Einsatzbereit', 'deployable'), ('In Reparatur', 'pending'), ('Ausgemustert', 'archived');
-INSERT INTO categories (name) VALUES ('Laptops'), ('Smartphones'), ('Monitore');
+INSERT INTO categories (name, kuerzel) VALUES ('Laptops', 'LP'), ('Smartphones', 'SP'), ('Monitore', 'MN');
 INSERT INTO manufacturers (name) VALUES ('Apple'), ('Dell'), ('Lenovo');
 INSERT INTO asset_models (name, manufacturer_id, category_id) VALUES ('MacBook Pro 14', 1, 1), ('Latitude 5420', 2, 1);
 
 -- Standard-Admin (Passwort: password)
-INSERT INTO users (first_name, last_name, email, username, password, role) 
-VALUES ('System', 'Admin', 'admin@example.com', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+INSERT INTO users (first_name, last_name, email, username, password, can_login, role) 
+VALUES ('System', 'Admin', 'admin@example.com', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'admin');

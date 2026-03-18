@@ -20,11 +20,38 @@ class UserController {
         return $stmt->fetchAll();
     }
 
+    public function countUsers() {
+        $stmt = $this->db->query("SELECT COUNT(*) FROM users");
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function getUsersPaginated($limit, $offset) {
+        $query = "SELECT u.*, l.name as location_name
+                  FROM users u
+                  LEFT JOIN locations l ON u.location_id = l.id
+                  ORDER BY u.last_name, u.first_name
+                  LIMIT ? OFFSET ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(1, (int)$limit, \PDO::PARAM_INT);
+        $stmt->bindValue(2, (int)$offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function createUser($data) {
-        $sql = "INSERT INTO users (first_name, last_name, email, username, password, location_id) 
-                VALUES (?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO users (first_name, last_name, email, username, password, location_id, can_login, role) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
-        $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+        $canLogin = array_key_exists('can_login', $data) ? (!empty($data['can_login']) ? 1 : 0) : 1;
+        $password = $data['password'] ?? '';
+        $hashedPassword = null;
+        $role = $data['role'] ?? 'user';
+        if (!in_array($role, ['admin', 'editor', 'user'], true)) {
+            $role = 'user';
+        }
+        if ($canLogin && trim($password) !== '') {
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        }
         
         $email = (isset($data['email']) && trim($data['email']) !== '') ? $data['email'] : null;
         $firstName = (isset($data['first_name']) && trim($data['first_name']) !== '') ? $data['first_name'] : null;
@@ -34,8 +61,10 @@ class UserController {
         $stmt->bindValue(2, $lastName, $lastName !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
         $stmt->bindValue(3, $email, $email !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
         $stmt->bindValue(4, $data['username'], \PDO::PARAM_STR);
-        $stmt->bindValue(5, $hashedPassword, \PDO::PARAM_STR);
+        $stmt->bindValue(5, $hashedPassword, $hashedPassword !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
         $stmt->bindValue(6, $data['location_id'], $data['location_id'] !== null ? \PDO::PARAM_INT : \PDO::PARAM_NULL);
+        $stmt->bindValue(7, $canLogin, \PDO::PARAM_INT);
+        $stmt->bindValue(8, $role, \PDO::PARAM_STR);
 
         return $stmt->execute();
     }
@@ -45,7 +74,15 @@ class UserController {
         $stmt->execute([$username]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['password'])) {
+        if (!$user) {
+            return false;
+        }
+
+        if (isset($user['can_login']) && (int)$user['can_login'] !== 1) {
+            return false;
+        }
+
+        if (!empty($user['password']) && password_verify($password, $user['password'])) {
             return $user;
         }
         return false;
@@ -65,7 +102,18 @@ class UserController {
         $fields = ["first_name=?", "last_name=?", "email=?", "username=?", "location_id=?"];
         $params = [$firstName, $lastName, $email, $data['username'], $data['location_id']];
 
-        if (!empty($data['password'])) {
+        $canLogin = null;
+        if (array_key_exists('can_login', $data)) {
+            $canLogin = (int)$data['can_login'] === 1 ? 1 : 0;
+            $fields[] = "can_login=?";
+            $params[] = $canLogin;
+
+            if ($canLogin === 0) {
+                $fields[] = "password=NULL";
+            }
+        }
+
+        if (($canLogin === null || $canLogin === 1) && !empty($data['password'])) {
             $fields[] = "password=?";
             $params[] = password_hash($data['password'], PASSWORD_DEFAULT);
         }

@@ -24,6 +24,67 @@ class AssetController {
         return $stmt->fetchAll();
     }
 
+    public function countAssets() {
+        $stmt = $this->db->query("SELECT COUNT(*) FROM assets");
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countAssetsFiltered($search, $modelId) {
+        $conditions = [];
+        $params     = [];
+        if (!empty($search)) {
+            $conditions[] = "(a.asset_tag LIKE ? OR a.serial LIKE ? OR a.name LIKE ?)";
+            $like = '%' . $search . '%';
+            $params[] = $like; $params[] = $like; $params[] = $like;
+        }
+        if (!empty($modelId)) {
+            $conditions[] = "a.model_id = ?";
+            $params[] = (int)$modelId;
+        }
+        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+        $stmt  = $this->db->prepare("SELECT COUNT(*) FROM assets a $where");
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function getAssetsPaginated($limit, $offset) {
+        return $this->getAssetsPaginatedFiltered('', null, $limit, $offset);
+    }
+
+    public function getAssetsPaginatedFiltered($search, $modelId, $limit, $offset) {
+        $conditions = [];
+        $params     = [];
+        if (!empty($search)) {
+            $conditions[] = "(a.asset_tag LIKE ? OR a.serial LIKE ? OR a.name LIKE ?)";
+            $like = '%' . $search . '%';
+            $params[] = $like; $params[] = $like; $params[] = $like;
+        }
+        if (!empty($modelId)) {
+            $conditions[] = "a.model_id = ?";
+            $params[] = (int)$modelId;
+        }
+        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+        $query = "SELECT a.*, m.name as model_name, s.name as status_name, l.name as location_name, u.username as assigned_to, mf.name as manufacturer_name 
+                  FROM assets a 
+                  LEFT JOIN asset_models m ON a.model_id = m.id 
+                  LEFT JOIN manufacturers mf ON m.manufacturer_id = mf.id
+                  LEFT JOIN status_labels s ON a.status_id = s.id 
+                  LEFT JOIN locations l ON a.location_id = l.id 
+                  LEFT JOIN users u ON a.user_id = u.id
+                  $where
+                  ORDER BY a.created_at DESC
+                  LIMIT ? OFFSET ?";
+        $stmt = $this->db->prepare($query);
+        $i = 1;
+        foreach ($params as $p) {
+            $stmt->bindValue($i++, $p, is_int($p) ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+        }
+        $stmt->bindValue($i++, (int)$limit,  \PDO::PARAM_INT);
+        $stmt->bindValue($i,   (int)$offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function getAssetById($id) {
         $stmt = $this->db->prepare("SELECT * FROM assets WHERE id = ?");
         $stmt->execute([$id]);

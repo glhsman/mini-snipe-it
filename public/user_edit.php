@@ -30,7 +30,10 @@ $locations = $masterData->getLocations();
 $error = null;
 $success = null;
 
+$canLogin = isset($user['can_login']) ? (int)$user['can_login'] : 1;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $canLogin = isset($_POST['can_login']) ? 1 : 0;
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
     
@@ -40,7 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'email'       => $_POST['email'] ?? '',
         'username'    => $_POST['username'] ?? '',
         'location_id' => !empty($_POST['location_id']) ? (int)$_POST['location_id'] : null,
-        'password'    => $password
+        'password'    => $password,
+        'can_login'   => $canLogin
     ];
 
     if (Auth::isAdmin()) {
@@ -49,9 +53,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($data['username'])) {
         $error = "Benutzername darf nicht leer sein.";
-    } elseif (!empty($password) && $password !== $password_confirm) {
+    } elseif ($canLogin === 1 && $password !== $password_confirm) {
         $error = "Die eingegebenen Passwörter stimmen nicht überein.";
+    } elseif (
+        $canLogin === 1 &&
+        empty($password) &&
+        ((int)($user['can_login'] ?? 1) === 0 || empty($user['password']))
+    ) {
+        $error = "Wenn Web-Login aktiviert wird, ist ein Passwort erforderlich.";
     } else {
+        if ($canLogin === 0) {
+            $data['password'] = '';
+        }
         if ($userController->updateUser($userId, $data)) {
             header('Location: users.php');
             exit;
@@ -109,6 +122,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; gap: 0.6rem; align-items: center; cursor: pointer; color: var(--text-main);">
+                        <input type="checkbox" name="can_login" id="can_login" value="1" <?php echo $canLogin ? 'checked' : ''; ?>>
+                        Web-Login erlauben
+                    </label>
+                    <small style="color: var(--text-muted);">Wenn deaktiviert, kann sich der Benutzer nicht anmelden und es ist kein Passwort erforderlich.</small>
+                </div>
+
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Vorname</label>
@@ -133,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Neues Passwort (leer lassen für keine Änderung)</label>
+                        <label id="passwordLabel">Passwort (Pflichtfeld bei Web-Login)</label>
                         <div class="password-wrapper">
                             <input type="password" name="password" id="pwd1" class="form-control" placeholder="••••••••">
                             <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd1', this)"></i>
@@ -181,6 +202,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script>
+        function updatePasswordRequirement() {
+            const canLogin = document.getElementById('can_login').checked;
+            const pwd1 = document.getElementById('pwd1');
+            const pwd2 = document.getElementById('pwd2');
+            const passwordLabel = document.getElementById('passwordLabel');
+
+            pwd1.required = canLogin;
+            pwd2.required = canLogin;
+            pwd1.disabled = !canLogin;
+            pwd2.disabled = !canLogin;
+
+            if (!canLogin) {
+                pwd1.value = '';
+                pwd2.value = '';
+                passwordLabel.textContent = 'Passwort (nicht erforderlich)';
+            } else {
+                passwordLabel.textContent = 'Passwort (Pflichtfeld bei Web-Login)';
+            }
+        }
+
         function togglePassword(inputId, icon) {
             const input = document.getElementById(inputId);
             if (input.type === 'password') {
@@ -193,6 +234,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 icon.classList.add('fa-eye');
             }
         }
+
+        document.getElementById('can_login').addEventListener('change', updatePasswordRequirement);
+        updatePasswordRequirement();
     </script>
 </body>
 </html>

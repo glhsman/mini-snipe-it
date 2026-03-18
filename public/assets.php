@@ -14,7 +14,39 @@ $db = Database::getInstance();
 $assetController = new AssetController($db);
 $masterData = new MasterDataController($db);
 
-$assets = $assetController->getAllAssets();
+$allowedPerPage = [25, 50, 100, 250];
+$perPage = isset($_GET['per_page']) && in_array((int)$_GET['per_page'], $allowedPerPage)
+    ? (int)$_GET['per_page'] : 25;
+
+$search  = isset($_GET['q'])        ? trim($_GET['q'])        : '';
+$modelId = isset($_GET['model_id']) ? (int)$_GET['model_id'] : 0;
+
+// Modelle für Dropdown laden
+$models = $masterData->getAssetModels();
+
+// Fallback: Wenn auf dem Zielsystem noch ein älterer Controller ohne Pagination-Methoden liegt,
+// wird serverseitig aus getAllAssets paginiert statt mit Fatal Error abzubrechen.
+if (method_exists($assetController, 'countAssetsFiltered') && method_exists($assetController, 'getAssetsPaginatedFiltered')) {
+    $totalAssets = $assetController->countAssetsFiltered($search, $modelId ?: null);
+    $totalPages  = max(1, (int)ceil($totalAssets / $perPage));
+    $page        = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
+    $offset      = ($page - 1) * $perPage;
+    $assets      = $assetController->getAssetsPaginatedFiltered($search, $modelId ?: null, $perPage, $offset);
+} else {
+    $allAssets   = $assetController->getAllAssets();
+    $totalAssets = count($allAssets);
+    $totalPages  = max(1, (int)ceil($totalAssets / $perPage));
+    $page        = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
+    $offset      = ($page - 1) * $perPage;
+    $assets      = array_slice($allAssets, $offset, $perPage);
+}
+
+function paginationUrl($p, $pp) {
+    $params = $_GET;
+    $params['page']     = $p;
+    $params['per_page'] = $pp;
+    return '?' . http_build_query($params);
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -59,6 +91,51 @@ $assets = $assetController->getAllAssets();
         <?php endif; ?>
 
         <div class="card">
+            <!-- Suchzeile -->
+            <form method="GET" action="assets.php" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; padding: 1rem 0 1.25rem 0;">
+                <!-- Suchfeld (Tag, Serial, Name) -->
+                <div style="position:relative; flex:1; min-width:200px;">
+                    <i class="fas fa-search" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                    <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
+                        placeholder="Tag, Seriennummer oder Name ..."
+                        style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.25rem; border-radius:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.875rem; box-sizing:border-box;">
+                </div>
+                <!-- Modell-Filter -->
+                <select name="model_id" onchange="this.form.submit()"
+                    style="padding:0.6rem 0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.875rem; min-width:180px;">
+                    <option value="">– Alle Modelle –</option>
+                    <?php foreach ($models as $m): ?>
+                        <option value="<?php echo $m['id']; ?>" <?php echo $modelId === (int)$m['id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($m['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="hidden" name="per_page" value="<?php echo $perPage; ?>">
+                <button type="submit" class="btn btn-primary" style="padding:0.6rem 1rem; font-size:0.875rem;"><i class="fas fa-filter"></i> Suchen</button>
+                <?php if ($search !== '' || $modelId): ?>
+                    <a href="assets.php?per_page=<?php echo $perPage; ?>" style="padding:0.6rem 0.75rem; border-radius:0.5rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.875rem; white-space:nowrap;">
+                        <i class="fas fa-times"></i> Filter zurücksetzen
+                    </a>
+                <?php endif; ?>
+            </form>
+            <!-- Zeile: Treffer + Pro-Seite -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; padding-bottom:1rem;">
+                <p style="color:var(--text-muted); font-size:0.875rem; margin:0;">
+                    <?php $from = $totalAssets ? $offset + 1 : 0; $to = min($offset + $perPage, $totalAssets); ?>
+                    Zeige <strong><?php echo $from; ?>&ndash;<?php echo $to; ?></strong> von <strong><?php echo $totalAssets; ?></strong> Assets
+                    <?php if ($search !== '' || $modelId): ?><span style="color:var(--accent-rose);"> (gefiltert)</span><?php endif; ?>
+                </p>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="color:var(--text-muted); font-size:0.875rem;">Pro Seite:</span>
+                    <?php foreach ($allowedPerPage as $opt): ?>
+                        <a href="<?php echo htmlspecialchars(paginationUrl(1, $opt)); ?>"
+                           style="padding:0.25rem 0.6rem; border-radius:0.375rem; font-size:0.8rem; text-decoration:none;
+                                  <?php echo $opt === $perPage ? 'background:var(--primary-color); color:white;' : 'background:rgba(255,255,255,0.07); color:var(--text-muted); border:1px solid var(--glass-border);'; ?>">
+                            <?php echo $opt; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
             <table class="data-table">
                 <thead>
                     <tr>
@@ -88,6 +165,20 @@ $assets = $assetController->getAllAssets();
                         <td><?php echo $asset['assigned_to'] ? htmlspecialchars($asset['assigned_to']) : '-'; ?></td>
                         <td>
                             <?php if (Auth::isEditor()): ?>
+                                    <!-- Ausgabe / Rücknahme -->
+                                    <?php if ($asset['assigned_to']): ?>
+                                        <form method="POST" action="asset_checkin.php" style="display:inline;">
+                                            <input type="hidden" name="id" value="<?php echo $asset['id']; ?>">
+                                            <button type="submit" title="Rücknahme (Check-in)" class="btn-icon" style="color: var(--accent-emerald);">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <a href="asset_checkout.php?id=<?php echo $asset['id']; ?>" class="btn-icon" title="Ausgabe (Check-out)" style="color: #a855f7;">
+                                            <i class="fas fa-hand-holding"></i>
+                                        </a>
+                                    <?php endif; ?>
+
                                     <a href="asset_edit.php?id=<?php echo $asset['id']; ?>" class="btn-icon" title="Bearbeiten">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -105,6 +196,32 @@ $assets = $assetController->getAllAssets();
                     <?php endforeach; ?>
                 </tbody>
             </table>
+
+            <?php if ($totalPages > 1): ?>
+            <div style="display:flex; justify-content:center; align-items:center; gap: 0.4rem; padding: 1.5rem 0 0.5rem;">
+                <?php if ($page > 1): ?>
+                    <a href="<?php echo htmlspecialchars(paginationUrl(1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Erste Seite"><i class="fas fa-angle-double-left"></i></a>
+                    <a href="<?php echo htmlspecialchars(paginationUrl($page - 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-left"></i></a>
+                <?php endif; ?>
+
+                <?php
+                $start = max(1, $page - 2);
+                $end   = min($totalPages, $page + 2);
+                for ($i = $start; $i <= $end; $i++): ?>
+                    <a href="<?php echo htmlspecialchars(paginationUrl($i, $perPage)); ?>"
+                       style="padding:0.35rem 0.65rem; border-radius:0.375rem; font-size:0.8rem; text-decoration:none; min-width:2rem; text-align:center;
+                              <?php echo $i === $page ? 'background: var(--primary-color); color: white;' : 'background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid var(--glass-border);'; ?>">
+                        <?php echo $i; ?>
+                    </a>
+                <?php endfor; ?>
+
+                <?php if ($page < $totalPages): ?>
+                    <a href="<?php echo htmlspecialchars(paginationUrl($page + 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-right"></i></a>
+                    <a href="<?php echo htmlspecialchars(paginationUrl($totalPages, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Letzte Seite"><i class="fas fa-angle-double-right"></i></a>
+                <?php endif; ?>
+            </div>
+            <p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding-bottom:0.75rem;">Seite <?php echo $page; ?> von <?php echo $totalPages; ?></p>
+            <?php endif; ?>
         </div>
     </main>
 </body>

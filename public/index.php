@@ -142,6 +142,20 @@ $recentAssets = array_slice($assets, 0, 5);
                             <td><?php echo $asset['assigned_to'] ? htmlspecialchars($asset['assigned_to']) : '<span style="color:var(--text-muted)">Nicht zugewiesen</span>'; ?></td>
                             <td>
                                 <?php if (Auth::isEditor()): ?>
+                                    <!-- Ausgabe / Rücknahme -->
+                                    <?php if ($asset['assigned_to']): ?>
+                                        <form method="POST" action="asset_checkin.php" style="display:inline;">
+                                            <input type="hidden" name="id" value="<?php echo $asset['id']; ?>">
+                                            <button type="submit" title="Rücknahme (Check-in)" class="btn-icon" style="color: var(--accent-emerald);">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <a href="asset_checkout.php?id=<?php echo $asset['id']; ?>" class="btn-icon" title="Ausgabe (Check-out)" style="color: #a855f7;">
+                                            <i class="fas fa-hand-holding"></i>
+                                        </a>
+                                    <?php endif; ?>
+
                                     <a href="asset_edit.php?id=<?php echo $asset['id']; ?>" class="btn-icon" title="Bearbeiten">
                                         <i class="fas fa-edit"></i>
                                     </a>

@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
         if (($handle = fopen($file, "r")) !== FALSE) {
             // Kopfzeile überspringen / lesen
-            $header = fgetcsv($handle, 1000, $delimiter);
+            $header = fgetcsv($handle, 1000, $delimiter, '"', "");
             
             if (!$header || count($header) < 4) {
                 $error = "Ungültiges CSV-Format. Die Datei muss mindestens 4 Spalten haben (username, email, vorname, nachname).";
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                 $inserted = 0;
                 $failed = 0;
 
-                while (($row = fgetcsv($handle, 1000, $delimiter)) !== FALSE) {
+                while (($row = fgetcsv($handle, 1000, $delimiter, '"', "")) !== FALSE) {
                     $rowCount++;
                     if (count($row) < 4) {
                         $failed++;
@@ -84,7 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         'first_name'  => !empty($firstName) ? $firstName : null,
                         'last_name'   => !empty($lastName) ? $lastName : null,
                         'location_id' => $locationId,
-                        'password'    => 'Start123!' // Standardpasswort
+                        'password'    => null, // Kein Passwort da Login standardmäßig deaktiviert
+                        'can_login'   => 0    // Importierte Benutzer haben standardmäßig KEIN Login-Recht
                     ];
 
                     try {

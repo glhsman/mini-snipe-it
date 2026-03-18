@@ -50,14 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         $userMap = []; foreach ($users as $u) $userMap[strtolower(trim($u['username']))] = $u['id'];
 
         if (($handle = fopen($file, "r")) !== FALSE) {
-            $header = fgetcsv($handle, 1000, $delimiter);
+            $header = fgetcsv($handle, 1000, $delimiter, '"', "");
             
             if (!$header || count($header) < 5) {
                 $error = "Ungültiges CSV-Format. Erwartete Spalten: asset_tag, name, model_name, manufacturer_name, category_name ...";
             } else {
-                $rowCount = 0; $inserted = 0; $failed = 0;
+                $rowCount = 0; $inserted = 0; $skipped = 0; $failed = 0;
 
-                while (($row = fgetcsv($handle, 1000, $delimiter)) !== FALSE) {
+                while (($row = fgetcsv($handle, 1000, $delimiter, '"', "")) !== FALSE) {
                     $rowCount++;
                     if (count($row) < 5) {
                         $failed++; $report[] = "Zeile $rowCount: Unzureichende Spaltenanzahl."; continue;
@@ -65,12 +65,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
                     $assetTag = trim($row[0]);
                     $assetName = trim($row[1]);
-                    $modelName = trim($row[2]);
-                    $manufacturerName = isset($row[3]) ? trim($row[3]) : '';
-                    $categoryName = isset($row[4]) ? trim($row[4]) : '';
-                    $statusName = isset($row[5]) ? trim($row[5]) : '';
-                    $locationName = isset($row[6]) ? trim($row[6]) : '';
-                    $assignedTo = isset($row[7]) ? trim($row[7]) : '';
+                    $serial = isset($row[2]) ? trim($row[2]) : null;
+                    $modelName = trim($row[3]);
+                    $manufacturerName = isset($row[4]) ? trim($row[4]) : '';
+                    $categoryName = isset($row[5]) ? trim($row[5]) : '';
+                    $statusName = isset($row[6]) ? trim($row[6]) : '';
+                    $locationName = isset($row[7]) ? trim($row[7]) : '';
+                    $assignedUsername  = isset($row[8]) ? trim($row[8]) : '';
+                    $assignedFirstName = isset($row[9]) ? trim($row[9]) : '';
+                    $assignedLastName  = isset($row[10]) ? trim($row[10]) : '';
 
                     if (empty($assetTag) || empty($assetName)) {
                         $failed++; $report[] = "Zeile $rowCount: Asset Tag oder Name fehlt."; continue;
@@ -96,10 +99,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     if (!empty($categoryName)) {
                         $cKey = strtolower($categoryName);
                         if (!isset($catMap[$cKey])) {
-                            $kuerzel = strtoupper(substr($categoryName, 0, 2));
-                            $masterData->createCategory(['name' => $categoryName, 'kuerzel' => $kuerzel]);
-                            $categoryId = $db->lastInsertId();
-                            $catMap[$cKey] = $categoryId;
+                            try {
+                                // Eindeutiges Kürzel generieren
+                                $kuerzel = strtoupper(substr($categoryName, 0, 2));
+                                $suffix = 1;
+                                $tryKuerzel = $kuerzel;
+                                while (true) {
+                                    try {
+                                        $masterData->createCategory(['name' => $categoryName, 'kuerzel' => $tryKuerzel]);
+                                        $categoryId = $db->lastInsertId();
+                                        $catMap[$cKey] = $categoryId;
+                                        break;
+                                    } catch (\Exception $inner) {
+                                        // Kürzel belegt – per Name prüfen ob Kategorie schon existiert
+                                        $stmt = $db->prepare("SELECT id FROM categories WHERE LOWER(name) = LOWER(?)");
+                                        $stmt->execute([$categoryName]);
+                                        $existingCat = $stmt->fetch();
+                                        if ($existingCat) {
+                                            $categoryId = $existingCat['id'];
+                                            $catMap[$cKey] = $categoryId;
+                                            break;
+                                        }
+                                        // Kürzel mit Nummer versuchen (z.B. S1, S2)
+                                        $tryKuerzel = strtoupper(substr($categoryName, 0, 1)) . $suffix;
+                                        $suffix++;
+                                        if ($suffix > 9) {
+                                            $failed++; $report[] = "Zeile $rowCount: Kategorie '$categoryName' konnte nicht erstellt werden (kein freies Kürzel)."; 
+                                            continue 3;
+                                        }
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                $failed++; $report[] = "Zeile $rowCount: Kategorie '$categoryName' – unerwarteter Fehler.";
+                                continue;
+                            }
                         } else {
                             $categoryId = $catMap[$cKey];
                         }
@@ -143,8 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
                     // 6. Benutzer
                     $userId = null;
-                    if (!empty($assignedTo)) {
-                        $uKey = strtolower($assignedTo);
+                    if (!empty($assignedUsername)) {
+                        $uKey = strtolower($assignedUsername);
                         if (isset($userMap[$uKey])) {
                             $userId = $userMap[$uKey];
                         }
@@ -154,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     $assetData = [
                         'name' => $assetName,
                         'asset_tag' => $assetTag,
-                        'serial' => null,
+                        'serial' => !empty($serial) ? $serial : null,
                         'model_id' => $modelId,
                         'status_id' => $statusId,
                         'location_id' => $locationId,
@@ -170,11 +203,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                             $failed++; $report[] = "Zeile $rowCount: DB-Fehler beim Erstellen von '$assetTag'.";
                         }
                     } catch (\Exception $e) {
-                        $failed++; $report[] = "Zeile $rowCount: " . $e->getMessage();
+                        // Duplikat asset_tag sauber abfangen
+                        if (strpos($e->getMessage(), '1062') !== false && strpos($e->getMessage(), 'asset_tag') !== false) {
+                            $skipped++; $report[] = "Zeile $rowCount: Asset Tag '$assetTag' existiert bereits – übersprungen.";
+                        } else {
+                            $failed++; $report[] = "Zeile $rowCount: " . $e->getMessage();
+                        }
                     }
                 }
                 fclose($handle);
-                $success = "Import abgeschlossen. Erstellt: $inserted, Fehlgeschlagen: $failed.";
+                $success = "Import abgeschlossen. Erstellt: $inserted, Übersprungen (Duplikat): $skipped, Fehlgeschlagen: $failed.";
             }
         } else {
             $error = "Datei konnte nicht geöffnet werden.";

@@ -10,7 +10,33 @@ Auth::requireLogin();
 
 $db = Database::getInstance();
 $userController = new UserController($db);
-$users = $userController->getAllUsers();
+
+$allowedPerPage = [25, 50, 100, 250];
+$perPage = isset($_GET['per_page']) && in_array((int)$_GET['per_page'], $allowedPerPage, true)
+    ? (int)$_GET['per_page'] : 25;
+
+// Fallback fuer aeltere Deployments ohne Pagination-Methoden im Controller.
+if (method_exists($userController, 'countUsers') && method_exists($userController, 'getUsersPaginated')) {
+    $totalUsers = $userController->countUsers();
+    $totalPages = max(1, (int) ceil($totalUsers / $perPage));
+    $page = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
+    $offset = ($page - 1) * $perPage;
+    $users = $userController->getUsersPaginated($perPage, $offset);
+} else {
+    $allUsers = $userController->getAllUsers();
+    $totalUsers = count($allUsers);
+    $totalPages = max(1, (int) ceil($totalUsers / $perPage));
+    $page = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
+    $offset = ($page - 1) * $perPage;
+    $users = array_slice($allUsers, $offset, $perPage);
+}
+
+function usersPaginationUrl($p, $pp) {
+    $params = $_GET;
+    $params['page'] = $p;
+    $params['per_page'] = $pp;
+    return '?' . http_build_query($params);
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -40,7 +66,7 @@ $users = $userController->getAllUsers();
         <header class="header">
             <h1>Benutzerverwaltung</h1>
             <?php if (Auth::isAdmin()): ?>
-                <button class="btn btn-primary"><i class="fas fa-user-plus"></i> Benutzer anlegen</button>
+                <a href="user_create.php" class="btn btn-primary"><i class="fas fa-user-plus"></i> Benutzer anlegen</a>
             <?php endif; ?>
         </header>
 
@@ -53,7 +79,29 @@ $users = $userController->getAllUsers();
         <?php endif; ?>
 
         <div class="card">
-            <table class="data-table">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; padding: 1rem 0 1.25rem 0; flex-wrap: wrap;">
+                <div>
+                    <div style="position: relative; max-width: 400px;">
+                    <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                    <input type="text" id="userSearch" placeholder="Name, Benutzername, E-Mail oder Standort ..." 
+                        style="width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.25rem; border-radius: 0.5rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; outline: none; font-size: 0.875rem; box-sizing: border-box;"
+                        oninput="filterUsers(this.value)">
+                    </div>
+                    <p id="userCount" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 0;"></p>
+                </div>
+
+                <div style="display:flex; align-items:center; gap: 0.5rem;">
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">Pro Seite:</span>
+                    <?php foreach ($allowedPerPage as $opt): ?>
+                        <a href="<?php echo htmlspecialchars(usersPaginationUrl(1, $opt)); ?>"
+                           style="padding: 0.25rem 0.6rem; border-radius: 0.375rem; font-size: 0.8rem; text-decoration:none;
+                                  <?php echo $opt === $perPage ? 'background: var(--primary-color); color: white;' : 'background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid var(--glass-border);'; ?>">
+                            <?php echo $opt; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <table class="data-table" id="userTable">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -66,9 +114,9 @@ $users = $userController->getAllUsers();
                 <tbody>
                     <?php foreach ($users as $user): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
+                        <td><?php echo htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')); ?></td>
                         <td><strong><?php echo htmlspecialchars($user['username']); ?></strong></td>
-                        <td><?php echo htmlspecialchars($user['email']); ?></td>
+                        <td><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($user['location_name'] ?? '-'); ?></td>
                         <td>
                             <?php if (Auth::isEditor()): ?>
@@ -89,8 +137,67 @@ $users = $userController->getAllUsers();
                     <?php endforeach; ?>
                 </tbody>
             </table>
+
+            <?php if ($totalPages > 1): ?>
+            <div style="display:flex; justify-content:center; align-items:center; gap: 0.4rem; padding: 1.5rem 0 0.5rem;">
+                <?php if ($page > 1): ?>
+                    <a href="<?php echo htmlspecialchars(usersPaginationUrl(1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Erste Seite"><i class="fas fa-angle-double-left"></i></a>
+                    <a href="<?php echo htmlspecialchars(usersPaginationUrl($page - 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-left"></i></a>
+                <?php endif; ?>
+
+                <?php
+                $start = max(1, $page - 2);
+                $end = min($totalPages, $page + 2);
+                for ($i = $start; $i <= $end; $i++): ?>
+                    <a href="<?php echo htmlspecialchars(usersPaginationUrl($i, $perPage)); ?>"
+                       style="padding:0.35rem 0.65rem; border-radius:0.375rem; font-size:0.8rem; text-decoration:none; min-width:2rem; text-align:center;
+                              <?php echo $i === $page ? 'background: var(--primary-color); color: white;' : 'background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid var(--glass-border);'; ?>">
+                        <?php echo $i; ?>
+                    </a>
+                <?php endfor; ?>
+
+                <?php if ($page < $totalPages): ?>
+                    <a href="<?php echo htmlspecialchars(usersPaginationUrl($page + 1, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;"><i class="fas fa-angle-right"></i></a>
+                    <a href="<?php echo htmlspecialchars(usersPaginationUrl($totalPages, $perPage)); ?>" style="padding:0.35rem 0.65rem; border-radius:0.375rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.8rem;" title="Letzte Seite"><i class="fas fa-angle-double-right"></i></a>
+                <?php endif; ?>
+            </div>
+            <p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding-bottom:0.75rem;">Seite <?php echo $page; ?> von <?php echo $totalPages; ?></p>
+            <?php endif; ?>
         </div>
     </main>
+    <script>
+        const allRows = Array.from(document.querySelectorAll('#userTable tbody tr'));
+        const countEl = document.getElementById('userCount');
+        const pageFrom = <?php echo $totalUsers ? ($offset + 1) : 0; ?>;
+        const pageTo = <?php echo min($offset + $perPage, $totalUsers); ?>;
+        const totalUsers = <?php echo (int) $totalUsers; ?>;
+
+        function updateCount(visible, filtered) {
+            if (filtered) {
+                countEl.textContent = visible + ' Treffer auf dieser Seite';
+                return;
+            }
+            countEl.textContent = 'Zeige ' + pageFrom + '-' + pageTo + ' von ' + totalUsers + ' Benutzern';
+        }
+
+        function filterUsers(query) {
+            const q = query.toLowerCase().trim();
+            let visible = 0;
+            allRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const show = q === '' || text.includes(q);
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            updateCount(visible, q !== '');
+        }
+
+        updateCount(allRows.length, false);
+
+        document.getElementById('userSearch').addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') { this.value = ''; filterUsers(''); }
+        });
+    </script>
 </body>
 </html>
 
