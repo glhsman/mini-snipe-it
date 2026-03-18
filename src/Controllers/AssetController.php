@@ -51,7 +51,7 @@ class AssetController {
         return $this->getAssetsPaginatedFiltered('', null, $limit, $offset);
     }
 
-    public function getAssetsPaginatedFiltered($search, $modelId, $limit, $offset) {
+    public function getAssetsPaginatedFiltered($search, $modelId, $limit, $offset, $sort = 'created_at', $order = 'DESC') {
         $conditions = [];
         $params     = [];
         if (!empty($search)) {
@@ -63,6 +63,24 @@ class AssetController {
             $conditions[] = "a.model_id = ?";
             $params[] = (int)$modelId;
         }
+        
+        // Sorting Whitelist
+        $allowedSort = ['name', 'asset_tag', 'model_name', 'manufacturer_name', 'status_name', 'location_name', 'id', 'created_at'];
+        $sort = in_array(strtolower($sort), $allowedSort) ? strtolower($sort) : 'created_at';
+        $order = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
+
+        $sortMap = [
+            'name' => 'a.name',
+            'asset_tag' => 'a.asset_tag',
+            'id' => 'a.id',
+            'created_at' => 'a.created_at',
+            'model_name' => 'm.name',
+            'manufacturer_name' => 'mf.name',
+            'status_name' => 's.name',
+            'location_name' => 'l.name'
+        ];
+        $orderBy = $sortMap[$sort] ?? 'a.created_at';
+
         $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
         $query = "SELECT a.*, m.name as model_name, s.name as status_name, l.name as location_name, u.username as assigned_to, mf.name as manufacturer_name 
                   FROM assets a 
@@ -72,7 +90,7 @@ class AssetController {
                   LEFT JOIN locations l ON a.location_id = l.id 
                   LEFT JOIN users u ON a.user_id = u.id
                   $where
-                  ORDER BY a.created_at DESC
+                  ORDER BY $orderBy $order
                   LIMIT ? OFFSET ?";
         $stmt = $this->db->prepare($query);
         $i = 1;

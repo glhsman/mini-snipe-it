@@ -20,6 +20,8 @@ $perPage = isset($_GET['per_page']) && in_array((int)$_GET['per_page'], $allowed
 
 $search  = isset($_GET['q'])        ? trim($_GET['q'])        : '';
 $modelId = isset($_GET['model_id']) ? (int)$_GET['model_id'] : 0;
+$sort    = isset($_GET['sort'])     ? $_GET['sort']           : 'created_at';
+$order   = isset($_GET['order'])    ? $_GET['order']          : 'desc';
 
 // Modelle für Dropdown laden
 $models = $masterData->getAssetModels();
@@ -31,7 +33,7 @@ if (method_exists($assetController, 'countAssetsFiltered') && method_exists($ass
     $totalPages  = max(1, (int)ceil($totalAssets / $perPage));
     $page        = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
     $offset      = ($page - 1) * $perPage;
-    $assets      = $assetController->getAssetsPaginatedFiltered($search, $modelId ?: null, $perPage, $offset);
+    $assets      = $assetController->getAssetsPaginatedFiltered($search, $modelId ?: null, $perPage, $offset, $sort, $order);
 } else {
     $allAssets   = $assetController->getAllAssets();
     $totalAssets = count($allAssets);
@@ -45,6 +47,16 @@ function paginationUrl($p, $pp) {
     $params = $_GET;
     $params['page']     = $p;
     $params['per_page'] = $pp;
+    return '?' . http_build_query($params);
+}
+
+function sortUrl($field) {
+    $params = $_GET;
+    $currentSort = $params['sort'] ?? 'created_at';
+    $currentOrder = $params['order'] ?? 'desc';
+    
+    $params['sort'] = $field;
+    $params['order'] = ($currentSort === $field && strtolower($currentOrder) === 'asc') ? 'desc' : 'asc';
     return '?' . http_build_query($params);
 }
 ?>
@@ -140,13 +152,13 @@ function paginationUrl($p, $pp) {
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Name</th>
-                        <th>Tag</th>
+                        <th><a href="<?php echo sortUrl('name'); ?>" style="color:white; text-decoration:none;">Name <i class="fas <?php echo ($sort === 'name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
+                        <th><a href="<?php echo sortUrl('asset_tag'); ?>" style="color:white; text-decoration:none;">Tag <i class="fas <?php echo ($sort === 'asset_tag') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
                         <th>Seriennummer</th>
-                        <th>Modell</th>
-                        <th>Hersteller</th>
-                        <th>Status</th>
-                        <th>Standort</th>
+                        <th><a href="<?php echo sortUrl('model_name'); ?>" style="color:white; text-decoration:none;">Modell <i class="fas <?php echo ($sort === 'model_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
+                        <th><a href="<?php echo sortUrl('manufacturer_name'); ?>" style="color:white; text-decoration:none;">Hersteller <i class="fas <?php echo ($sort === 'manufacturer_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
+                        <th><a href="<?php echo sortUrl('status_name'); ?>" style="color:white; text-decoration:none;">Status <i class="fas <?php echo ($sort === 'status_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
+                        <th><a href="<?php echo sortUrl('location_name'); ?>" style="color:white; text-decoration:none;">Standort <i class="fas <?php echo ($sort === 'location_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
                         <th>Benutzer</th>
                         <th>Aktionen</th>
                     </tr>
