@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS assets (
 
 -- Initiale Testdaten
 INSERT INTO locations (name, city, kuerzel) VALUES ('Hauptquartier', 'Berlin', 'HQ'), ('Zweigstelle Süd', 'München', 'ZS');
-INSERT INTO status_labels (name, status_type) VALUES ('Einsatzbereit', 'deployable'), ('In Reparatur', 'pending'), ('Ausgemustert', 'archived');
+INSERT INTO status_labels (name, status_type) VALUES ('Einsatzbereit', 'deployable'), ('In Reparatur', 'pending'), ('Ausgemustert', 'archived'), ('Defekt', 'undeployable'), ('Ausgegeben', 'deployable');
 INSERT INTO categories (name, kuerzel) VALUES ('Laptops', 'LP'), ('Smartphones', 'SP'), ('Monitore', 'MN');
 INSERT INTO manufacturers (name) VALUES ('Apple'), ('Dell'), ('Lenovo');
 INSERT INTO asset_models (name, manufacturer_id, category_id) VALUES ('MacBook Pro 14', 1, 1), ('Latitude 5420', 2, 1);

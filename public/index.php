@@ -23,6 +23,14 @@ $topManufacturers = $dashboardController->getTopManufacturers(5);
 
 // Letzte 5 Assets für die Tabelle
 $recentAssets = array_slice($assets, 0, 5);
+
+$statusClasses = [
+    'einsatzbereit' => 'badge-success',
+    'ausgegeben' => 'badge-warning',
+    'defekt' => 'badge-danger',
+    'in reparatur' => 'badge-info',
+    'ausgemustert' => 'badge-secondary'
+];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -138,7 +146,13 @@ $recentAssets = array_slice($assets, 0, 5);
                             <td><strong><?php echo htmlspecialchars($asset['asset_tag']); ?></strong></td>
                             <td><?php echo htmlspecialchars($asset['name']); ?></td>
                             <td><?php echo htmlspecialchars($asset['model_name'] ?? 'Unbekannt'); ?></td>
-                            <td><span class="badge badge-success"><?php echo htmlspecialchars($asset['status_name'] ?? 'Einsatzbereit'); ?></span></td>
+                            <td>
+                                <?php 
+                                $sName = $asset['status_name'] ?? 'Einsatzbereit';
+                                $sClass = $statusClasses[strtolower(trim($sName))] ?? 'badge-success';
+                                ?>
+                                <span class="badge <?php echo $sClass; ?>"><?php echo htmlspecialchars($sName); ?></span>
+                            </td>
                             <td><?php echo $asset['assigned_to'] ? htmlspecialchars($asset['assigned_to']) : '<span style="color:var(--text-muted)">Nicht zugewiesen</span>'; ?></td>
                             <td>
                                 <?php if (Auth::isEditor()): ?>

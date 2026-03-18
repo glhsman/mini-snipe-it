@@ -187,4 +187,11 @@ ALTER TABLE assets
     ADD COLUMN ram INT NULL,
     ADD COLUMN ssd_size INT NULL,
     ADD COLUMN cores INT NULL,
-    ADD COLUMN os_version VARCHAR(100) NULL;
+-- 12) Status labels erweitern (Defekt & Ausgegeben)
+INSERT INTO status_labels (name, status_type)
+SELECT 'Defekt', 'undeployable' FROM (SELECT 1) AS tmp
+WHERE NOT EXISTS (SELECT name FROM status_labels WHERE name = 'Defekt');
+
+INSERT INTO status_labels (name, status_type)
+SELECT 'Ausgegeben', 'deployable' FROM (SELECT 1) AS tmp
+WHERE NOT EXISTS (SELECT name FROM status_labels WHERE name = 'Ausgegeben');

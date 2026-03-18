@@ -59,6 +59,14 @@ function sortUrl($field) {
     $params['order'] = ($currentSort === $field && strtolower($currentOrder) === 'asc') ? 'desc' : 'asc';
     return '?' . http_build_query($params);
 }
+
+$statusClasses = [
+    'einsatzbereit' => 'badge-success',
+    'ausgegeben' => 'badge-warning',
+    'defekt' => 'badge-danger',
+    'in reparatur' => 'badge-info',
+    'ausgemustert' => 'badge-secondary'
+];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -172,7 +180,13 @@ function sortUrl($field) {
                         <td><?php echo htmlspecialchars($asset['serial'] ?? '-'); ?></td>
                         <td><?php echo htmlspecialchars($asset['model_name'] ?? '-'); ?></td>
                         <td><?php echo htmlspecialchars($asset['manufacturer_name'] ?? '-'); ?></td>
-                        <td><span class="badge badge-success"><?php echo htmlspecialchars($asset['status_name']); ?></span></td>
+                        <td>
+                            <?php 
+                            $sName = $asset['status_name'] ?? 'Einsatzbereit';
+                            $sClass = $statusClasses[strtolower(trim($sName))] ?? 'badge-success';
+                            ?>
+                            <span class="badge <?php echo $sClass; ?>"><?php echo htmlspecialchars($sName); ?></span>
+                        </td>
                         <td><?php echo htmlspecialchars($asset['location_name'] ?? '-'); ?></td>
                         <td><?php echo $asset['assigned_to'] ? htmlspecialchars($asset['assigned_to']) : '-'; ?></td>
                         <td>

@@ -164,7 +164,8 @@ body {
 .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); }
 .badge-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 
-/* Buttons */
+.badge-danger { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); }
+.badge-info { background: rgba(168, 85, 247, 0.1); color: #a855f7; } /* Purple */
 .btn {
     padding: 0.625rem 1.25rem;
     border-radius: 0.5rem;
