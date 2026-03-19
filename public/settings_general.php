@@ -2,9 +2,390 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../src/Helpers/Auth.php';
 
+$composerAutoload = __DIR__ . '/../vendor/autoload.php';
+if (is_file($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
 use App\Helpers\Auth;
 
 Auth::requireAdmin();
+
+if (!isset($_SESSION['csrf_token']) || !is_string($_SESSION['csrf_token']) || $_SESSION['csrf_token'] === '') {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+/**
+ * Sendmail-Konfiguration auslesen
+ */
+function parseSendmailIni(string $sendmailPath): array {
+    $trimmedPath = trim($sendmailPath);
+    if ($trimmedPath === '') {
+        return [];
+    }
+
+    $binaryPath = '';
+    if (preg_match('/^"([^"]+)"/', $trimmedPath, $matches)) {
+        $binaryPath = $matches[1];
+    } else {
+        $parts = preg_split('/\s+/', $trimmedPath);
+        $binaryPath = $parts[0] ?? '';
+    }
+
+    if ($binaryPath === '') {
+        return [];
+    }
+
+    $iniPath = dirname($binaryPath) . DIRECTORY_SEPARATOR . 'sendmail.ini';
+    if (!is_file($iniPath) || !is_readable($iniPath)) {
+        return [];
+    }
+
+    $parsed = parse_ini_file($iniPath, true, INI_SCANNER_RAW);
+    if (!is_array($parsed)) {
+        return [];
+    }
+
+    if (isset($parsed['sendmail']) && is_array($parsed['sendmail'])) {
+        return $parsed['sendmail'];
+    }
+
+    return $parsed;
+}
+
+function getSendmailConfig() {
+    $sendmail_path = ini_get('sendmail_path') ?: 'sendmail -t -i';
+    $smtp_host_php = ini_get('SMTP') ?: 'localhost';
+    $smtp_port_php = ini_get('smtp_port') ?: 25;
+    $sendmail_ini = parseSendmailIni((string) $sendmail_path);
+
+    $smtp_host = (string) ($sendmail_ini['smtp_server'] ?? $smtp_host_php);
+    $smtp_port = (string) ($sendmail_ini['smtp_port'] ?? $smtp_port_php);
+    $smtp_ssl = strtolower(trim((string) ($sendmail_ini['smtp_ssl'] ?? 'auto')));
+    $auth_username = trim((string) ($sendmail_ini['auth_username'] ?? ''));
+    $auth_password = (string) ($sendmail_ini['auth_password'] ?? '');
+    $smtp_source = isset($sendmail_ini['smtp_server']) || isset($sendmail_ini['smtp_port'])
+        ? 'sendmail.ini'
+        : 'php.ini';
+    
+    return [
+        'sendmail_path' => $sendmail_path,
+        'smtp_host' => $smtp_host,
+        'smtp_port' => $smtp_port,
+        'smtp_ssl' => $smtp_ssl,
+        'smtp_source' => $smtp_source,
+        'auth_username' => $auth_username,
+        'auth_password' => $auth_password,
+    ];
+}
+
+function smtpReadResponse($socket): string {
+    $response = '';
+    while (!feof($socket)) {
+        $line = fgets($socket, 515);
+        if ($line === false) {
+            break;
+        }
+        $response .= $line;
+        if (strlen($line) < 4 || $line[3] === ' ') {
+            break;
+        }
+    }
+    return $response;
+}
+
+function smtpSendCommand($socket, string $command, array $okCodes): array {
+    fwrite($socket, $command . "\r\n");
+    $response = smtpReadResponse($socket);
+    $code = (int) substr($response, 0, 3);
+    return [
+        'ok' => in_array($code, $okCodes, true),
+        'response' => trim($response),
+        'code' => $code,
+    ];
+}
+
+function testSmtpDirect(string $to_email, string $subject, string $message, array $cfg): array {
+    $host = trim((string) ($cfg['smtp_host'] ?? ''));
+    $port = (int) ($cfg['smtp_port'] ?? 0);
+    $username = trim((string) ($cfg['auth_username'] ?? ''));
+    $password = (string) ($cfg['auth_password'] ?? '');
+    $sslMode = strtolower(trim((string) ($cfg['smtp_ssl'] ?? 'auto')));
+
+    if ($host === '' || $port <= 0) {
+        return [
+            'success' => false,
+            'message' => 'SMTP-Konfiguration unvollstaendig: Host oder Port fehlt.',
+        ];
+    }
+
+    $transport = ($sslMode === 'ssl' || $port === 465) ? 'ssl' : 'tcp';
+    $target = $transport . '://' . $host . ':' . $port;
+    $context = stream_context_create([
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+            'allow_self_signed' => false,
+        ],
+    ]);
+
+    $errno = 0;
+    $errstr = '';
+    $socket = @stream_socket_client($target, $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
+    if (!$socket) {
+        return [
+            'success' => false,
+            'message' => "SMTP-Verbindung fehlgeschlagen ({$host}:{$port}): {$errstr} ({$errno})",
+        ];
+    }
+
+    stream_set_timeout($socket, 20);
+    $greeting = smtpReadResponse($socket);
+    if ((int) substr($greeting, 0, 3) !== 220) {
+        fclose($socket);
+        return [
+            'success' => false,
+            'message' => 'SMTP-Server meldet keinen gueltigen Start: ' . trim($greeting),
+        ];
+    }
+
+    $heloHost = gethostname() ?: 'localhost';
+    $ehlo = smtpSendCommand($socket, 'EHLO ' . $heloHost, [250]);
+    if (!$ehlo['ok']) {
+        fclose($socket);
+        return [
+            'success' => false,
+            'message' => 'EHLO fehlgeschlagen: ' . $ehlo['response'],
+        ];
+    }
+
+    $supportsStartTls = stripos($ehlo['response'], 'STARTTLS') !== false;
+    if ($transport === 'tcp' && $sslMode !== 'none' && ($sslMode === 'tls' || $sslMode === 'auto')) {
+        if (!$supportsStartTls) {
+            fclose($socket);
+            return [
+                'success' => false,
+                'message' => 'Server bietet kein STARTTLS an, aber TLS ist konfiguriert.',
+            ];
+        }
+
+        $startTls = smtpSendCommand($socket, 'STARTTLS', [220]);
+        if (!$startTls['ok']) {
+            fclose($socket);
+            return [
+                'success' => false,
+                'message' => 'STARTTLS fehlgeschlagen: ' . $startTls['response'],
+            ];
+        }
+
+        $cryptoMethod = defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')
+            ? STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+            : STREAM_CRYPTO_METHOD_TLS_CLIENT;
+        if (defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT')) {
+            $cryptoMethod |= STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT;
+        }
+
+        $cryptoOk = @stream_socket_enable_crypto($socket, true, $cryptoMethod);
+        if ($cryptoOk !== true) {
+            fclose($socket);
+            return [
+                'success' => false,
+                'message' => 'TLS-Handshake fehlgeschlagen (stream_socket_enable_crypto).',
+            ];
+        }
+
+        $ehloTls = smtpSendCommand($socket, 'EHLO ' . $heloHost, [250]);
+        if (!$ehloTls['ok']) {
+            fclose($socket);
+            return [
+                'success' => false,
+                'message' => 'EHLO nach STARTTLS fehlgeschlagen: ' . $ehloTls['response'],
+            ];
+        }
+    }
+
+    if ($username !== '' || $password !== '') {
+        $auth = smtpSendCommand($socket, 'AUTH LOGIN', [334]);
+        if (!$auth['ok']) {
+            fclose($socket);
+            return [
+                'success' => false,
+                'message' => 'AUTH LOGIN wurde abgelehnt: ' . $auth['response'],
+            ];
+        }
+
+        $authUser = smtpSendCommand($socket, base64_encode($username), [334]);
+        if (!$authUser['ok']) {
+            fclose($socket);
+            return [
+                'success' => false,
+                'message' => 'SMTP-Benutzername abgelehnt: ' . $authUser['response'],
+            ];
+        }
+
+        $authPass = smtpSendCommand($socket, base64_encode($password), [235]);
+        if (!$authPass['ok']) {
+            fclose($socket);
+            return [
+                'success' => false,
+                'message' => 'SMTP-Passwort abgelehnt: ' . $authPass['response'],
+            ];
+        }
+    }
+
+    $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
+    $mailFrom = smtpSendCommand($socket, 'MAIL FROM:<' . $fromAddress . '>', [250]);
+    if (!$mailFrom['ok']) {
+        fclose($socket);
+        return [
+            'success' => false,
+            'message' => 'MAIL FROM abgelehnt: ' . $mailFrom['response'],
+        ];
+    }
+
+    $rcptTo = smtpSendCommand($socket, 'RCPT TO:<' . $to_email . '>', [250, 251]);
+    if (!$rcptTo['ok']) {
+        fclose($socket);
+        return [
+            'success' => false,
+            'message' => 'Empfaenger abgelehnt: ' . $rcptTo['response'],
+        ];
+    }
+
+    $data = smtpSendCommand($socket, 'DATA', [354]);
+    if (!$data['ok']) {
+        fclose($socket);
+        return [
+            'success' => false,
+            'message' => 'DATA-Befehl fehlgeschlagen: ' . $data['response'],
+        ];
+    }
+
+    $headers = [
+        'From: ' . $fromAddress,
+        'To: ' . $to_email,
+        'Subject: ' . $subject,
+        'Reply-To: ' . $fromAddress,
+        'Content-Type: text/plain; charset=UTF-8',
+        'X-Mailer: Mini-Snipe SMTP',
+    ];
+    $body = str_replace(["\r\n", "\r"], "\n", $message);
+    $body = str_replace("\n.", "\n..", $body);
+    $payload = implode("\r\n", $headers) . "\r\n\r\n" . str_replace("\n", "\r\n", $body) . "\r\n.\r\n";
+    fwrite($socket, $payload);
+
+    $queued = smtpReadResponse($socket);
+    $queuedCode = (int) substr($queued, 0, 3);
+    smtpSendCommand($socket, 'QUIT', [221]);
+    fclose($socket);
+
+    if (!in_array($queuedCode, [250], true)) {
+        return [
+            'success' => false,
+            'message' => 'Server hat Nachricht nicht akzeptiert: ' . trim($queued),
+        ];
+    }
+
+    return [
+        'success' => true,
+        'message' => "SMTP-Test erfolgreich. Server hat die Nachricht akzeptiert ({$host}:{$port}).",
+    ];
+}
+
+function buildTlsHostnameHint(string $reason): string {
+    if (preg_match("/CN=`([^']+)' did not match expected CN=`([^']+)'/", $reason, $matches)) {
+        $certName = trim((string) ($matches[1] ?? ''));
+        $expectedName = trim((string) ($matches[2] ?? ''));
+        if ($certName !== '' && $expectedName !== '') {
+            return " Hinweis: Zertifikat-Hostname passt nicht. Server-Zertifikat ist fuer '{$certName}', konfiguriert ist '{$expectedName}'. Setze smtp_server={$certName} oder fordere ein passendes Zertifikat beim Provider an.";
+        }
+    }
+    return '';
+}
+
+function testSmtpWithPHPMailer(string $to_email, string $subject, string $message, array $cfg): array {
+    if (!class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
+        return [
+            'success' => false,
+            'message' => 'PHPMailer nicht verfuegbar (vendor/autoload.php nicht gefunden).',
+        ];
+    }
+
+    $host = trim((string) ($cfg['smtp_host'] ?? ''));
+    $port = (int) ($cfg['smtp_port'] ?? 0);
+    $username = trim((string) ($cfg['auth_username'] ?? ''));
+    $password = (string) ($cfg['auth_password'] ?? '');
+    $sslMode = strtolower(trim((string) ($cfg['smtp_ssl'] ?? 'auto')));
+
+    if ($host === '' || $port <= 0) {
+        return [
+            'success' => false,
+            'message' => 'SMTP-Konfiguration unvollstaendig: Host oder Port fehlt.',
+        ];
+    }
+
+    $pmClass = '\\PHPMailer\\PHPMailer\\PHPMailer';
+    $mail = new $pmClass(true);
+
+    try {
+        $mail->isSMTP();
+        $mail->Host = $host;
+        $mail->Port = $port;
+        $mail->Timeout = 20;
+        $mail->CharSet = 'UTF-8';
+
+        $mail->SMTPAuth = ($username !== '' || $password !== '');
+        if ($mail->SMTPAuth) {
+            $mail->Username = $username;
+            $mail->Password = $password;
+        }
+
+        // Port 465 uses implicit TLS, otherwise STARTTLS if enabled.
+        if ($sslMode === 'ssl' || $port === 465) {
+            $mail->SMTPSecure = $pmClass::ENCRYPTION_SMTPS;
+            $mail->SMTPAutoTLS = false;
+        } elseif ($sslMode === 'none') {
+            $mail->SMTPSecure = '';
+            $mail->SMTPAutoTLS = false;
+        } else {
+            $mail->SMTPSecure = $pmClass::ENCRYPTION_STARTTLS;
+            $mail->SMTPAutoTLS = true;
+        }
+
+        $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
+        $mail->setFrom($fromAddress, 'Mini-Snipe');
+        $mail->addAddress($to_email);
+        $mail->Subject = $subject;
+        $mail->Body = $message;
+
+        $mail->send();
+
+        return [
+            'success' => true,
+            'message' => "SMTP-Test erfolgreich mit PHPMailer ({$host}:{$port}).",
+        ];
+    } catch (\Throwable $e) {
+        $errorInfo = (string) ($mail->ErrorInfo ?? '');
+        $reason = $errorInfo !== '' ? $errorInfo : $e->getMessage();
+        $hostHint = buildTlsHostnameHint($reason);
+
+        return [
+            'success' => false,
+            'message' => "PHPMailer Fehler bei {$host}:{$port}: {$reason}{$hostHint}",
+        ];
+    }
+}
+
+/**
+ * Test-Mail versenden
+ */
+function testSendmail($to_email, $subject, $message) {
+    $cfg = getSendmailConfig();
+    if (class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
+        return testSmtpWithPHPMailer($to_email, $subject, $message, $cfg);
+    }
+    return testSmtpDirect($to_email, $subject, $message, $cfg);
+}
 
 /**
  * Verkleinert ein Bild auf eine maximale Höhe, falls nötig und GD verfügbar ist.
@@ -101,8 +482,28 @@ $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
 
 $error = null;
 $success = null;
+$testMailResult = null;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Test-Mail-Versand
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_sendmail'])) {
+    $testEmail = trim($_POST['test_email'] ?? '');
+    if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Bitte eine gueltige E-Mail-Adresse eingeben.';
+    } else {
+        $testMailResult = testSendmail(
+            $testEmail,
+            'Mini-Snipe Sendmail Test',
+            "Hallo,\n\nDies ist eine Test-E-Mail von Mini-Snipe.\n\nWenn Sie diese Nachricht erhalten haben, funktioniert Ihr E-Mail-System korrekt.\n\nViele Gruesse,\nIhr Mini-Snipe System"
+        );
+        if ($testMailResult['success']) {
+            $success = $testMailResult['message'];
+        } else {
+            $error = $testMailResult['message'];
+        }
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['test_sendmail'])) {
     $siteName = $_POST['site_name'] ?? 'Mini-Snipe';
     $brandingType = $_POST['branding_type'] ?? 'text';
     $companyAddress = trim($_POST['company_address'] ?? '');
@@ -432,6 +833,50 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:0.5rem;"></i> Einstellungen speichern</button>
                 </div>
             </form>
+
+            <!-- ===== Sendmail-Konfiguration ===== -->
+            <div class="form-section" style="margin-top: 2.5rem;">
+                <h2><i class="fas fa-envelope" style="margin-right:0.5rem; color:var(--primary-color);"></i> Sendmail-Konfiguration</h2>
+
+                <?php $sendmailConfig = getSendmailConfig(); ?>
+                <div style="background: rgba(99,102,241,0.1); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem;">
+                        <div>
+                            <span style="color: var(--text-muted);">Sendmail-Pfad:</span><br>
+                            <code style="color: var(--accent-color); word-break: break-all;"><?php echo htmlspecialchars($sendmailConfig['sendmail_path']); ?></code>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted);">SMTP-Host:</span><br>
+                            <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['smtp_host']); ?>:<?php echo htmlspecialchars($sendmailConfig['smtp_port']); ?></code>
+                            <div style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.78rem;">Quelle: <?php echo htmlspecialchars($sendmailConfig['smtp_source']); ?></div>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if (!empty($success)): ?>
+                    <div style="background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; color: #10b981;">
+                        <i class="fas fa-check-circle" style="margin-right:0.5rem;"></i> <?php echo htmlspecialchars($success); ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($error)): ?>
+                    <div style="background: rgba(239,68,68,0.1); border: 1px solid #ef4444; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; color: #ef4444;">
+                        <i class="fas fa-exclamation-circle" style="margin-right:0.5rem;"></i> <?php echo htmlspecialchars($error); ?>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST" style="display: flex; gap: 1rem; align-items: flex-end;">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                    <div style="flex: 1;">
+                        <label for="test_email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Test-E-Mail senden an:</label>
+                        <input type="email" id="test_email" name="test_email" class="form-control" placeholder="beispiel@gmail.com" required="required" />
+                    </div>
+                    <button type="submit" name="test_sendmail" value="1" class="btn btn-primary">
+                        <i class="fas fa-paper-plane" style="margin-right:0.5rem;"></i> Test-Mail senden
+                    </button>
+                </form>
+                <small style="display: block; color: var(--text-muted); margin-top: 0.75rem;">Eine Test-E-Mail wird an die angegebene Adresse gesendet. Dies hilft zur Überprüfung der Sendmail-Konfiguration.</small>
+            </div>
 
             <!-- ===== Login-Protokoll ===== -->
             <div class="form-section" style="margin-top: 2.5rem;">

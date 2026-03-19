@@ -28,6 +28,7 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 ## Voraussetzungen
 
 -   **XAMPP** (mit PHP 8.x und MySQL/MariaDB)
+-   **Optional für erweiterten SMTP-Test**: Composer (für PHPMailer)
 
 ## Installation & Setup
 
@@ -40,6 +41,28 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
     -   Der Assistent führt `database.sql` automatisch aus und erstellt die `.env`.
 4.  **Anmelden**:
     -   Startseite: `http://localhost/minisnipeit/public/`.
+
+### Optional: PHPMailer installieren (empfohlen)
+
+Für den E-Mail-Test in `Einstellungen -> Sendmail-Konfiguration` wird bevorzugt **PHPMailer** genutzt, wenn es installiert ist.
+
+1.  In das Projektverzeichnis wechseln (z.B. `D:\xampp\htdocs\minisnipeit`)
+2.  Abhängigkeit installieren:
+
+```bash
+composer require phpmailer/phpmailer
+```
+
+3.  Sicherstellen, dass `vendor/autoload.php` vorhanden ist
+
+Ohne PHPMailer verwendet die Anwendung einen direkten SMTP-Fallback. PHPMailer ist jedoch robuster bei TLS/Authentifizierung und liefert verständlichere Fehlermeldungen.
+
+### Hinweis zu SMTP-Zertifikaten
+
+Wenn der SMTP-Host nicht zum Zertifikat passt, schlägt die TLS-Verbindung fehl (z.B. Zertifikat zeigt auf einen anderen CN).
+
+-   In diesem Fall den Hostnamen verwenden, der zum Zertifikat passt
+-   Oder den Provider um ein passendes Zertifikat für den gewünschten Host bitten
 
 ## Update bestehender Installationen
 
