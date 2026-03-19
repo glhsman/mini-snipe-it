@@ -18,11 +18,64 @@
     font-family: 'Inter', -apple-system, sans-serif;
 }
 
+/* Top Navbar */
+.top-navbar {
+    height: 50px;
+    background: var(--bg-card); /* Passt sich an Dark/Light Mode an */
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    color: var(--text-main);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+.top-navbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--text-main);
+    text-decoration: none;
+}
+
+.top-navbar .brand img {
+    height: 32px;
+    max-height: 32px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.top-navbar .nav-icons {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+.top-navbar .nav-icons i {
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+
+.top-navbar .nav-icons i:hover {
+    opacity: 1;
+}
+
 body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     min-height: 100vh;
     display: flex;
+    padding-top: 50px; /* Platz fuer Top-Navbar */
 }
 
 /* Sidebar */
@@ -34,6 +87,11 @@ body {
     padding: 2rem 1rem;
     display: flex;
     flex-direction: column;
+    position: fixed;
+    top: 50px;
+    bottom: 0;
+    left: 0;
+    z-index: 900;
 }
 
 .logo {
@@ -71,6 +129,7 @@ body {
     flex: 1;
     padding: 2rem;
     overflow-y: auto;
+    margin-left: 260px; /* Platz fuer Sidebar */
 }
 
 .header {
@@ -251,3 +310,72 @@ body {
     border-color: rgba(244, 63, 94, 0.2);
     color: #f43f5e;
 }
+
+/* --- Light Mode --- */
+body.light-mode {
+    --bg-dark: #f8fafc;
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .sidebar {
+    background: #ffffff;
+}
+
+body.light-mode .nav-link:hover, body.light-mode .nav-link.active {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--primary-color);
+}
+
+body.light-mode .form-control {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+body.light-mode .form-control:focus {
+    border-color: var(--primary-color) !important;
+}
+
+body.light-mode .modal-card {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode .modal-overlay {
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+body.light-mode .data-table th, body.light-mode .data-table td {
+    border-bottom-color: rgba(0, 0, 0, 0.05) !important;
+    color: var(--text-main);
+}
+
+body.light-mode .user-info {
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-mode .chart-card {
+    background: #ffffff;
+}
+
+body.light-mode .card {
+    background: #ffffff;
+}
+
+/* Fix für hartkodierte weiße Icons/Links in Tabellen */
+body.light-mode .data-table td a[style*="color: white"],
+body.light-mode .data-table td a[style*="color:white"] {
+    color: var(--text-main) !important;
+}
+
+body.light-mode .data-table td a[style*="color: white"]:hover,
+body.light-mode .data-table td a[style*="color:white"]:hover {
+    color: var(--primary-color) !important;
+}
+
+

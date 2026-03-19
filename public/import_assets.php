@@ -295,10 +295,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assets importieren - Mini-Snipe</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
+    <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
     <div class="sidebar">
         <div class="logo">Mini-Snipe</div>
         <nav>
@@ -307,7 +308,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             <a href="users.php" class="nav-link"><i class="fas fa-users"></i> User</a>
             <?php if (Auth::isAdmin()): ?>
                 <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link active"><i class="fas fa-cog"></i> Einstellungen</a>
+                <a href="settings.php" class="nav-link active"><i class="fas fa-cog"></i> Verwaltung</a>
+                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
             <?php endif; ?>
         </nav>
     </div>

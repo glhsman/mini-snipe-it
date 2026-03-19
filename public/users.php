@@ -15,13 +15,22 @@ $allowedPerPage = [25, 50, 100, 250];
 $perPage = isset($_GET['per_page']) && in_array((int)$_GET['per_page'], $allowedPerPage, true)
     ? (int)$_GET['per_page'] : 25;
 
+if (isset($_GET['q'])) {
+    $search = trim($_GET['q']);
+    $_SESSION['users_search'] = $search;
+} elseif (isset($_SESSION['users_search'])) {
+    $search = $_SESSION['users_search'];
+} else {
+    $search = '';
+}
+
 // Fallback fuer aeltere Deployments ohne Pagination-Methoden im Controller.
-if (method_exists($userController, 'countUsers') && method_exists($userController, 'getUsersPaginated')) {
-    $totalUsers = $userController->countUsers();
+if (method_exists($userController, 'countUsersFiltered') && method_exists($userController, 'getUsersPaginatedFiltered')) {
+    $totalUsers = $userController->countUsersFiltered($search);
     $totalPages = max(1, (int) ceil($totalUsers / $perPage));
     $page = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
     $offset = ($page - 1) * $perPage;
-    $users = $userController->getUsersPaginated($perPage, $offset);
+    $users = $userController->getUsersPaginatedFiltered($search, $perPage, $offset);
 } else {
     $allUsers = $userController->getAllUsers();
     $totalUsers = count($allUsers);
@@ -44,10 +53,11 @@ function usersPaginationUrl($p, $pp) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzer - Mini-Snipe</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
+    <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
     <div class="sidebar">
         <div class="logo">Mini-Snipe</div>
         <nav>
@@ -56,7 +66,8 @@ function usersPaginationUrl($p, $pp) {
             <a href="users.php" class="nav-link active"><i class="fas fa-users"></i> User</a>
             <?php if (Auth::isAdmin()): ?>
                 <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Einstellungen</a>
+                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Verwaltung</a>
+                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
             <?php endif; ?>
             <a href="logout.php" class="nav-link" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;"><i class="fas fa-sign-out-alt"></i> Abmelden</a>
         </nav>
@@ -79,17 +90,30 @@ function usersPaginationUrl($p, $pp) {
         <?php endif; ?>
 
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; padding: 1rem 0 1.25rem 0; flex-wrap: wrap;">
-                <div>
-                    <div style="position: relative; max-width: 400px;">
-                    <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                    <input type="text" id="userSearch" placeholder="Name, Benutzername, E-Mail oder Standort ..." 
-                        style="width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.25rem; border-radius: 0.5rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; outline: none; font-size: 0.875rem; box-sizing: border-box;"
-                        oninput="filterUsers(this.value)">
-                    </div>
-                    <p id="userCount" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 0;"></p>
+            <!-- Suchzeile -->
+            <form method="GET" action="users.php" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; padding: 1rem 0 1.25rem 0;">
+                <div style="position:relative; flex:1; min-width:200px;">
+                    <i class="fas fa-search" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                    <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
+                        placeholder="Name, Benutzername, E-Mail oder Standort ..."
+                        style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.25rem; border-radius:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.875rem; box-sizing:border-box;">
                 </div>
+                <input type="hidden" name="per_page" value="<?php echo $perPage; ?>">
+                <button type="submit" class="btn btn-primary" style="padding:0.6rem 1rem; font-size:0.875rem;"><i class="fas fa-filter"></i> Suchen</button>
+                <?php if ($search !== ''): ?>
+                    <a href="users.php?q=&per_page=<?php echo $perPage; ?>" style="padding:0.6rem 0.75rem; border-radius:0.5rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.875rem; white-space:nowrap;">
+                        <i class="fas fa-times"></i> Filter zurücksetzen
+                    </a>
+                <?php endif; ?>
+            </form>
 
+            <!-- Zeile: Treffer + Pro-Seite -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; padding-bottom:1rem;">
+                <p style="color:var(--text-muted); font-size:0.875rem; margin:0;">
+                    <?php $from = $totalUsers ? $offset + 1 : 0; $to = min($offset + $perPage, $totalUsers); ?>
+                    Zeige <strong><?php echo $from; ?></strong>&ndash;<strong><?php echo $to; ?></strong> von <strong><?php echo $totalUsers; ?></strong> Benutzern
+                    <?php if ($search !== ''): ?><span style="color:var(--accent-rose);"> (gefiltert)</span><?php endif; ?>
+                </p>
                 <div style="display:flex; align-items:center; gap: 0.5rem;">
                     <span style="color: var(--text-muted); font-size: 0.875rem;">Pro Seite:</span>
                     <?php foreach ($allowedPerPage as $opt): ?>
@@ -165,39 +189,7 @@ function usersPaginationUrl($p, $pp) {
             <?php endif; ?>
         </div>
     </main>
-    <script>
-        const allRows = Array.from(document.querySelectorAll('#userTable tbody tr'));
-        const countEl = document.getElementById('userCount');
-        const pageFrom = <?php echo $totalUsers ? ($offset + 1) : 0; ?>;
-        const pageTo = <?php echo min($offset + $perPage, $totalUsers); ?>;
-        const totalUsers = <?php echo (int) $totalUsers; ?>;
-
-        function updateCount(visible, filtered) {
-            if (filtered) {
-                countEl.textContent = visible + ' Treffer auf dieser Seite';
-                return;
-            }
-            countEl.textContent = 'Zeige ' + pageFrom + '-' + pageTo + ' von ' + totalUsers + ' Benutzern';
-        }
-
-        function filterUsers(query) {
-            const q = query.toLowerCase().trim();
-            let visible = 0;
-            allRows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                const show = q === '' || text.includes(q);
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-            updateCount(visible, q !== '');
-        }
-
-        updateCount(allRows.length, false);
-
-        document.getElementById('userSearch').addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') { this.value = ''; filterUsers(''); }
-        });
-    </script>
+    <!-- JavaScript-Filterung entfernt, da nun serverseitig -->
 </body>
 </html>
 

@@ -197,3 +197,27 @@ WHERE NOT EXISTS (SELECT name FROM status_labels WHERE name = 'Defekt');
 INSERT INTO status_labels (name, status_type)
 SELECT 'Ausgegeben', 'deployable' FROM (SELECT 1) AS tmp
 WHERE NOT EXISTS (SELECT name FROM status_labels WHERE name = 'Ausgegeben');
+
+-- 13) Lookup-Tabellen für Hardware erstellen (Idempotent)
+CREATE TABLE IF NOT EXISTS lookup_ram (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
+CREATE TABLE IF NOT EXISTS lookup_ssd (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
+CREATE TABLE IF NOT EXISTS lookup_cores (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
+CREATE TABLE IF NOT EXISTS lookup_os (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(100) UNIQUE);
+
+-- 14) Standardwerte für Lookups
+INSERT IGNORE INTO lookup_ram (value) VALUES ('4 GB'), ('8 GB'), ('16 GB'), ('32 GB'), ('64 GB');
+INSERT IGNORE INTO lookup_ssd (value) VALUES ('128 GB'), ('256 GB'), ('512 GB'), ('1 TB'), ('2 TB');
+INSERT IGNORE INTO lookup_cores (value) VALUES ('2'), ('4'), ('6'), ('8'), ('10'), ('12'), ('16');
+INSERT IGNORE INTO lookup_os (value) VALUES ('Windows 10'), ('Windows 11'), ('macOS'), ('Linux'), ('Android'), ('iOS');
+
+-- 15) Migriere bestehende Daten aus Assets (idempotent)
+INSERT IGNORE INTO lookup_ram (value) SELECT DISTINCT CONCAT(ram, ' GB') FROM assets WHERE ram IS NOT NULL AND ram > 0 AND ram NOT IN (SELECT id FROM lookup_ram);
+INSERT IGNORE INTO lookup_ssd (value) SELECT DISTINCT CONCAT(ssd_size, ' GB') FROM assets WHERE ssd_size IS NOT NULL AND ssd_size > 0 AND ssd_size NOT IN (SELECT id FROM lookup_ssd);
+INSERT IGNORE INTO lookup_cores (value) SELECT DISTINCT cores FROM assets WHERE cores IS NOT NULL AND cores > 0 AND cores NOT IN (SELECT id FROM lookup_cores);
+INSERT IGNORE INTO lookup_os (value) SELECT DISTINCT os_version FROM assets WHERE os_version IS NOT NULL AND os_version != '' AND os_version NOT IN (SELECT id FROM lookup_os);
+
+-- 16) Assets Tabelle updaten (IDs statt Rohwerte)
+UPDATE assets a JOIN lookup_ram l ON CONCAT(a.ram, ' GB') = l.value SET a.ram = l.id WHERE a.ram IS NOT NULL AND a.ram > 0 AND a.ram NOT IN (SELECT id FROM lookup_ram);
+UPDATE assets a JOIN lookup_ssd l ON CONCAT(a.ssd_size, ' GB') = l.value SET a.ssd_size = l.id WHERE a.ssd_size IS NOT NULL AND a.ssd_size > 0 AND a.ssd_size NOT IN (SELECT id FROM lookup_ssd);
+UPDATE assets a JOIN lookup_cores l ON a.cores = l.value SET a.cores = l.id WHERE a.cores IS NOT NULL AND a.cores > 0 AND a.cores NOT IN (SELECT id FROM lookup_cores);
+UPDATE assets a JOIN lookup_os l ON a.os_version = l.value SET a.os_version = l.id WHERE a.os_version IS NOT NULL AND a.os_version != '' AND a.os_version NOT IN (SELECT id FROM lookup_os);

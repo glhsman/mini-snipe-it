@@ -143,4 +143,58 @@ class UserController {
         $stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
         return $stmt->execute([$id]);
     }
+
+    public function changePassword($userId, $oldPassword, $newPassword) {
+        $user = $this->getUserById($userId);
+        if (!$user) {
+            return false;
+        }
+
+        // Wenn das Passwort aktuell leer ist (nicht eingeloggt war oder Admin es geleert hat),
+        // erlauben wir die Änderung ohne alte Verifikation?
+        // Normalerweise sollte ein User ein Passwort haben, wenn er sich einloggen darf.
+        if (!empty($user['password']) && !password_verify($oldPassword, $user['password'])) {
+            return false;
+        }
+
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$hashedPassword, $userId]);
+    }
+
+    public function countUsersFiltered($search = '') {
+        $query = "SELECT COUNT(*) FROM users u LEFT JOIN locations l ON u.location_id = l.id";
+        $params = [];
+        if (!empty($search)) {
+            $query .= " WHERE u.first_name LIKE ? OR u.last_name LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR l.name LIKE ?";
+            $searchTerm = '%' . $search . '%';
+            $params = [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm];
+        }
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function getUsersPaginatedFiltered($search = '', $limit, $offset) {
+        $query = "SELECT u.*, l.name as location_name FROM users u LEFT JOIN locations l ON u.location_id = l.id";
+        $params = [];
+        if (!empty($search)) {
+            $query .= " WHERE u.first_name LIKE ? OR u.last_name LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR l.name LIKE ?";
+            $searchTerm = '%' . $search . '%';
+            $params = [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm];
+        }
+        $query .= " ORDER BY u.last_name, u.first_name LIMIT ? OFFSET ?";
+        
+        $stmt = $this->db->prepare($query);
+        
+        $i = 1;
+        foreach ($params as $p) {
+            $stmt->bindValue($i++, $p, \PDO::PARAM_STR);
+        }
+        $stmt->bindValue($i++, (int)$limit, \PDO::PARAM_INT);
+        $stmt->bindValue($i++, (int)$offset, \PDO::PARAM_INT);
+        
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 }

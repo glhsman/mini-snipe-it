@@ -9,6 +9,13 @@ use App\Helpers\Auth;
 Auth::requireAdmin();
 
 $db = Database::getInstance();
+// Auto-Migration für Hardware-Lookups
+$stmt = $db->query("SHOW TABLES LIKE 'lookup_ram'");
+if ($stmt->rowCount() == 0) {
+    require_once __DIR__ . '/migrate_lookups.php';
+    runLookupMigration($db);
+}
+
 $masterData = new MasterDataController($db);
 
 $error = null;
@@ -26,6 +33,11 @@ $categories = $masterData->getCategories();
 $manufacturers = $masterData->getManufacturers();
 $statusLabels = $masterData->getStatusLabels();
 $models = $masterData->getAssetModels();
+$ramOptions = $masterData->getLookupOptions('ram');
+$ssdOptions = $masterData->getLookupOptions('ssd');
+$coresOptions = $masterData->getLookupOptions('cores');
+$osOptions = $masterData->getLookupOptions('os');
+
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -33,7 +45,7 @@ $models = $masterData->getAssetModels();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Einstellungen - Mini-Snipe</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .settings-section { margin-bottom: 3rem; }
@@ -70,7 +82,8 @@ $models = $masterData->getAssetModels();
         .alert-success { background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.2); }
     </style>
 </head>
-<body>
+<body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
+    <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
     <div class="sidebar">
         <div class="logo">Mini-Snipe</div>
         <nav>
@@ -78,13 +91,21 @@ $models = $masterData->getAssetModels();
             <a href="assets.php" class="nav-link"><i class="fas fa-laptop"></i> Assets</a>
             <a href="users.php" class="nav-link"><i class="fas fa-users"></i> User</a>
             <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-            <a href="settings.php" class="nav-link active"><i class="fas fa-cog"></i> Einstellungen</a>
+            <a href="settings.php" class="nav-link active"><i class="fas fa-cog"></i> Verwaltung</a>
+                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
         </nav>
     </div>
 
     <main class="main-content">
         <header class="header">
             <h1>Stammdatenverwaltung</h1>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem; margin-bottom: 2rem;">
+            <a href="#models" class="btn btn-sm" style="background: rgba(255,255,255,0.05);">Modelle</a>
+            <a href="#categories" class="btn btn-sm" style="background: rgba(255,255,255,0.05);">Kategorien</a>
+            <a href="#manufacturers" class="btn btn-sm" style="background: rgba(255,255,255,0.05);">Hersteller</a>
+            <a href="#hardware-options" class="btn btn-sm" style="background: var(--primary-color); color: white;">Hardware-Optionen</a>
+        </div>
+
         </header>
 
         <?php if ($error): ?>
@@ -165,7 +186,79 @@ $models = $masterData->getAssetModels();
             </div>
         </div>
 
-        <div class="settings-section" style="margin-top: 3rem;">
+                <div class="settings-section" id="hardware-options" style="margin-top: 3rem;">
+            <div class="settings-header">
+                <h2>Hardware & OS Optionen</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                
+                <!-- RAM -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>RAM</h3>
+                        <button class="btn btn-sm btn-primary" onclick="openLookupModal('ram')"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <ul style="list-style: none; padding: 0;">
+                        <?php foreach ($ramOptions as $opt): ?>
+                            <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span><?php echo htmlspecialchars($opt['value']); ?></span>
+                                <button onclick="deleteLookup('ram', <?php echo $opt['id']; ?>)" style="background:none; border:none; cursor:pointer; color: var(--accent-rose);"><i class="fas fa-trash"></i></button>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+
+                <!-- SSD -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>SSD</h3>
+                        <button class="btn btn-sm btn-primary" onclick="openLookupModal('ssd')"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <ul style="list-style: none; padding: 0;">
+                        <?php foreach ($ssdOptions as $opt): ?>
+                            <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span><?php echo htmlspecialchars($opt['value']); ?></span>
+                                <button onclick="deleteLookup('ssd', <?php echo $opt['id']; ?>)" style="background:none; border:none; cursor:pointer; color: var(--accent-rose);"><i class="fas fa-trash"></i></button>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+
+                <!-- Cores -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>Cores (Kerne)</h3>
+                        <button class="btn btn-sm btn-primary" onclick="openLookupModal('cores')"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <ul style="list-style: none; padding: 0;">
+                        <?php foreach ($coresOptions as $opt): ?>
+                            <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span><?php echo htmlspecialchars($opt['value']); ?></span>
+                                <button onclick="deleteLookup('cores', <?php echo $opt['id']; ?>)" style="background:none; border:none; cursor:pointer; color: var(--accent-rose);"><i class="fas fa-trash"></i></button>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+
+                <!-- OS -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>OS / Betriebssystem</h3>
+                        <button class="btn btn-sm btn-primary" onclick="openLookupModal('os')"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <ul style="list-style: none; padding: 0;">
+                        <?php foreach ($osOptions as $opt): ?>
+                            <li style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span><?php echo htmlspecialchars($opt['value']); ?></span>
+                                <button onclick="deleteLookup('os', <?php echo $opt['id']; ?>)" style="background:none; border:none; cursor:pointer; color: var(--accent-rose);"><i class="fas fa-trash"></i></button>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+<div class="settings-section" style="margin-top: 3rem;">
             <div class="settings-header">
                 <h2>Datenimport (CSV)</h2>
             </div>
@@ -362,6 +455,64 @@ $models = $masterData->getAssetModels();
                 });
             }
         });
+    </script>
+    <!-- Modal für Hardware-Lookups -->
+    <div class="modal-overlay" id="lookupModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="lookupModalTitle">Eintrag hinzufügen</h3>
+                <button class="close-btn" onclick="closeLookupModal()">&times;</button>
+            </div>
+            <form action="lookup_action.php" method="POST">
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="type" id="lookupType" value="">
+
+                <div class="form-group">
+                    <label id="lookupLabel">Wert</label>
+                    <input type="text" name="value" class="form-control" required placeholder="z.B. 16 GB oder Windows 11">
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Speichern</button>
+                    <button type="button" class="btn" style="background: rgba(255,255,255,0.1); flex:1;" onclick="closeLookupModal()">Abbrechen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lösch-Formular für Lookups (versteckt) -->
+    <form action="lookup_action.php" method="POST" id="deleteLookupForm" style="display:none;">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="type" id="deleteLookupType">
+        <input type="hidden" name="id" id="deleteLookupId">
+    </form>
+
+    <script>
+        function openLookupModal(type) {
+            document.getElementById('lookupType').value = type;
+            let title = "Eintrag hinzufügen";
+            let label = "Wert";
+            if (type === 'ram') { title = "RAM hinzufügen"; label = "RAM (z.B. 16 GB)"; }
+            else if (type === 'ssd') { title = "SSD hinzufügen"; label = "Format: z.B. 512 GB oder 1 TB"; }
+            else if (type === 'cores') { title = "Cores hinzufügen"; label = "Anzahl (z.B. 8)"; }
+            else if (type === 'os') { title = "Betriebssystem hinzufügen"; label = "Name (z.B. Windows 11)"; }
+            
+            document.getElementById('lookupModalTitle').textContent = title;
+            document.getElementById('lookupLabel').textContent = label;
+            document.getElementById('lookupModal').classList.add('active');
+        }
+
+        function closeLookupModal() {
+            document.getElementById('lookupModal').classList.remove('active');
+        }
+
+        function deleteLookup(type, id) {
+            if (confirm("Möchten Sie diesen Eintrag wirklich löschen?")) {
+                document.getElementById('deleteLookupType').value = type;
+                document.getElementById('deleteLookupId').value = id;
+                document.getElementById('deleteLookupForm').submit();
+            }
+        }
     </script>
 </body>
 </html>

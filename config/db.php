@@ -44,6 +44,18 @@ class Database {
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ];
             $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
+
+            // Auto-Migration für Settings Tabelle
+            $stmt = $this->connection->query("SHOW TABLES LIKE 'settings'");
+            if ($stmt->rowCount() == 0) {
+                $this->connection->exec("CREATE TABLE settings (
+                    id INT PRIMARY KEY,
+                    site_name VARCHAR(255) DEFAULT 'Mini-Snipe',
+                    branding_type VARCHAR(20) DEFAULT 'text',
+                    site_logo VARCHAR(255) DEFAULT NULL
+                )");
+                $this->connection->exec("INSERT INTO settings (id, site_name, branding_type) VALUES (1, 'Mini-Snipe', 'text')");
+            }
         } catch (PDOException $e) {
             die("Verbindungsfehler: " . $e->getMessage());
         }

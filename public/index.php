@@ -16,6 +16,9 @@ $db = Database::getInstance();
 $assetController = new AssetController($db);
 $dashboardController = new DashboardController($db);
 
+// Globale Einstellungen laden
+$settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
+
 $assets = $assetController->getAllAssets();
 $stats = $dashboardController->getStats();
 $catDistribution = $dashboardController->getCategoryDistribution();
@@ -38,12 +41,13 @@ $statusClasses = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini-Snipe Asset Management</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
+    <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
     <div class="sidebar">
         <div class="logo">Mini-Snipe</div>
         <nav>
@@ -52,7 +56,8 @@ $statusClasses = [
             <a href="users.php" class="nav-link"><i class="fas fa-users"></i> User</a>
             <?php if (Auth::isAdmin()): ?>
                 <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Einstellungen</a>
+                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Verwaltung</a>
+                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
             <?php endif; ?>
         </nav>
     </div>
@@ -64,10 +69,10 @@ $statusClasses = [
                 <p style="color: var(--text-muted); margin-top: 0.25rem;">Willkommen zurück! Hier ist der aktuelle Status deiner Bestände.</p>
             </div>
             <div class="user-profile" style="display: flex; align-items: center;">
-                <div class="user-info" style="display: flex; align-items: center; gap: 0.5rem; margin-right: 1.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 0.5rem;">
+                <a href="profile.php" class="user-info" style="display: flex; align-items: center; gap: 0.5rem; margin-right: 1.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; color: inherit;">
                     <i class="fas fa-user-circle" style="color: var(--primary-color); font-size: 1.15rem;"></i>
                     <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-main);"><?php echo htmlspecialchars(\App\Helpers\Auth::getUsername()); ?></span>
-                </div>
+                </a>
                 <?php if (Auth::isEditor()): ?>
                     <a href="asset_add.php" class="btn btn-primary"><i class="fas fa-plus"></i> Neues Asset</a>
                 <?php endif; ?>

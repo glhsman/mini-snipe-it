@@ -162,4 +162,33 @@ class MasterDataController {
         $stmt = $this->db->prepare("DELETE FROM manufacturers WHERE id = ?");
         return $stmt->execute([$id]);
     }
+    // --- Hardware Lookups ---
+    public function getLookupOptions($type) {
+        $allowed = ['ram', 'ssd', 'cores', 'os'];
+        if (!in_array($type, $allowed)) return [];
+        
+        $table = "lookup_" . $type;
+        $orderBy = ($type === 'os') ? "value" : "CAST(value AS UNSIGNED), value";
+        
+        $stmt = $this->db->query("SELECT * FROM $table ORDER BY $orderBy");
+        return $stmt->fetchAll();
+    }
+
+    public function addLookupOption($type, $value) {
+        $allowed = ['ram', 'ssd', 'cores', 'os'];
+        if (!in_array($type, $allowed)) return false;
+        
+        $table = "lookup_" . $type;
+        $stmt = $this->db->prepare("INSERT INTO $table (value) VALUES (?)");
+        return $stmt->execute([trim($value)]);
+    }
+
+    public function deleteLookupOption($type, $id) {
+        $allowed = ['ram', 'ssd', 'cores', 'os'];
+        if (!in_array($type, $allowed)) return false;
+        
+        $table = "lookup_" . $type;
+        $stmt = $this->db->prepare("DELETE FROM $table WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
 }

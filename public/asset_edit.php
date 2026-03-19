@@ -34,6 +34,11 @@ $statusLabels = $masterData->getStatusLabels();
 $locations = $masterData->getLocations();
 $users = $userController->getAllUsers();
 
+$ramOptions = $masterData->getLookupOptions('ram');
+$ssdOptions = $masterData->getLookupOptions('ssd');
+$coresOptions = $masterData->getLookupOptions('cores');
+$osOptions = $masterData->getLookupOptions('os');
+
 $error = null;
 $success = null;
 
@@ -55,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'ram'           => !empty($_POST['ram']) ? (int)$_POST['ram'] : (!empty($_POST) ? null : ($asset['ram'] ?? null)),
         'ssd_size'      => !empty($_POST['ssd_size']) ? (int)$_POST['ssd_size'] : (!empty($_POST) ? null : ($asset['ssd_size'] ?? null)),
         'cores'         => !empty($_POST['cores']) ? (int)$_POST['cores'] : (!empty($_POST) ? null : ($asset['cores'] ?? null)),
-        'os_version'    => !empty($_POST['os_version']) ? trim($_POST['os_version']) : (!empty($_POST) ? null : ($asset['os_version'] ?? null))
+        'os_version'    => !empty($_POST['os_version']) ? (int)$_POST['os_version'] : (!empty($_POST) ? null : ($asset['os_version'] ?? null))
     ];
 
     if (empty($data['asset_tag'])) {
@@ -89,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asset bearbeiten - Mini-Snipe</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -102,7 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .alert-error { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.2); }
     </style>
 </head>
-<body>
+<body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
+    <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
     <div class="sidebar">
         <div class="logo">Mini-Snipe</div>
         <nav>
@@ -111,7 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="users.php" class="nav-link"><i class="fas fa-users"></i> User</a>
             <?php if (Auth::isAdmin()): ?>
                 <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Einstellungen</a>
+                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Verwaltung</a>
+                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
             <?php endif; ?>
         </nav>
     </div>
@@ -232,20 +239,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" name="mac_adresse" class="form-control" placeholder="z.B. AA:BB:CC:DD:EE:FF" value="<?php echo isset($_POST['mac_adresse']) ? htmlspecialchars($_POST['mac_adresse']) : htmlspecialchars($asset['mac_adresse'] ?? ''); ?>">
                     </div>
                     <div class="form-group">
-                        <label>RAM (GB)</label>
-                        <input type="number" name="ram" class="form-control" placeholder="z.B. 16" value="<?php echo isset($_POST['ram']) ? htmlspecialchars($_POST['ram']) : htmlspecialchars($asset['ram'] ?? ''); ?>">
+                        <label>RAM</label>
+                        <select name="ram" class="form-control">
+                            <option value="">- Wählen -</option>
+                            <?php foreach ($ramOptions as $opt): ?>
+                                <option value="<?php echo $opt['id']; ?>" <?php echo (($asset['ram'] ?? '') == $opt['id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($opt['value']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>SSD-Größe (GB)</label>
-                        <input type="number" name="ssd_size" class="form-control" placeholder="z.B. 512" value="<?php echo isset($_POST['ssd_size']) ? htmlspecialchars($_POST['ssd_size']) : htmlspecialchars($asset['ssd_size'] ?? ''); ?>">
+                        <label>SSD-Größe</label>
+                        <select name="ssd_size" class="form-control">
+                            <option value="">- Wählen -</option>
+                            <?php foreach ($ssdOptions as $opt): ?>
+                                <option value="<?php echo $opt['id']; ?>" <?php echo (($asset['ssd_size'] ?? '') == $opt['id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($opt['value']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Cores (Kerne)</label>
-                        <input type="number" name="cores" class="form-control" placeholder="z.B. 8" value="<?php echo isset($_POST['cores']) ? htmlspecialchars($_POST['cores']) : htmlspecialchars($asset['cores'] ?? ''); ?>">
+                        <select name="cores" class="form-control">
+                            <option value="">- Wählen -</option>
+                            <?php foreach ($coresOptions as $opt): ?>
+                                <option value="<?php echo $opt['id']; ?>" <?php echo (($asset['cores'] ?? '') == $opt['id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($opt['value']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                    <div class="form-group" style="grid-column: 1 / -1;">
+                    <div class="form-group" style="grid-column: 1 / -1; width: 50%;">
                         <label>OS / Betriebssystem</label>
-                        <input type="text" name="os_version" class="form-control" style="width: 50%;" placeholder="z.B. Windows 11 / Android 14" value="<?php echo isset($_POST['os_version']) ? htmlspecialchars($_POST['os_version']) : htmlspecialchars($asset['os_version'] ?? ''); ?>">
+                        <select name="os_version" class="form-control">
+                            <option value="">- Wählen -</option>
+                            <?php foreach ($osOptions as $opt): ?>
+                                <option value="<?php echo $opt['id']; ?>" <?php echo (($asset['os_version'] ?? '') == $opt['id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($opt['value']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
 
