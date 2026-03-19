@@ -18,6 +18,30 @@ SELECT 'Tabelle categories vorhanden' AS check_name,
            WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'categories'
        ), 'OK', 'FEHLT') AS result;
 
+SELECT 'Tabelle settings vorhanden' AS check_name,
+     IF(EXISTS(
+       SELECT 1 FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'settings'
+     ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Tabelle assets vorhanden' AS check_name,
+     IF(EXISTS(
+       SELECT 1 FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'assets'
+     ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Tabelle asset_assignments vorhanden' AS check_name,
+     IF(EXISTS(
+       SELECT 1 FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'asset_assignments'
+     ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Tabelle asset_requests vorhanden' AS check_name,
+     IF(EXISTS(
+       SELECT 1 FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'asset_requests'
+     ), 'OK', 'FEHLT') AS result;
+
 -- 2) Kritische Spalten vorhanden?
 SELECT 'Spalte categories.kuerzel vorhanden' AS check_name,
        IF(EXISTS(
@@ -57,6 +81,71 @@ SELECT 'Spalte users.can_login vorhanden' AS check_name,
            WHERE TABLE_SCHEMA = @schema_name
              AND TABLE_NAME = 'users'
              AND COLUMN_NAME = 'can_login'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte settings.site_favicon vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'settings'
+             AND COLUMN_NAME = 'site_favicon'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte settings.company_address vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'settings'
+             AND COLUMN_NAME = 'company_address'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte settings.protocol_header_text vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'settings'
+             AND COLUMN_NAME = 'protocol_header_text'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte settings.protocol_footer_text vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'settings'
+             AND COLUMN_NAME = 'protocol_footer_text'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte assets.os_version ist INT' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'assets'
+             AND COLUMN_NAME = 'os_version'
+             AND DATA_TYPE = 'int'
+       ), 'OK', 'FEHLT/FALSCHER TYP') AS result;
+
+SELECT 'Spalte asset_requests.status vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_requests'
+             AND COLUMN_NAME = 'status'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_requests.location_id vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_requests'
+             AND COLUMN_NAME = 'location_id'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_requests.category_id vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_requests'
+             AND COLUMN_NAME = 'category_id'
        ), 'OK', 'FEHLT') AS result;
 
 SET @has_users_can_login := (
@@ -139,7 +228,102 @@ LEFT JOIN locations l ON l.id = u.location_id
 WHERE u.location_id IS NOT NULL
   AND l.id IS NULL;
 
--- 6) Optional: Detailausgabe bei Problemen (auskommentiert)
+-- 6) Asset-Zuordnungs-Historie (Plausibilitaet)
+SELECT 'Offene Zuordnungen ohne aktuell zugewiesenes Asset' AS check_name,
+       COUNT(*) AS result
+FROM asset_assignments aa
+LEFT JOIN assets a ON a.id = aa.asset_id
+WHERE aa.checkin_at IS NULL
+  AND (a.id IS NULL OR a.user_id IS NULL OR a.user_id <> aa.user_id);
+
+SELECT 'Assets mit mehr als einer offenen Zuordnung' AS check_name,
+       COUNT(*) AS result
+FROM (
+    SELECT asset_id
+    FROM asset_assignments
+    WHERE checkin_at IS NULL
+    GROUP BY asset_id
+    HAVING COUNT(*) > 1
+) x;
+
+SELECT 'Asset-Anforderungen mit ungueltigem Status' AS check_name,
+     COUNT(*) AS result
+FROM asset_requests
+WHERE status NOT IN ('pending', 'approved', 'rejected')
+  OR status IS NULL;
+
+SELECT 'Asset-Anforderungen mit ungueltiger Menge' AS check_name,
+     COUNT(*) AS result
+FROM asset_requests
+WHERE quantity IS NULL OR quantity < 1;
+
+-- 7) Lookup-Tabellen vorhanden und befuellt?
+SELECT 'Tabelle lookup_ram vorhanden' AS check_name,
+       IF(EXISTS(SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'lookup_ram'),   'OK', 'FEHLT') AS result;
+SELECT 'Tabelle lookup_ssd vorhanden' AS check_name,
+       IF(EXISTS(SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'lookup_ssd'),   'OK', 'FEHLT') AS result;
+SELECT 'Tabelle lookup_cores vorhanden' AS check_name,
+       IF(EXISTS(SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'lookup_cores'), 'OK', 'FEHLT') AS result;
+SELECT 'Tabelle lookup_os vorhanden' AS check_name,
+       IF(EXISTS(SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'lookup_os'),    'OK', 'FEHLT') AS result;
+
+SELECT 'Eintraege lookup_ram' AS check_name, COUNT(*) AS result FROM lookup_ram;
+SELECT 'Eintraege lookup_ssd' AS check_name, COUNT(*) AS result FROM lookup_ssd;
+SELECT 'Eintraege lookup_cores' AS check_name, COUNT(*) AS result FROM lookup_cores;
+SELECT 'Eintraege lookup_os' AS check_name, COUNT(*) AS result FROM lookup_os;
+
+-- 8) Mindestdaten vorhanden?
+SELECT 'Anzahl Status-Labels' AS check_name, COUNT(*) AS result FROM status_labels;
+SELECT 'Anzahl Standorte' AS check_name, COUNT(*) AS result FROM locations;
+SELECT 'Anzahl Kategorien' AS check_name, COUNT(*) AS result FROM categories;
+SELECT 'Anzahl Hersteller' AS check_name, COUNT(*) AS result FROM manufacturers;
+SELECT 'Anzahl Asset-Modelle' AS check_name, COUNT(*) AS result FROM asset_models;
+SELECT 'Anzahl Assets gesamt' AS check_name, COUNT(*) AS result FROM assets;
+
+SELECT 'Mindestens 1 Admin vorhanden' AS check_name,
+       IF(EXISTS(SELECT 1 FROM users WHERE role = 'admin' AND can_login = 1), 'OK', 'KEIN ADMIN') AS result;
+
+SELECT 'Settings-Zeile vorhanden' AS check_name,
+       IF(EXISTS(SELECT 1 FROM settings WHERE id = 1), 'OK', 'FEHLT') AS result;
+
+-- 9) Login-Log-Tabelle vorhanden und befuellt?
+SELECT 'Tabelle login_logs vorhanden' AS check_name,
+       IF(EXISTS(SELECT 1 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'login_logs'),
+          'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte login_logs.reason vorhanden' AS check_name,
+  IF(EXISTS(
+      SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = @schema_name
+        AND TABLE_NAME = 'login_logs'
+        AND COLUMN_NAME = 'reason'
+  ), 'OK', 'FEHLT') AS result;
+
+SELECT 'login_logs.action um Fehler-/Block-Events erweitert' AS check_name,
+  IF(EXISTS(
+      SELECT 1
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = @schema_name
+        AND TABLE_NAME = 'login_logs'
+        AND COLUMN_NAME = 'action'
+        AND COLUMN_TYPE LIKE '%login_failed%'
+        AND COLUMN_TYPE LIKE '%login_blocked%'
+  ), 'OK', 'FEHLT/FALSCHER ENUM') AS result;
+
+SELECT 'Eintraege login_logs gesamt' AS check_name, COUNT(*) AS result FROM login_logs;
+
+SELECT 'Login-Logs letzte 24h'  AS check_name,
+       COUNT(*) AS result
+  FROM login_logs
+ WHERE created_at >= NOW() - INTERVAL 1 DAY;
+
+SELECT 'Letzte Logins (max. 10)' AS check_name,
+       username, action, ip_address, created_at
+  FROM login_logs
+ ORDER BY created_at DESC
+ LIMIT 10;
+
+-- 10) Optional: Detailausgabe bei Problemen (auskommentiert)
 -- SELECT * FROM categories WHERE kuerzel IS NULL OR kuerzel = '' OR kuerzel NOT REGEXP '^[A-Z]{2}$';
 -- SELECT u.* FROM users u LEFT JOIN locations l ON l.id = u.location_id WHERE u.location_id IS NOT NULL AND l.id IS NULL;
-assets

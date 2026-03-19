@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>README.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="mini-snipe-it">Mini-Snipe IT</h1>
+<p>Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Management. Entwickelt mit PHP und MySQL/MariaDB für den Betrieb auf XAMPP.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li><strong>Dashboard</strong>: Schneller Überblick über Gesamtzahl, zugewiesene und verfügbare Assets sowie detaillierte Status-Zähler (z.B. &quot;Einsatzbereit&quot;, &quot;Ausgegeben&quot;).</li>
+<li><strong>Asset-Management</strong>: Anlegen, Bearbeiten und Löschen von Assets mit Seriennummern, Kaufdatum und Notizen.</li>
+<li><strong>Automatische Asset-Tags</strong>: Generierung von Tags basierend auf Standort- und Kategorie-Kürzeln (z.B. <code>MUNB0001</code>).</li>
+<li><strong>Stammdatenverwaltung</strong>:
+<ul>
+<li>Standorte (Locations) mit Kürzeln</li>
+<li>Kategorien (Categories) mit Kürzeln (z.B. Notebooks -&gt; NB)</li>
+<li>Hersteller (Manufacturers)</li>
+<li>Asset-Modelle (Asset Models)</li>
+</ul>
+</li>
+<li><strong>Benutzerverwaltung</strong>: Rollenbasiertes System (Admin, Editor, User) mit wählbarer Rolle und optionalem Web-Login bei der Erstellung.</li>
+<li><strong>Asset Check-in / Check-out</strong>: Assets direkt aus Dashboard und Assetliste einem Benutzer zuweisen (Check-out) oder die Zuweisung aufheben (Check-in).</li>
+<li><strong>Asset-Suche &amp; Filter</strong>: Freitextsuche nach Asset-Tag, Seriennummer und Name sowie Filterung nach Asset-Modell in der Assetliste.</li>
+<li><strong>Profilverwaltung &amp; Designs</strong>:
+<ul>
+<li><strong>Dark &amp; Light Mode</strong>: Modernes Design mit standardmäßigem Dark Mode, umschaltbar auf Light Mode.</li>
+<li><strong>Profilseite</strong>: Benutzer können ihr eigenes Passwort ändern und das Design-Theme auswählen.</li>
+</ul>
+</li>
+<li><strong>CSV-Importcenter in den Einstellungen</strong>:
+<ul>
+<li>Import für Standorte, Benutzer und Assets</li>
+<li>Robuste Imports mit Update-Logik bei Duplikaten (Matchen über Seriennummer/Tag oder Username)</li>
+</ul>
+</li>
+<li><strong>Pagination in Listenansichten</strong>:
+<ul>
+<li>Asset-Verwaltung: 25/50/100/250 pro Seite</li>
+<li>Benutzer-Verwaltung: 25/50/100/250 pro Seite</li>
+</ul>
+</li>
+</ul>
+<h2 id="voraussetzungen">Voraussetzungen</h2>
+<ul>
+<li><strong>XAMPP</strong> (mit PHP 8.x und MySQL/MariaDB)</li>
+</ul>
+<h2 id="installation--setup">Installation &amp; Setup</h2>
+<ol>
+<li><strong>Dateien kopieren</strong>: Kopieren Sie das Repository in Ihr <code>htdocs</code>-Verzeichnis (z.B. <code>C:\xampp\htdocs\minisnipeit</code>).</li>
+<li><strong>Datenbank erstellen</strong>:
+<ul>
+<li>Erstellen Sie eine leere Datenbank (z.B. <code>snipeit</code>).</li>
+</ul>
+</li>
+<li><strong>Setup-Assistent starten</strong>:
+<ul>
+<li>Öffnen Sie <code>http://localhost/minisnipeit/public/setup.php</code>.</li>
+<li>Tragen Sie Host, Datenbankname, Benutzer und Passwort ein.</li>
+<li>Der Assistent führt <code>database.sql</code> automatisch aus und erstellt die <code>.env</code>.</li>
+</ul>
+</li>
+<li><strong>Anmelden</strong>:
+<ul>
+<li>Startseite: <code>http://localhost/minisnipeit/public/</code>.</li>
+</ul>
+</li>
+</ol>
+<h2 id="update-bestehender-installationen">Update bestehender Installationen</h2>
+<p>Wenn Sie eine ältere Version aktualisieren möchten, führen Sie die folgende Migrationsdatei auf Ihrer Datenbank aus (z.B. via phpMyAdmin oder CLI):</p>
+<ul>
+<li><code>db_migration.sql</code></li>
+</ul>
+<h3 id="empfohlener-rollout-produktiv">Empfohlener Rollout (Produktiv)</h3>
+<p>Für produktive Systeme wird folgende Reihenfolge empfohlen:</p>
+<ol>
+<li><strong>Backup erstellen</strong>
+<ul>
+<li>Vor dem Update immer einen vollständigen Datenbank-Dump erstellen.</li>
+</ul>
+</li>
+<li><strong>Migration ausführen</strong>
+<ul>
+<li>Datei: <code>db_migration.sql</code></li>
+</ul>
+</li>
+<li><strong>Verifikation ausführen</strong>
+<ul>
+<li>Datei: <code>db_verify.sql</code></li>
+</ul>
+</li>
+<li><strong>Ergebnisse prüfen</strong>
+<ul>
+<li>Kritische Checks sollten <code>OK</code> liefern.</li>
+<li>Problemzähler sollten idealerweise <code>0</code> sein.</li>
+</ul>
+</li>
+<li><strong>Funktionstest durchführen</strong>
+<ul>
+<li>Ausgabeprotokoll für einen Benutzer erstellen.</li>
+<li>Mehrere Assets per Checkbox auswählen und Sammel-Rückgabe ausführen.</li>
+<li>Rückgabeprotokoll prüfen (Auswahl korrekt, Drucklayout korrekt).</li>
+</ul>
+</li>
+</ol>
+<h3 id="erwartete-verify-ergebnisse">Erwartete Verify-Ergebnisse</h3>
+<p>Nach <code>db_verify.sql</code> sollten insbesondere folgende Prüfungen auf <code>OK</code> stehen:</p>
+<ul>
+<li>Tabelle <code>settings</code> vorhanden</li>
+<li>Tabelle <code>assets</code> vorhanden</li>
+<li>Tabelle <code>asset_assignments</code> vorhanden</li>
+<li>Spalte <code>settings.company_address</code> vorhanden</li>
+<li>Spalte <code>settings.protocol_header_text</code> vorhanden</li>
+<li>Spalte <code>settings.protocol_footer_text</code> vorhanden</li>
+<li>Spalte <code>assets.os_version</code> ist <code>INT</code></li>
+</ul>
+<p>Diese Checks sollten idealerweise <code>0</code> liefern:</p>
+<ul>
+<li>Kategorien mit leerem/NULL-Kürzel</li>
+<li>Doppelte Kategorien-Kürzel</li>
+<li>Benutzer ohne Username</li>
+<li>Benutzer mit ungültiger Rolle</li>
+<li>Benutzer mit ungültigem <code>can_login</code></li>
+<li>Benutzer mit <code>can_login=1</code> aber ohne Passwort</li>
+<li>Benutzer mit nicht existierendem Standort</li>
+<li>Offene Zuordnungen ohne aktuell zugewiesenes Asset</li>
+<li>Assets mit mehr als einer offenen Zuordnung</li>
+</ul>
+<h2 id="csv-import-empfohlene-reihenfolge">CSV-Import: Empfohlene Reihenfolge</h2>
+<p>Damit Zuordnungen zwischen Standorten, Benutzern und Assets korrekt aufgelöst werden, müssen die Dateien in dieser Reihenfolge importiert werden:</p>
+<ol>
+<li><strong>Standorte</strong></li>
+<li><strong>Benutzer</strong></li>
+<li><strong>Assets</strong></li>
+</ol>
+<p><em>Hinweis</em>: Die erwartete Spaltenstruktur für die CSVs wird direkt in den Import-Karten im Menü <em>Einstellungen</em> angezeigt.</p>
+<h2 id="standard-anmeldedaten-seed">Standard-Anmeldedaten (Seed)</h2>
+<ul>
+<li><strong>Benutzer</strong>: <code>admin</code></li>
+<li><strong>Passwort</strong>: <code>password</code></li>
+</ul>
+<h2 id="lizenz">Lizenz</h2>
+<p>Dieses Projekt steht unter der MIT-Lizenz.</p>
+
+</body>
+</html>

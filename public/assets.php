@@ -20,22 +20,48 @@ $perPage = isset($_GET['per_page']) && in_array((int)$_GET['per_page'], $allowed
 
 $search  = isset($_GET['q'])        ? trim($_GET['q'])        : '';
 $modelId = isset($_GET['model_id']) ? (int)$_GET['model_id'] : 0;
+$statusId = isset($_GET['status_id']) ? (int)$_GET['status_id'] : 0;
 $sort    = isset($_GET['sort'])     ? $_GET['sort']           : 'created_at';
 $order   = isset($_GET['order'])    ? $_GET['order']          : 'desc';
 
 // Modelle für Dropdown laden
 $models = $masterData->getAssetModels();
+$statuses = $masterData->getStatusLabels();
 
 // Fallback: Wenn auf dem Zielsystem noch ein älterer Controller ohne Pagination-Methoden liegt,
 // wird serverseitig aus getAllAssets paginiert statt mit Fatal Error abzubrechen.
 if (method_exists($assetController, 'countAssetsFiltered') && method_exists($assetController, 'getAssetsPaginatedFiltered')) {
-    $totalAssets = $assetController->countAssetsFiltered($search, $modelId ?: null);
+    $totalAssets = $assetController->countAssetsFiltered($search, $modelId ?: null, $statusId ?: null);
     $totalPages  = max(1, (int)ceil($totalAssets / $perPage));
     $page        = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
     $offset      = ($page - 1) * $perPage;
-    $assets      = $assetController->getAssetsPaginatedFiltered($search, $modelId ?: null, $perPage, $offset, $sort, $order);
+    $assets      = $assetController->getAssetsPaginatedFiltered($search, $modelId ?: null, $perPage, $offset, $sort, $order, $statusId ?: null);
 } else {
     $allAssets   = $assetController->getAllAssets();
+    $allAssets = array_values(array_filter($allAssets, function ($asset) use ($search, $modelId, $statusId) {
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $haystack = mb_strtolower(implode(' ', [
+                (string)($asset['asset_tag'] ?? ''),
+                (string)($asset['serial'] ?? ''),
+                (string)($asset['name'] ?? ''),
+            ]));
+            if (mb_strpos($haystack, $needle) === false) {
+                return false;
+            }
+        }
+
+        if ($modelId && (int)($asset['model_id'] ?? 0) !== $modelId) {
+            return false;
+        }
+
+        if ($statusId && (int)($asset['status_id'] ?? 0) !== $statusId) {
+            return false;
+        }
+
+        return true;
+    }));
+
     $totalAssets = count($allAssets);
     $totalPages  = max(1, (int)ceil($totalAssets / $perPage));
     $page        = isset($_GET['page']) ? max(1, min((int)$_GET['page'], $totalPages)) : 1;
@@ -57,6 +83,17 @@ function sortUrl($field) {
     
     $params['sort'] = $field;
     $params['order'] = ($currentSort === $field && strtolower($currentOrder) === 'asc') ? 'desc' : 'asc';
+    return '?' . http_build_query($params);
+}
+
+function statusQuickFilterUrl($statusId = null) {
+    $params = $_GET;
+    $params['page'] = 1;
+    if ($statusId) {
+        $params['status_id'] = (int)$statusId;
+    } else {
+        unset($params['status_id']);
+    }
     return '?' . http_build_query($params);
 }
 
@@ -101,6 +138,7 @@ function renderPagination($page, $totalPages, $perPage) {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assets - Mini-Snipe</title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
@@ -108,20 +146,7 @@ function renderPagination($page, $totalPages, $perPage) {
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
     <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
-    <div class="sidebar">
-        <div class="logo">Mini-Snipe</div>
-        <nav>
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="assets.php" class="nav-link active"><i class="fas fa-laptop"></i> Assets</a>
-            <a href="users.php" class="nav-link"><i class="fas fa-users"></i> User</a>
-            <?php if (Auth::isAdmin()): ?>
-                <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Verwaltung</a>
-                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
-            <?php endif; ?>
-            <a href="logout.php" class="nav-link" style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;"><i class="fas fa-sign-out-alt"></i> Abmelden</a>
-        </nav>
-    </div>
+    <?php $activePage = 'assets'; include_once __DIR__ . '/includes/sidebar.php'; ?>
 
     <main class="main-content">
         <header class="header">
@@ -143,6 +168,23 @@ function renderPagination($page, $totalPages, $perPage) {
         <?php endif; ?>
 
         <div class="card">
+            <div class="quick-filter-bar">
+                <span class="quick-filter-label">Schnellfilter:</span>
+
+                <a href="<?php echo htmlspecialchars(statusQuickFilterUrl(null)); ?>"
+                   class="quick-filter-pill<?php echo !$statusId ? ' is-active' : ''; ?>">
+                    Alle
+                </a>
+
+                <?php foreach ($statuses as $status): ?>
+                    <?php $isActiveQuick = $statusId === (int)$status['id']; ?>
+                    <a href="<?php echo htmlspecialchars(statusQuickFilterUrl((int)$status['id'])); ?>"
+                       class="quick-filter-pill<?php echo $isActiveQuick ? ' is-active' : ''; ?>">
+                        <?php echo htmlspecialchars($status['name']); ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+
             <!-- Suchzeile -->
             <form method="GET" action="assets.php" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; padding: 1rem 0 1.25rem 0;">
                 <!-- Suchfeld (Tag, Serial, Name) -->
@@ -153,8 +195,7 @@ function renderPagination($page, $totalPages, $perPage) {
                         style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.25rem; border-radius:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.875rem; box-sizing:border-box;">
                 </div>
                 <!-- Modell-Filter -->
-                <select name="model_id" onchange="this.form.submit()"
-                    style="padding:0.6rem 0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.875rem; min-width:180px;">
+                <select name="model_id" onchange="this.form.submit()" class="asset-filter-select">
                     <option value="">– Alle Modelle –</option>
                     <?php foreach ($models as $m): ?>
                         <option value="<?php echo $m['id']; ?>" <?php echo $modelId === (int)$m['id'] ? 'selected' : ''; ?>>
@@ -162,9 +203,18 @@ function renderPagination($page, $totalPages, $perPage) {
                         </option>
                     <?php endforeach; ?>
                 </select>
+                <!-- Status-Schnellfilter -->
+                <select name="status_id" onchange="this.form.submit()" class="asset-filter-select">
+                    <option value="">– Alle Status –</option>
+                    <?php foreach ($statuses as $status): ?>
+                        <option value="<?php echo $status['id']; ?>" <?php echo $statusId === (int)$status['id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($status['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
                 <input type="hidden" name="per_page" value="<?php echo $perPage; ?>">
                 <button type="submit" class="btn btn-primary" style="padding:0.6rem 1rem; font-size:0.875rem;"><i class="fas fa-filter"></i> Suchen</button>
-                <?php if ($search !== '' || $modelId): ?>
+                <?php if ($search !== '' || $modelId || $statusId): ?>
                     <a href="assets.php?per_page=<?php echo $perPage; ?>" style="padding:0.6rem 0.75rem; border-radius:0.5rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.875rem; white-space:nowrap;">
                         <i class="fas fa-times"></i> Filter zurücksetzen
                     </a>
@@ -175,7 +225,7 @@ function renderPagination($page, $totalPages, $perPage) {
                 <p style="color:var(--text-muted); font-size:0.875rem; margin:0;">
                     <?php $from = $totalAssets ? $offset + 1 : 0; $to = min($offset + $perPage, $totalAssets); ?>
                     Zeige <strong><?php echo $from; ?>&ndash;<?php echo $to; ?></strong> von <strong><?php echo $totalAssets; ?></strong> Assets
-                    <?php if ($search !== '' || $modelId): ?><span style="color:var(--accent-rose);"> (gefiltert)</span><?php endif; ?>
+                    <?php if ($search !== '' || $modelId || $statusId): ?><span style="color:var(--accent-rose);"> (gefiltert)</span><?php endif; ?>
                 </p>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <span style="color:var(--text-muted); font-size:0.875rem;">Pro Seite:</span>
@@ -210,7 +260,7 @@ function renderPagination($page, $totalPages, $perPage) {
                     <?php foreach ($assets as $asset): ?>
                     <tr>
                         <td><?php echo $asset['id']; ?></td>
-                        <td><strong><?php echo htmlspecialchars($asset['asset_tag']); ?></strong></td>
+                        <td><strong><?php echo htmlspecialchars($asset['asset_tag'] ?? ''); ?></strong></td>
                         <td><?php echo htmlspecialchars($asset['serial'] ?? '-'); ?></td>
                         <td><?php echo htmlspecialchars($asset['model_name'] ?? '-'); ?></td>
                         <td><?php echo htmlspecialchars($asset['manufacturer_name'] ?? '-'); ?></td>

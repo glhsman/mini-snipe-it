@@ -52,9 +52,107 @@ class Database {
                     id INT PRIMARY KEY,
                     site_name VARCHAR(255) DEFAULT 'Mini-Snipe',
                     branding_type VARCHAR(20) DEFAULT 'text',
-                    site_logo VARCHAR(255) DEFAULT NULL
+                    site_logo VARCHAR(255) DEFAULT NULL,
+                    company_address TEXT DEFAULT NULL,
+                    protocol_header_text TEXT DEFAULT NULL,
+                    protocol_footer_text TEXT DEFAULT NULL
                 )");
-                $this->connection->exec("INSERT INTO settings (id, site_name, branding_type) VALUES (1, 'Mini-Snipe', 'text')");
+                $this->connection->exec("INSERT INTO settings (id, site_name, branding_type, company_address, protocol_header_text, protocol_footer_text) VALUES (1, 'Mini-Snipe', 'text', 'Firmenadresse hier hinterlegen', 'Die unten aufgefuehrte IT-Hardware wird hiermit bestaetigt. Mit Ihrer Unterschrift bestaetigen Sie den ordnungsgemaessen Erhalt bzw. die vollstaendige Rueckgabe der aufgelisteten Geraete.', 'IT-Protokoll. Fuer Ihre/unsere Unterlagen.')");
+            }
+
+            $settingColumns = [
+                'site_favicon'         => "ALTER TABLE settings ADD COLUMN site_favicon VARCHAR(255) NULL AFTER site_logo",
+                'company_address'      => "ALTER TABLE settings ADD COLUMN company_address TEXT NULL AFTER site_favicon",
+                'protocol_header_text' => "ALTER TABLE settings ADD COLUMN protocol_header_text TEXT NULL AFTER company_address",
+                'protocol_footer_text' => "ALTER TABLE settings ADD COLUMN protocol_footer_text TEXT NULL AFTER protocol_header_text",
+            ];
+            foreach ($settingColumns as $column => $sql) {
+                $columnStmt = $this->connection->prepare("SELECT COUNT(*)
+                    FROM information_schema.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'settings'
+                      AND COLUMN_NAME = ?");
+                $columnStmt->execute([$column]);
+                if ((int) $columnStmt->fetchColumn() === 0) {
+                    $this->connection->exec($sql);
+                }
+            }
+
+            $this->connection->exec("UPDATE settings
+                SET company_address = COALESCE(NULLIF(company_address, ''), 'Firmenadresse hier hinterlegen'),
+                    protocol_header_text = COALESCE(NULLIF(protocol_header_text, ''), 'Die unten aufgefuehrte IT-Hardware wird hiermit bestaetigt. Mit Ihrer Unterschrift bestaetigen Sie den ordnungsgemaessen Erhalt bzw. die vollstaendige Rueckgabe der aufgelisteten Geraete.'),
+                    protocol_footer_text = COALESCE(NULLIF(protocol_footer_text, ''), 'IT-Protokoll. Fuer Ihre/unsere Unterlagen.')
+                WHERE id = 1");
+
+            $this->connection->exec("CREATE TABLE IF NOT EXISTS asset_assignments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                asset_id INT NOT NULL,
+                user_id INT NOT NULL,
+                checkout_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                checkout_by_user_id INT NULL,
+                checkin_at DATETIME NULL,
+                checkin_by_user_id INT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+                FOREIGN KEY (checkout_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+                FOREIGN KEY (checkin_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+            )");
+
+            $this->connection->exec("CREATE TABLE IF NOT EXISTS login_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                username VARCHAR(100) NOT NULL,
+                action ENUM('login','logout','login_failed','login_blocked') NOT NULL,
+                reason VARCHAR(100) NULL,
+                ip_address VARCHAR(45) NULL,
+                user_agent VARCHAR(255) NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_login_logs_created (created_at),
+                INDEX idx_login_logs_user (user_id)
+            )");
+
+            $this->connection->exec("CREATE TABLE IF NOT EXISTS asset_requests (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                location_id INT NOT NULL,
+                category_id INT NOT NULL,
+                quantity INT NOT NULL DEFAULT 1,
+                reason TEXT NOT NULL,
+                status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+                requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                processed_at DATETIME NULL,
+                processed_by_user_id INT NULL,
+                internal_note TEXT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+                FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE RESTRICT,
+                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+                FOREIGN KEY (processed_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_asset_requests_status_requested (status, requested_at),
+                INDEX idx_asset_requests_user (user_id),
+                INDEX idx_asset_requests_location (location_id),
+                INDEX idx_asset_requests_category (category_id)
+            )");
+
+            $loginReasonStmt = $this->connection->prepare("SELECT COUNT(*)
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'login_logs'
+                  AND COLUMN_NAME = 'reason'");
+            $loginReasonStmt->execute();
+            if ((int) $loginReasonStmt->fetchColumn() === 0) {
+                $this->connection->exec("ALTER TABLE login_logs ADD COLUMN reason VARCHAR(100) NULL AFTER action");
+            }
+
+            $loginActionTypeStmt = $this->connection->prepare("SELECT COLUMN_TYPE
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'login_logs'
+                  AND COLUMN_NAME = 'action'");
+            $loginActionTypeStmt->execute();
+            $loginActionType = (string) $loginActionTypeStmt->fetchColumn();
+            if (strpos($loginActionType, 'login_failed') === false || strpos($loginActionType, 'login_blocked') === false) {
+                $this->connection->exec("ALTER TABLE login_logs MODIFY COLUMN action ENUM('login','logout','login_failed','login_blocked') NOT NULL");
             }
         } catch (PDOException $e) {
             die("Verbindungsfehler: " . $e->getMessage());

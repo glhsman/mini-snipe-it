@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HANDBUCH.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="mini-snipe-it-handbuch">Mini-Snipe IT Handbuch</h1>
+<p>Version: 19.03.2026</p>
+<h2 id="1-zweck-und-geltungsbereich">1. Zweck und Geltungsbereich</h2>
+<p>Mini-Snipe IT ist ein webbasiertes Asset-Management-System fuer IT-Hardware.
+Das System unterstuetzt die Erfassung, Verwaltung, Ausgabe, Ruecknahme und Protokollierung von Assets sowie die Pflege von Stammdaten.</p>
+<p>Dieses Handbuch richtet sich an:</p>
+<ul>
+<li>Administratoren</li>
+<li>Editoren</li>
+<li>Normale Benutzer mit Lesezugriff</li>
+</ul>
+<h2 id="2-systemueberblick">2. Systemueberblick</h2>
+<h3 id="21-kernfunktionen">2.1 Kernfunktionen</h3>
+<ul>
+<li>Dashboard mit Kennzahlen und Diagrammen</li>
+<li>Asset-Verwaltung (Anlegen, Bearbeiten, Loeschen)</li>
+<li>Check-out und Check-in mit Historie</li>
+<li>Benutzerverwaltung mit Rollenmodell</li>
+<li>Standorte, Kategorien, Hersteller und Modelle als Stammdaten</li>
+<li>Hardware-Lookups (RAM, SSD, Cores, OS)</li>
+<li>CSV-Import fuer Standorte, Benutzer und Assets</li>
+<li>Ausgabe- und Rueckgabeprotokolle</li>
+<li>Login-Protokoll inkl. erfolgreicher, fehlgeschlagener und gesperrter Anmeldungen</li>
+<li>Theme-Umschaltung (Dark/Light)</li>
+<li>Kollabierbare Sidebar mit persistenter Einstellung</li>
+</ul>
+<h3 id="22-rollen-und-rechte">2.2 Rollen und Rechte</h3>
+<ul>
+<li>Admin:
+<ul>
+<li>Vollzugriff auf alle Bereiche</li>
+<li>Zugriff auf Standorte, Stammdatenverwaltung, globale Einstellungen</li>
+<li>Zugriff auf Login-Protokoll und Branding-Einstellungen</li>
+</ul>
+</li>
+<li>Editor:
+<ul>
+<li>Zugriff auf operative Arbeit mit Assets (inkl. Check-in/Check-out)</li>
+<li>Kein Zugriff auf Admin-Bereiche</li>
+</ul>
+</li>
+<li>User:
+<ul>
+<li>Lesen von freigegebenen Bereichen</li>
+<li>Keine administrativen Aenderungen</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-navigation">3. Navigation</h2>
+<p>Die Hauptnavigation erfolgt ueber die linke Sidebar.</p>
+<p>Hauptpunkte:</p>
+<ul>
+<li>Dashboard</li>
+<li>Assets</li>
+<li>User</li>
+<li>Standorte (nur Admin)</li>
+<li>Verwaltung (nur Admin)</li>
+<li>Einstellungen (nur Admin)</li>
+<li>Abmelden</li>
+</ul>
+<p>Hinweise:</p>
+<ul>
+<li>Die Sidebar kann ein- und ausgeklappt werden.</li>
+<li>Auf mobilen Geraeten wird die Sidebar ueber das Hamburger-Menue geoeffnet.</li>
+</ul>
+<h2 id="4-anmeldung-und-sicherheit">4. Anmeldung und Sicherheit</h2>
+<h3 id="41-anmeldung">4.1 Anmeldung</h3>
+<ul>
+<li>Benutzer melden sich ueber die Login-Seite mit Benutzername und Passwort an.</li>
+<li>Bei erfolgreicher Anmeldung wird ein Login-Event protokolliert.</li>
+</ul>
+<h3 id="42-protokollierung-von-login-ereignissen">4.2 Protokollierung von Login-Ereignissen</h3>
+<p>Folgende Events werden im Login-Protokoll gespeichert:</p>
+<ul>
+<li>login (erfolgreich)</li>
+<li>logout</li>
+<li>login_failed (fehlgeschlagen)</li>
+<li>login_blocked (gesperrt, z. B. Login deaktiviert)</li>
+</ul>
+<p>Zusatzinformationen:</p>
+<ul>
+<li>Benutzername</li>
+<li>ggf. Benutzer-ID</li>
+<li>Grundfeld (reason), z. B. invalid_password, unknown_username, login_disabled</li>
+<li>IP-Adresse</li>
+<li>User-Agent</li>
+<li>Zeitstempel</li>
+</ul>
+<h3 id="43-passwort-und-profil">4.3 Passwort und Profil</h3>
+<ul>
+<li>Benutzer koennen auf der Profilseite ihr Passwort aendern.</li>
+<li>Theme-Umschaltung (Dark/Light) ist benutzerbezogen.</li>
+</ul>
+<h2 id="5-arbeiten-mit-assets">5. Arbeiten mit Assets</h2>
+<h3 id="50-buchungen-fuer-bearbeiter-neu">5.0 Buchungen fuer Bearbeiter (neu)</h3>
+<p>Berechtigte Bearbeiter koennen im Menuepunkt Buchungen alle Ausgaben und Ruecknahmen einsehen.</p>
+<p>Ziel:</p>
+<ul>
+<li>Transparenz ueber Asset-Bewegungen</li>
+<li>Nachvollziehbarkeit, wer wann welches Asset einem Benutzer zugewiesen oder zurueckgenommen hat</li>
+<li>Schnellere Auskunft bei Rueckfragen aus Fachbereichen</li>
+</ul>
+<p>Inhalt der Uebersicht:</p>
+<ul>
+<li>Buchungs-ID</li>
+<li>Asset (Asset-Tag/Seriennummer/Name)</li>
+<li>Benutzer</li>
+<li>Ausgabezeitpunkt und Bearbeiter</li>
+<li>Ruecknahmezeitpunkt und Bearbeiter</li>
+<li>Status (Ausgegeben oder Zurueckgenommen)</li>
+</ul>
+<p>Die Suchfunktion in der Buchungsansicht erlaubt Filter auf Asset-Tag, Seriennummer, Asset-Name und Benutzer.</p>
+<h3 id="51-asset-anlegen">5.1 Asset anlegen</h3>
+<p>Pflichtfelder und verfuegbare Felder koennen je nach Konfiguration variieren.
+Typische Felder:</p>
+<ul>
+<li>Name</li>
+<li>Asset-Tag</li>
+<li>Seriennummer</li>
+<li>Modell</li>
+<li>Status</li>
+<li>Standort</li>
+<li>Benutzerzuweisung</li>
+<li>technische Detailfelder</li>
+</ul>
+<p>Das Asset-Tag kann leer sein, falls intern so gewuenscht.</p>
+<h3 id="52-asset-suchen-und-filtern">5.2 Asset suchen und filtern</h3>
+<p>In der Asset-Liste stehen Suche und Modellfilter zur Verfuegung.
+Dadurch lassen sich auch grosse Datenbestaende effizient durchsuchen.</p>
+<h3 id="53-asset-ausgeben-check-out">5.3 Asset ausgeben (Check-out)</h3>
+<p>Ablauf:</p>
+<ol>
+<li>Asset in Dashboard oder Asset-Liste auswaehlen</li>
+<li>Ausgabe starten</li>
+<li>Benutzer ueber Suchfeld finden</li>
+<li>Auswahl bestaetigen</li>
+</ol>
+<p>Besonderheit bei vielen Benutzern:</p>
+<ul>
+<li>Im Checkout-Dialog steht eine Live-Suche zur Verfuegung.</li>
+<li>Auswahl erfolgt in einer gefilterten Dropdown-Liste.</li>
+</ul>
+<h3 id="54-asset-zuruecknehmen-check-in">5.4 Asset zuruecknehmen (Check-in)</h3>
+<p>Ablauf:</p>
+<ol>
+<li>Ruecknahme am Asset ausloesen</li>
+<li>System schliesst offene Zuordnung</li>
+<li>Historie wird aktualisiert</li>
+</ol>
+<h2 id="6-benutzerverwaltung">6. Benutzerverwaltung</h2>
+<p>Funktionen:</p>
+<ul>
+<li>Benutzer anlegen</li>
+<li>Benutzer bearbeiten</li>
+<li>Benutzer loeschen (nur wenn keine aktiven Asset-Zuweisungen bestehen)</li>
+<li>Rolle setzen (admin, editor, user)</li>
+<li>Login-Berechtigung steuern (can_login)</li>
+</ul>
+<p>Wichtig:</p>
+<ul>
+<li>Benutzer mit can_login = 0 koennen sich nicht anmelden.</li>
+<li>Solche Versuche erscheinen als login_blocked im Login-Protokoll.</li>
+</ul>
+<h2 id="7-stammdatenverwaltung-admin">7. Stammdatenverwaltung (Admin)</h2>
+<p>Bereiche:</p>
+<ul>
+<li>Asset-Modelle</li>
+<li>Kategorien</li>
+<li>Hersteller</li>
+<li>Hardware-Optionen (Lookup-Tabellen)</li>
+</ul>
+<p>Zweck:</p>
+<ul>
+<li>Einheitliche Datenbasis</li>
+<li>Vermeidung freier Texteingaben bei technischen Feldern</li>
+<li>Konsistente Auswertungen</li>
+</ul>
+<h2 id="8-standorte-admin">8. Standorte (Admin)</h2>
+<p>Standorte werden zentral gepflegt und koennen Benutzern sowie Assets zugewiesen werden.
+Kuerzel sind fuer interne Prozesse wie Asset-Tag-Generierung relevant.</p>
+<h2 id="9-globale-einstellungen-admin">9. Globale Einstellungen (Admin)</h2>
+<p>In den globalen Einstellungen koennen u. a. verwaltet werden:</p>
+<ul>
+<li>Seitenname</li>
+<li>Branding-Typ</li>
+<li>Logo</li>
+<li>Favicon</li>
+<li>Firmenadresse</li>
+<li>Header-/Footer-Texte fuer Protokolle</li>
+<li>Login-Protokoll-Ansicht</li>
+</ul>
+<h2 id="10-protokolle">10. Protokolle</h2>
+<h3 id="101-ausgabe--und-rueckgabeprotokolle">10.1 Ausgabe- und Rueckgabeprotokolle</h3>
+<p>Nach Check-out/Check-in koennen Protokolle erzeugt werden.
+Diese enthalten typischerweise:</p>
+<ul>
+<li>Benutzerdaten</li>
+<li>Asset-Liste</li>
+<li>Zeitbezug</li>
+<li>konfigurierbare Header-/Footer-Texte</li>
+</ul>
+<h3 id="102-login-protokoll">10.2 Login-Protokoll</h3>
+<p>Im Bereich Einstellungen einsehbar (Admin).
+Empfohlen fuer:</p>
+<ul>
+<li>Sicherheitsmonitoring</li>
+<li>Erkennung von Fehlversuchen</li>
+<li>Nachvollziehbarkeit von Nutzeraktivitaet</li>
+</ul>
+<h2 id="11-csv-import">11. CSV-Import</h2>
+<h3 id="111-empfohlene-reihenfolge">11.1 Empfohlene Reihenfolge</h3>
+<ol>
+<li>Standorte</li>
+<li>Benutzer</li>
+<li>Assets</li>
+</ol>
+<p>Diese Reihenfolge ist wichtig, damit Abhaengigkeiten sauber aufgeloest werden.</p>
+<h3 id="112-allgemeine-hinweise">11.2 Allgemeine Hinweise</h3>
+<ul>
+<li>Vor jedem Massenimport ein Datenbank-Backup erstellen</li>
+<li>CSV-Formate gem. Import-Hinweisen in der Anwendung verwenden</li>
+<li>Nach dem Import Stichproben in Listenansichten pruefen</li>
+</ul>
+<h2 id="12-installation-und-update">12. Installation und Update</h2>
+<h3 id="121-neuinstallation">12.1 Neuinstallation</h3>
+<ol>
+<li>Projekt in Webserver-Verzeichnis kopieren</li>
+<li>Leere Datenbank erstellen</li>
+<li>Setup-Assistent oeffnen</li>
+<li>DB-Zugangsdaten eintragen</li>
+<li>Installation abschliessen und Admin-Login testen</li>
+</ol>
+<h3 id="122-update-bestehender-instanzen">12.2 Update bestehender Instanzen</h3>
+<p>Empfohlener Ablauf:</p>
+<ol>
+<li>Vollstaendiges Backup</li>
+<li>Migration ausfuehren</li>
+<li>Verifikation ausfuehren</li>
+<li>Funktionstest durchfuehren</li>
+</ol>
+<p>Verwendete SQL-Dateien:</p>
+<ul>
+<li>database.sql (Basis)</li>
+<li>db_migration.sql (Updatepfad)</li>
+<li>db_verify.sql (Pruefungen)</li>
+</ul>
+<h2 id="13-betriebsempfehlungen">13. Betriebsempfehlungen</h2>
+<ul>
+<li>Regelmaessige Backups (taeglich, je nach Kritikalitaet)</li>
+<li>Pruefung der Login-Logs auf Auffaelligkeiten</li>
+<li>Rollenrechte sparsam vergeben (Least Privilege)</li>
+<li>Testsystem vor Produktiv-Rollout verwenden</li>
+<li>Temporare Wartungsskripte nach Nutzung sofort entfernen</li>
+</ul>
+<h2 id="14-temporare-skripte-und-sonderfaelle">14. Temporare Skripte und Sonderfaelle</h2>
+<p>Es koennen temporaere Wartungsskripte fuer Einmalaktionen eingesetzt werden.
+Beispiel:</p>
+<ul>
+<li>Bereinigung von Lager-Assets mit IT-Sammelbenutzern</li>
+</ul>
+<p>Sicherer Einsatz:</p>
+<ol>
+<li>Zuerst Dry-Run</li>
+<li>Ergebnis pruefen</li>
+<li>Erst dann Execute-Modus</li>
+<li>Skript danach loeschen</li>
+</ol>
+<h2 id="15-fehlerbilder-und-troubleshooting">15. Fehlerbilder und Troubleshooting</h2>
+<h3 id="151-login-funktioniert-nicht">15.1 Login funktioniert nicht</h3>
+<p>Pruefen:</p>
+<ul>
+<li>Benutzername korrekt?</li>
+<li>Passwort korrekt?</li>
+<li>can_login aktiv?</li>
+<li>Login-Protokoll auf reason-Werte pruefen</li>
+</ul>
+<h3 id="152-assets-koennen-benutzer-nicht-zugeordnet-werden">15.2 Assets koennen Benutzer nicht zugeordnet werden</h3>
+<p>Pruefen:</p>
+<ul>
+<li>Besteht der Benutzer?</li>
+<li>Hat Asset bereits offene Zuordnung?</li>
+<li>Ist der Workflow Check-out statt direkter Bearbeitung korrekt genutzt?</li>
+</ul>
+<h3 id="153-sql-update-lief-durch-aber-funktionen-fehlen">15.3 SQL-Update lief durch, aber Funktionen fehlen</h3>
+<p>Pruefen:</p>
+<ul>
+<li>Wurde db_migration.sql komplett ausgefuehrt?</li>
+<li>Wurde db_verify.sql ausgewertet?</li>
+<li>Gibt es mehrere Deploy-Pfade mit unterschiedlichen Dateistaenden?</li>
+</ul>
+<h2 id="16-begriffe">16. Begriffe</h2>
+<ul>
+<li>Asset: Ein inventarisiertes IT-Geraet</li>
+<li>Check-out: Ausgabe eines Assets an einen Benutzer</li>
+<li>Check-in: Ruecknahme eines Assets</li>
+<li>Stammdaten: Grunddaten wie Kategorien, Modelle, Hersteller</li>
+<li>Lookup: Vordefinierte Auswahlliste fuer technische Werte</li>
+</ul>
+<h2 id="17-aenderungs--und-pflegehinweis">17. Aenderungs- und Pflegehinweis</h2>
+<p>Dieses Handbuch beschreibt den Stand der Anwendung zum oben genannten Datum.
+Bei funktionalen Erweiterungen sollte das Handbuch zeitnah aktualisiert werden.</p>
+
+</body>
+</html>

@@ -70,26 +70,79 @@ class UserController {
     }
 
     public function authenticate($username, $password) {
+        $result = $this->authenticateDetailed($username, $password);
+        return $result['success'] ? $result['user'] : false;
+    }
+
+    public function authenticateDetailed($username, $password) {
+        $username = trim((string) $username);
+        $password = (string) $password;
+
+        if ($username === '' || $password === '') {
+            return [
+                'success' => false,
+                'reason' => 'missing_credentials',
+                'user' => null,
+                'user_id' => null,
+                'username' => $username,
+            ];
+        }
+
         $stmt = $this->db->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->execute([$username]);
         $user = $stmt->fetch();
 
         if (!$user) {
-            return false;
+            return [
+                'success' => false,
+                'reason' => 'unknown_username',
+                'user' => null,
+                'user_id' => null,
+                'username' => $username,
+            ];
         }
 
         if (isset($user['can_login']) && (int)$user['can_login'] !== 1) {
-            return false;
+            return [
+                'success' => false,
+                'reason' => 'login_disabled',
+                'user' => null,
+                'user_id' => (int) $user['id'],
+                'username' => (string) $user['username'],
+            ];
         }
 
-        if (!empty($user['password']) && password_verify($password, $user['password'])) {
-            return $user;
+        if (empty($user['password'])) {
+            return [
+                'success' => false,
+                'reason' => 'no_password_set',
+                'user' => null,
+                'user_id' => (int) $user['id'],
+                'username' => (string) $user['username'],
+            ];
         }
-        return false;
+
+        if (password_verify($password, $user['password'])) {
+            return [
+                'success' => true,
+                'reason' => null,
+                'user' => $user,
+                'user_id' => (int) $user['id'],
+                'username' => (string) $user['username'],
+            ];
+        }
+
+        return [
+            'success' => false,
+            'reason' => 'invalid_password',
+            'user' => null,
+            'user_id' => (int) $user['id'],
+            'username' => (string) $user['username'],
+        ];
     }
 
     public function getUserById($id) {
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT u.*, l.name AS location_name, l.address AS location_address, l.city AS location_city FROM users u LEFT JOIN locations l ON u.location_id = l.id WHERE u.id = ?");
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
@@ -175,7 +228,7 @@ class UserController {
         return (int) $stmt->fetchColumn();
     }
 
-    public function getUsersPaginatedFiltered($search = '', $limit, $offset) {
+    public function getUsersPaginatedFiltered($search = '', $limit = 20, $offset = 0) {
         $query = "SELECT u.*, l.name as location_name FROM users u LEFT JOIN locations l ON u.location_id = l.id";
         $params = [];
         if (!empty($search)) {

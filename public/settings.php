@@ -43,6 +43,7 @@ $osOptions = $masterData->getLookupOptions('os');
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Einstellungen - Mini-Snipe</title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
@@ -84,17 +85,7 @@ $osOptions = $masterData->getLookupOptions('os');
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
     <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
-    <div class="sidebar">
-        <div class="logo">Mini-Snipe</div>
-        <nav>
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="assets.php" class="nav-link"><i class="fas fa-laptop"></i> Assets</a>
-            <a href="users.php" class="nav-link"><i class="fas fa-users"></i> User</a>
-            <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-            <a href="settings.php" class="nav-link active"><i class="fas fa-cog"></i> Verwaltung</a>
-                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
-        </nav>
-    </div>
+    <?php $activePage = 'settings'; include_once __DIR__ . '/includes/sidebar.php'; ?>
 
     <main class="main-content">
         <header class="header">

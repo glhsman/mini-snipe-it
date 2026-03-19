@@ -47,6 +47,48 @@ Wenn Sie eine ältere Version aktualisieren möchten, führen Sie die folgende M
 
 -   `db_migration.sql`
 
+### Empfohlener Rollout (Produktiv)
+
+Für produktive Systeme wird folgende Reihenfolge empfohlen:
+
+1.  **Backup erstellen**
+    -   Vor dem Update immer einen vollständigen Datenbank-Dump erstellen.
+2.  **Migration ausführen**
+    -   Datei: `db_migration.sql`
+3.  **Verifikation ausführen**
+    -   Datei: `db_verify.sql`
+4.  **Ergebnisse prüfen**
+    -   Kritische Checks sollten `OK` liefern.
+    -   Problemzähler sollten idealerweise `0` sein.
+5.  **Funktionstest durchführen**
+    -   Ausgabeprotokoll für einen Benutzer erstellen.
+    -   Mehrere Assets per Checkbox auswählen und Sammel-Rückgabe ausführen.
+    -   Rückgabeprotokoll prüfen (Auswahl korrekt, Drucklayout korrekt).
+
+### Erwartete Verify-Ergebnisse
+
+Nach `db_verify.sql` sollten insbesondere folgende Prüfungen auf `OK` stehen:
+
+-   Tabelle `settings` vorhanden
+-   Tabelle `assets` vorhanden
+-   Tabelle `asset_assignments` vorhanden
+-   Spalte `settings.company_address` vorhanden
+-   Spalte `settings.protocol_header_text` vorhanden
+-   Spalte `settings.protocol_footer_text` vorhanden
+-   Spalte `assets.os_version` ist `INT`
+
+Diese Checks sollten idealerweise `0` liefern:
+
+-   Kategorien mit leerem/NULL-Kürzel
+-   Doppelte Kategorien-Kürzel
+-   Benutzer ohne Username
+-   Benutzer mit ungültiger Rolle
+-   Benutzer mit ungültigem `can_login`
+-   Benutzer mit `can_login=1` aber ohne Passwort
+-   Benutzer mit nicht existierendem Standort
+-   Offene Zuordnungen ohne aktuell zugewiesenes Asset
+-   Assets mit mehr als einer offenen Zuordnung
+
 ## CSV-Import: Empfohlene Reihenfolge
 
 Damit Zuordnungen zwischen Standorten, Benutzern und Assets korrekt aufgelöst werden, müssen die Dateien in dieser Reihenfolge importiert werden:

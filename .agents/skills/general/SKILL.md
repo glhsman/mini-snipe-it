@@ -10,3 +10,4 @@ description: "Notizen und Anweisungen für dieses Projekt"
 - **Verifizierung**: Nach Änderungen an der Logik (z.B. SQL-Abfragen) sollte eine Verifizierung per PHP CLI durchgeführt werden, um die Korrektheit der Daten zu prüfen.
 - **Datenbank-Schema**: Das Schema befindet sich in `database.sql`. Bei Änderungen an Tabellenstrukturen muss diese Datei aktualisiert werden (oder Migrations erstellt werden).
 Antworte immer auf deutsch.
+Vor größeren Änderungen bitte immer .bak Dateien erstellen.

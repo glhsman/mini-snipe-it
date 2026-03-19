@@ -48,6 +48,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
         $users = $userController->getAllUsers();
         $userMap = []; foreach ($users as $u) $userMap[strtolower(trim($u['username']))] = $u['id'];
+
+        $lookupMaps = [
+            'ram' => [],
+            'ssd' => [],
+            'cores' => [],
+            'os' => [],
+        ];
+
+        foreach ($masterData->getLookupOptions('ram') as $option) {
+            $lookupMaps['ram'][strtolower(trim($option['value']))] = (int) $option['id'];
+        }
+        foreach ($masterData->getLookupOptions('ssd') as $option) {
+            $lookupMaps['ssd'][strtolower(trim($option['value']))] = (int) $option['id'];
+        }
+        foreach ($masterData->getLookupOptions('cores') as $option) {
+            $lookupMaps['cores'][strtolower(trim($option['value']))] = (int) $option['id'];
+        }
+        foreach ($masterData->getLookupOptions('os') as $option) {
+            $lookupMaps['os'][strtolower(trim($option['value']))] = (int) $option['id'];
+        }
+
+        $resolveLookupId = function ($type, $rawValue) use (&$lookupMaps, $masterData, $db) {
+            $value = trim((string) $rawValue);
+            if ($value === '') {
+                return null;
+            }
+
+            if ($type === 'ram' || $type === 'ssd') {
+                if (preg_match('/^(\d+)\s*(gb|tb)?$/i', $value, $matches)) {
+                    $unit = isset($matches[2]) && $matches[2] !== '' ? strtoupper($matches[2]) : 'GB';
+                    $value = $matches[1] . ' ' . $unit;
+                }
+            } elseif ($type === 'cores' && preg_match('/^\d+$/', $value)) {
+                $value = (string) (int) $value;
+            }
+
+            $key = strtolower($value);
+            if (isset($lookupMaps[$type][$key])) {
+                return $lookupMaps[$type][$key];
+            }
+
+            $masterData->addLookupOption($type, $value);
+
+            $table = 'lookup_' . $type;
+            $stmt = $db->prepare("SELECT id FROM $table WHERE value = ? LIMIT 1");
+            $stmt->execute([$value]);
+            $lookupId = $stmt->fetchColumn();
+
+            if ($lookupId === false) {
+                return null;
+            }
+
+            $lookupMaps[$type][$key] = (int) $lookupId;
+            return (int) $lookupId;
+        };
         
         // Assets für Lookup (UPDATE statt INSERT bei Duplikaten)
         $assets = $assetController->getAllAssets();
@@ -237,10 +292,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         'puk' => !empty($puk) ? $puk : null,
                         'rufnummer' => !empty($rufnummer) ? $rufnummer : null,
                         'mac_adresse' => !empty($macAddress) ? $macAddress : null,
-                        'ram' => !empty($ram) ? (int)$ram : null,
-                        'ssd_size' => !empty($ssd) ? (int)$ssd : null,
-                        'cores' => !empty($cores) ? (int)$cores : null,
-                        'os_version' => !empty($osVersion) ? $osVersion : null
+                        'ram' => $resolveLookupId('ram', $ram),
+                        'ssd_size' => $resolveLookupId('ssd', $ssd),
+                        'cores' => $resolveLookupId('cores', $cores),
+                        'os_version' => $resolveLookupId('os', $osVersion)
                     ];
 
                     try {
@@ -293,6 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assets importieren - Mini-Snipe</title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
@@ -300,19 +356,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
     <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
-    <div class="sidebar">
-        <div class="logo">Mini-Snipe</div>
-        <nav>
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="assets.php" class="nav-link"><i class="fas fa-laptop"></i> Assets</a>
-            <a href="users.php" class="nav-link"><i class="fas fa-users"></i> User</a>
-            <?php if (Auth::isAdmin()): ?>
-                <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link active"><i class="fas fa-cog"></i> Verwaltung</a>
-                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
-            <?php endif; ?>
-        </nav>
-    </div>
+    <?php $activePage = 'settings'; include_once __DIR__ . '/includes/sidebar.php'; ?>
 
     <main class="main-content">
         <header class="header">

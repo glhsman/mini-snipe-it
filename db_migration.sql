@@ -4,6 +4,121 @@
 
 SET @schema_name := DATABASE();
 
+-- 0) settings-Tabelle anlegen, falls sie fehlt
+CREATE TABLE IF NOT EXISTS settings (
+    id INT PRIMARY KEY,
+    site_name VARCHAR(255) DEFAULT 'Mini-Snipe',
+    branding_type VARCHAR(20) DEFAULT 'text',
+    site_logo VARCHAR(255) DEFAULT NULL,
+    site_favicon VARCHAR(255) DEFAULT NULL,
+    company_address TEXT DEFAULT NULL,
+    protocol_header_text TEXT DEFAULT NULL,
+    protocol_footer_text TEXT DEFAULT NULL
+);
+
+INSERT INTO settings (id, site_name, branding_type)
+SELECT 1,
+       'Mini-Snipe',
+       'text'
+WHERE NOT EXISTS (
+    SELECT 1 FROM settings WHERE id = 1
+);
+
+-- 0a) settings.site_favicon nur anlegen, falls sie fehlt
+SET @has_site_favicon_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'settings'
+      AND COLUMN_NAME = 'site_favicon'
+);
+
+SET @sql_add_site_favicon_col := IF(
+    @has_site_favicon_col = 0,
+    'ALTER TABLE settings ADD COLUMN site_favicon VARCHAR(255) NULL AFTER site_logo',
+    'SELECT ''Spalte settings.site_favicon existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_site_favicon_col FROM @sql_add_site_favicon_col;
+EXECUTE stmt_add_site_favicon_col;
+DEALLOCATE PREPARE stmt_add_site_favicon_col;
+
+SET @has_company_address_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'settings'
+      AND COLUMN_NAME = 'company_address'
+);
+
+SET @sql_add_company_address_col := IF(
+    @has_company_address_col = 0,
+    'ALTER TABLE settings ADD COLUMN company_address TEXT NULL AFTER site_favicon',
+    'SELECT ''Spalte settings.company_address existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_company_address_col FROM @sql_add_company_address_col;
+EXECUTE stmt_add_company_address_col;
+DEALLOCATE PREPARE stmt_add_company_address_col;
+
+SET @has_protocol_header_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'settings'
+      AND COLUMN_NAME = 'protocol_header_text'
+);
+
+SET @sql_add_protocol_header_col := IF(
+    @has_protocol_header_col = 0,
+    'ALTER TABLE settings ADD COLUMN protocol_header_text TEXT NULL AFTER company_address',
+    'SELECT ''Spalte settings.protocol_header_text existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_protocol_header_col FROM @sql_add_protocol_header_col;
+EXECUTE stmt_add_protocol_header_col;
+DEALLOCATE PREPARE stmt_add_protocol_header_col;
+
+SET @has_protocol_footer_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'settings'
+      AND COLUMN_NAME = 'protocol_footer_text'
+);
+
+SET @sql_add_protocol_footer_col := IF(
+    @has_protocol_footer_col = 0,
+    'ALTER TABLE settings ADD COLUMN protocol_footer_text TEXT NULL AFTER protocol_header_text',
+    'SELECT ''Spalte settings.protocol_footer_text existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_protocol_footer_col FROM @sql_add_protocol_footer_col;
+EXECUTE stmt_add_protocol_footer_col;
+DEALLOCATE PREPARE stmt_add_protocol_footer_col;
+
+UPDATE settings
+SET company_address = COALESCE(NULLIF(company_address, ''), 'Firmenadresse hier hinterlegen'),
+    protocol_header_text = COALESCE(NULLIF(protocol_header_text, ''), 'Die unten aufgefuehrte IT-Hardware wird hiermit bestaetigt. Mit Ihrer Unterschrift bestaetigen Sie den ordnungsgemaessen Erhalt bzw. die vollstaendige Rueckgabe der aufgelisteten Geraete.'),
+    protocol_footer_text = COALESCE(NULLIF(protocol_footer_text, ''), 'IT-Protokoll. Fuer Ihre/unsere Unterlagen.')
+WHERE id = 1;
+
+-- 0b) Historie fuer Asset-Ausgaben/Rueckgaben
+CREATE TABLE IF NOT EXISTS asset_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    asset_id INT NOT NULL,
+    user_id INT NOT NULL,
+    checkout_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    checkout_by_user_id INT NULL,
+    checkin_at DATETIME NULL,
+    checkin_by_user_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (checkout_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (checkin_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- 1) Spalte categories.kuerzel nur anlegen, falls sie fehlt
 SET @has_kuerzel_col := (
     SELECT COUNT(*)
@@ -199,10 +314,62 @@ SELECT 'Ausgegeben', 'deployable' FROM (SELECT 1) AS tmp
 WHERE NOT EXISTS (SELECT name FROM status_labels WHERE name = 'Ausgegeben');
 
 -- 13) Lookup-Tabellen für Hardware erstellen (Idempotent)
-CREATE TABLE IF NOT EXISTS lookup_ram (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
-CREATE TABLE IF NOT EXISTS lookup_ssd (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
-CREATE TABLE IF NOT EXISTS lookup_cores (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
-CREATE TABLE IF NOT EXISTS lookup_os (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(100) UNIQUE);
+CREATE TABLE IF NOT EXISTS lookup_ram    (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50)  UNIQUE);
+CREATE TABLE IF NOT EXISTS lookup_ssd    (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50)  UNIQUE);
+CREATE TABLE IF NOT EXISTS lookup_cores  (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50)  UNIQUE);
+CREATE TABLE IF NOT EXISTS lookup_os     (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(100) UNIQUE);
+
+-- 14) Login-Protokoll-Tabelle anlegen (Idempotent)
+CREATE TABLE IF NOT EXISTS login_logs (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT  NULL,
+    username    VARCHAR(100) NOT NULL,
+    action      ENUM('login','logout','login_failed','login_blocked') NOT NULL,
+    reason      VARCHAR(100) NULL,
+    ip_address  VARCHAR(45)  NULL,
+    user_agent  VARCHAR(255) NULL,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_login_logs_created (created_at),
+    INDEX idx_login_logs_user    (user_id)
+);
+
+-- 14b) login_logs um neue Felder/Aktionen erweitern (idempotent)
+SET @has_login_reason_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'login_logs'
+      AND COLUMN_NAME = 'reason'
+);
+
+SET @sql_add_login_reason_col := IF(
+    @has_login_reason_col = 0,
+    'ALTER TABLE login_logs ADD COLUMN reason VARCHAR(100) NULL AFTER action',
+    'SELECT ''Spalte login_logs.reason existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_login_reason_col FROM @sql_add_login_reason_col;
+EXECUTE stmt_add_login_reason_col;
+DEALLOCATE PREPARE stmt_add_login_reason_col;
+
+SET @login_action_type := (
+    SELECT COLUMN_TYPE
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'login_logs'
+      AND COLUMN_NAME = 'action'
+    LIMIT 1
+);
+
+SET @sql_expand_login_action_enum := IF(
+    @login_action_type NOT LIKE '%login_failed%' OR @login_action_type NOT LIKE '%login_blocked%',
+    'ALTER TABLE login_logs MODIFY COLUMN action ENUM(''login'',''logout'',''login_failed'',''login_blocked'') NOT NULL',
+    'SELECT ''login_logs.action enthält bereits alle Login-Events'' AS info'
+);
+
+PREPARE stmt_expand_login_action_enum FROM @sql_expand_login_action_enum;
+EXECUTE stmt_expand_login_action_enum;
+DEALLOCATE PREPARE stmt_expand_login_action_enum;
 
 -- 14) Standardwerte für Lookups
 INSERT IGNORE INTO lookup_ram (value) VALUES ('4 GB'), ('8 GB'), ('16 GB'), ('32 GB'), ('64 GB');
@@ -214,10 +381,63 @@ INSERT IGNORE INTO lookup_os (value) VALUES ('Windows 10'), ('Windows 11'), ('ma
 INSERT IGNORE INTO lookup_ram (value) SELECT DISTINCT CONCAT(ram, ' GB') FROM assets WHERE ram IS NOT NULL AND ram > 0 AND ram NOT IN (SELECT id FROM lookup_ram);
 INSERT IGNORE INTO lookup_ssd (value) SELECT DISTINCT CONCAT(ssd_size, ' GB') FROM assets WHERE ssd_size IS NOT NULL AND ssd_size > 0 AND ssd_size NOT IN (SELECT id FROM lookup_ssd);
 INSERT IGNORE INTO lookup_cores (value) SELECT DISTINCT cores FROM assets WHERE cores IS NOT NULL AND cores > 0 AND cores NOT IN (SELECT id FROM lookup_cores);
-INSERT IGNORE INTO lookup_os (value) SELECT DISTINCT os_version FROM assets WHERE os_version IS NOT NULL AND os_version != '' AND os_version NOT IN (SELECT id FROM lookup_os);
+INSERT IGNORE INTO lookup_os (value)
+SELECT DISTINCT TRIM(os_version)
+FROM assets
+WHERE os_version IS NOT NULL
+    AND TRIM(os_version) <> ''
+    AND TRIM(os_version) NOT REGEXP '^[0-9]+$';
 
 -- 16) Assets Tabelle updaten (IDs statt Rohwerte)
 UPDATE assets a JOIN lookup_ram l ON CONCAT(a.ram, ' GB') = l.value SET a.ram = l.id WHERE a.ram IS NOT NULL AND a.ram > 0 AND a.ram NOT IN (SELECT id FROM lookup_ram);
 UPDATE assets a JOIN lookup_ssd l ON CONCAT(a.ssd_size, ' GB') = l.value SET a.ssd_size = l.id WHERE a.ssd_size IS NOT NULL AND a.ssd_size > 0 AND a.ssd_size NOT IN (SELECT id FROM lookup_ssd);
 UPDATE assets a JOIN lookup_cores l ON a.cores = l.value SET a.cores = l.id WHERE a.cores IS NOT NULL AND a.cores > 0 AND a.cores NOT IN (SELECT id FROM lookup_cores);
-UPDATE assets a JOIN lookup_os l ON a.os_version = l.value SET a.os_version = l.id WHERE a.os_version IS NOT NULL AND a.os_version != '' AND a.os_version NOT IN (SELECT id FROM lookup_os);
+UPDATE assets a
+JOIN lookup_os l ON TRIM(a.os_version) = l.value
+SET a.os_version = l.id
+WHERE a.os_version IS NOT NULL
+    AND TRIM(a.os_version) <> ''
+    AND TRIM(a.os_version) NOT REGEXP '^[0-9]+$';
+
+-- 17) assets.os_version auf Lookup-ID-Typ umstellen
+SET @os_version_data_type := (
+        SELECT DATA_TYPE
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = @schema_name
+            AND TABLE_NAME = 'assets'
+            AND COLUMN_NAME = 'os_version'
+        LIMIT 1
+);
+
+SET @sql_set_os_version_int := IF(
+        @os_version_data_type <> 'int',
+        'ALTER TABLE assets MODIFY COLUMN os_version INT NULL',
+        'SELECT ''Spalte assets.os_version ist bereits INT'' AS info'
+);
+
+PREPARE stmt_set_os_version_int FROM @sql_set_os_version_int;
+EXECUTE stmt_set_os_version_int;
+DEALLOCATE PREPARE stmt_set_os_version_int;
+
+-- 18) Asset-Anforderungen (oeffentlich) speichern
+CREATE TABLE IF NOT EXISTS asset_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    location_id INT NOT NULL,
+    category_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    reason TEXT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    processed_at DATETIME NULL,
+    processed_by_user_id INT NULL,
+    internal_note TEXT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE RESTRICT,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+    FOREIGN KEY (processed_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_asset_requests_status_requested (status, requested_at),
+    INDEX idx_asset_requests_user (user_id),
+    INDEX idx_asset_requests_location (location_id),
+    INDEX idx_asset_requests_category (category_id)
+);

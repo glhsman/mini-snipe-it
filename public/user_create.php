@@ -65,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzer anlegen - Mini-Snipe</title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
@@ -81,23 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .password-toggle { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); z-index: 10; padding: 0.5rem; }
         .password-toggle:hover { color: white; }
         input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
+        .form-control option, .form-control optgroup { background: #1f2937; color: white; }
+        .light-mode .form-control option, .light-mode .form-control optgroup { background: #ffffff; color: #1e293b; }
     </style>
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
     <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
-    <div class="sidebar">
-        <div class="logo">Mini-Snipe</div>
-        <nav>
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="assets.php" class="nav-link"><i class="fas fa-laptop"></i> Assets</a>
-            <a href="users.php" class="nav-link active"><i class="fas fa-users"></i> User</a>
-            <?php if (Auth::isAdmin()): ?>
-                <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Verwaltung</a>
-                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
-            <?php endif; ?>
-        </nav>
-    </div>
+    <?php $activePage = 'users'; include_once __DIR__ . '/includes/sidebar.php'; ?>
 
     <main class="main-content">
         <header class="header">

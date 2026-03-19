@@ -29,7 +29,7 @@ class AssetController {
         return (int) $stmt->fetchColumn();
     }
 
-    public function countAssetsFiltered($search, $modelId) {
+    public function countAssetsFiltered($search, $modelId, $statusId = null) {
         $conditions = [];
         $params     = [];
         if (!empty($search)) {
@@ -40,6 +40,10 @@ class AssetController {
         if (!empty($modelId)) {
             $conditions[] = "a.model_id = ?";
             $params[] = (int)$modelId;
+        }
+        if (!empty($statusId)) {
+            $conditions[] = "a.status_id = ?";
+            $params[] = (int)$statusId;
         }
         $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
         $stmt  = $this->db->prepare("SELECT COUNT(*) FROM assets a $where");
@@ -51,7 +55,7 @@ class AssetController {
         return $this->getAssetsPaginatedFiltered('', null, $limit, $offset);
     }
 
-    public function getAssetsPaginatedFiltered($search, $modelId, $limit, $offset, $sort = 'created_at', $order = 'DESC') {
+    public function getAssetsPaginatedFiltered($search, $modelId, $limit, $offset, $sort = 'created_at', $order = 'DESC', $statusId = null) {
         $conditions = [];
         $params     = [];
         if (!empty($search)) {
@@ -62,6 +66,10 @@ class AssetController {
         if (!empty($modelId)) {
             $conditions[] = "a.model_id = ?";
             $params[] = (int)$modelId;
+        }
+        if (!empty($statusId)) {
+            $conditions[] = "a.status_id = ?";
+            $params[] = (int)$statusId;
         }
         
         // Sorting Whitelist
@@ -107,6 +115,179 @@ class AssetController {
         $stmt = $this->db->prepare("SELECT * FROM assets WHERE id = ?");
         $stmt->execute([$id]);
         return $stmt->fetch();
+    }
+
+    public function getAssetsByUserId($userId) {
+                $stmt = $this->db->prepare("SELECT a.*, m.name AS model_name, s.name AS status_name, aa.checkout_at AS assigned_at
+                                   FROM assets a
+                                   LEFT JOIN asset_models m ON a.model_id = m.id
+                                   LEFT JOIN status_labels s ON a.status_id = s.id
+                                                                     LEFT JOIN asset_assignments aa ON aa.id = (
+                                                                             SELECT aa2.id
+                                                                             FROM asset_assignments aa2
+                                                                             WHERE aa2.asset_id = a.id
+                                                                                 AND aa2.checkin_at IS NULL
+                                                                             ORDER BY aa2.checkout_at DESC, aa2.id DESC
+                                                                             LIMIT 1
+                                                                     )
+                                   WHERE a.user_id = ?
+                                   ORDER BY COALESCE(a.asset_tag, a.serial, a.name, '') ASC, a.id ASC");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+
+    public function getAssignmentById($assignmentId) {
+        $stmt = $this->db->prepare("SELECT aa.*, a.name AS asset_name, a.asset_tag, a.serial, m.name AS model_name,
+                                           u.username, u.first_name, u.last_name, u.email,
+                                           l.name AS location_name, l.address AS location_address, l.city AS location_city
+                                    FROM asset_assignments aa
+                                    INNER JOIN assets a ON aa.asset_id = a.id
+                                    LEFT JOIN asset_models m ON a.model_id = m.id
+                                    INNER JOIN users u ON aa.user_id = u.id
+                                    LEFT JOIN locations l ON u.location_id = l.id
+                                    WHERE aa.id = ?");
+        $stmt->execute([$assignmentId]);
+        return $stmt->fetch();
+    }
+
+    public function getAssignmentsByIds(array $assignmentIds) {
+        $assignmentIds = array_values(array_filter(array_map('intval', $assignmentIds), static fn($id) => $id > 0));
+        if (empty($assignmentIds)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($assignmentIds), '?'));
+        $sql = "SELECT aa.*, a.name AS asset_name, a.asset_tag, a.serial, m.name AS model_name,
+                       u.username, u.first_name, u.last_name, u.email,
+                       l.name AS location_name, l.address AS location_address, l.city AS location_city
+                FROM asset_assignments aa
+                INNER JOIN assets a ON aa.asset_id = a.id
+                LEFT JOIN asset_models m ON a.model_id = m.id
+                INNER JOIN users u ON aa.user_id = u.id
+                LEFT JOIN locations l ON u.location_id = l.id
+                WHERE aa.id IN ($placeholders)
+                ORDER BY aa.checkout_at ASC, aa.id ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($assignmentIds);
+        return $stmt->fetchAll();
+    }
+
+    public function getAssignmentHistory(int $limit = 250, string $search = ''): array {
+        $limit = max(1, min($limit, 1000));
+        $search = trim($search);
+
+        $sql = "SELECT aa.id,
+                       aa.asset_id,
+                       aa.user_id,
+                       aa.checkout_at,
+                       aa.checkin_at,
+                       a.asset_tag,
+                       a.serial,
+                       a.name AS asset_name,
+                       m.name AS model_name,
+                       u.username,
+                       u.first_name,
+                       u.last_name,
+                       cbu.username AS checkout_by_username,
+                       ibu.username AS checkin_by_username
+                FROM asset_assignments aa
+                INNER JOIN assets a ON a.id = aa.asset_id
+                LEFT JOIN asset_models m ON m.id = a.model_id
+                INNER JOIN users u ON u.id = aa.user_id
+                LEFT JOIN users cbu ON cbu.id = aa.checkout_by_user_id
+                LEFT JOIN users ibu ON ibu.id = aa.checkin_by_user_id";
+
+        $params = [];
+        if ($search !== '') {
+            $sql .= " WHERE (
+                COALESCE(a.asset_tag, '') LIKE ?
+                OR COALESCE(a.serial, '') LIKE ?
+                OR COALESCE(a.name, '') LIKE ?
+                OR COALESCE(u.username, '') LIKE ?
+                OR COALESCE(u.first_name, '') LIKE ?
+                OR COALESCE(u.last_name, '') LIKE ?
+            )";
+            $term = '%' . $search . '%';
+            $params = [$term, $term, $term, $term, $term, $term];
+        }
+
+        $sql .= " ORDER BY aa.checkout_at DESC, aa.id DESC LIMIT " . (int) $limit;
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    private function getOpenAssignmentForAsset($assetId) {
+        $stmt = $this->db->prepare("SELECT * FROM asset_assignments WHERE asset_id = ? AND checkin_at IS NULL ORDER BY checkout_at DESC, id DESC LIMIT 1");
+        $stmt->execute([$assetId]);
+        return $stmt->fetch();
+    }
+
+    public function checkoutAsset($assetId, $userId, $operatorId = null) {
+        $this->db->beginTransaction();
+        try {
+            $asset = $this->getAssetById($assetId);
+            if (!$asset) {
+                throw new \RuntimeException('Asset nicht gefunden.');
+            }
+
+            $openAssignment = $this->getOpenAssignmentForAsset($assetId);
+            if ($openAssignment) {
+                $stmt = $this->db->prepare("UPDATE asset_assignments SET checkin_at = NOW(), checkin_by_user_id = ? WHERE id = ?");
+                $stmt->execute([$operatorId, $openAssignment['id']]);
+            }
+
+            $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$userId, $assetId]);
+
+            $stmt = $this->db->prepare("INSERT INTO asset_assignments (asset_id, user_id, checkout_by_user_id) VALUES (?, ?, ?)");
+            $stmt->execute([$assetId, $userId, $operatorId]);
+
+            $assignmentId = (int) $this->db->lastInsertId();
+            $this->db->commit();
+            return $assignmentId;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function checkinAsset($assetId, $operatorId = null) {
+        $this->db->beginTransaction();
+        try {
+            $asset = $this->getAssetById($assetId);
+            if (!$asset) {
+                throw new \RuntimeException('Asset nicht gefunden.');
+            }
+
+            $openAssignment = $this->getOpenAssignmentForAsset($assetId);
+            if ($openAssignment) {
+                $assignmentId = (int) $openAssignment['id'];
+                $stmt = $this->db->prepare("UPDATE asset_assignments SET checkin_at = NOW(), checkin_by_user_id = ? WHERE id = ?");
+                $stmt->execute([$operatorId, $assignmentId]);
+            } elseif (!empty($asset['user_id'])) {
+                $stmt = $this->db->prepare("INSERT INTO asset_assignments (asset_id, user_id, checkout_at, checkout_by_user_id, checkin_at, checkin_by_user_id) VALUES (?, ?, NOW(), NULL, NOW(), ?)");
+                $stmt->execute([$assetId, $asset['user_id'], $operatorId]);
+                $assignmentId = (int) $this->db->lastInsertId();
+            } else {
+                throw new \RuntimeException('Asset ist keinem Benutzer zugewiesen.');
+            }
+
+            $stmt = $this->db->prepare("UPDATE assets SET user_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$assetId]);
+
+            $this->db->commit();
+            return $assignmentId;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
     }
 
     public function createAsset($data) {

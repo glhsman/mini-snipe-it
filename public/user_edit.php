@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../src/Controllers/UserController.php';
+require_once __DIR__ . '/../src/Controllers/AssetController.php';
 require_once __DIR__ . '/../src/Controllers/MasterDataController.php';
 require_once __DIR__ . '/../src/Helpers/Auth.php';
 
+use App\Controllers\AssetController;
 use App\Controllers\UserController;
 use App\Controllers\MasterDataController;
 use App\Helpers\Auth;
@@ -18,6 +20,7 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $userId = (int)$_GET['id'];
 $db = Database::getInstance();
 $userController = new UserController($db);
+$assetController = new AssetController($db);
 $masterData = new MasterDataController($db);
 
 $user = $userController->getUserById($userId);
@@ -27,6 +30,8 @@ if (!$user) {
 }
 
 $locations = $masterData->getLocations();
+$assignedAssets = $assetController->getAssetsByUserId($userId);
+$assignedAssetCount = count($assignedAssets);
 $error = null;
 $success = null;
 
@@ -78,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzer bearbeiten - Mini-Snipe</title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
@@ -94,23 +100,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .password-toggle { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); z-index: 10; padding: 0.5rem; }
         .password-toggle:hover { color: white; }
         input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
+        .form-control option, .form-control optgroup { background: #1f2937; color: white; }
+        .light-mode .form-control option, .light-mode .form-control optgroup { background: #ffffff; color: #1e293b; }
+        .protocol-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .protocol-hint { color: var(--text-muted); font-size: 0.825rem; margin-bottom: 1.5rem; }
+        .asset-list { margin: 1.5rem 0 2rem; border: 1px solid var(--glass-border); border-radius: 0.85rem; overflow: hidden; }
+        .asset-list table { width: 100%; border-collapse: collapse; }
+        .asset-list th, .asset-list td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left; }
+        .asset-list th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(255,255,255,0.02); }
+        .asset-list tr:last-child td { border-bottom: 0; }
+        .asset-inline-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-small { padding: 0.5rem 0.75rem; font-size: 0.82rem; }
+        .asset-list-controls { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.01); }
+        .checkbox-col { width: 44px; text-align: center; }
+        .checkbox-col input { width: 16px; height: 16px; }
     </style>
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
     <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
-    <div class="sidebar">
-        <div class="logo">Mini-Snipe</div>
-        <nav>
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="assets.php" class="nav-link"><i class="fas fa-laptop"></i> Assets</a>
-            <a href="users.php" class="nav-link active"><i class="fas fa-users"></i> User</a>
-            <?php if (Auth::isAdmin()): ?>
-                <a href="locations.php" class="nav-link"><i class="fas fa-map-marker-alt"></i> Standorte</a>
-                <a href="settings.php" class="nav-link"><i class="fas fa-cog"></i> Verwaltung</a>
-                <a href="settings_general.php" class="nav-link"><i class="fas fa-sliders-h"></i> Einstellungen</a>
-            <?php endif; ?>
-        </nav>
-    </div>
+    <?php $activePage = 'users'; include_once __DIR__ . '/includes/sidebar.php'; ?>
 
     <main class="main-content">
         <header class="header">
@@ -119,6 +127,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </header>
 
         <div class="card" style="max-width: 800px;">
+            <div class="protocol-actions">
+                <a href="user_protocol.php?id=<?php echo $userId; ?>&type=handover" class="btn" target="_blank" rel="noopener" style="background: rgba(34, 197, 94, 0.16); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.28);">
+                    <i class="fas fa-file-export"></i> Ausgabeprotokoll erzeugen
+                </a>
+            </div>
+            <div class="protocol-hint">
+                Aktuell zugewiesene Assets: <?php echo $assignedAssetCount; ?>. Das Ausgabeprotokoll enthaelt immer den aktuellen Gesamtbestand.
+            </div>
+
+            <?php if ($assignedAssetCount > 0): ?>
+                <div class="asset-list">
+                    <form method="POST" action="asset_checkin.php" id="bulk-return-form" onsubmit="return validateBulkReturn();">
+                        <input type="hidden" name="user_id" value="<?php echo $userId; ?>">
+                        <table>
+                        <thead>
+                            <tr>
+                                <th class="checkbox-col"><input type="checkbox" id="toggle-all-assets" title="Alle auswaehlen"></th>
+                                <th>Asset</th>
+                                <th>Seriennummer</th>
+                                <th>Inventar-Nr</th>
+                                <th>Ausgegeben am</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($assignedAssets as $assignedAsset): ?>
+                                <tr>
+                                    <td class="checkbox-col"><input type="checkbox" name="asset_ids[]" value="<?php echo $assignedAsset['id']; ?>" class="asset-checkbox"></td>
+                                    <td><?php echo htmlspecialchars($assignedAsset['name'] ?: $assignedAsset['model_name'] ?: 'Unbekannt'); ?></td>
+                                    <td><?php echo htmlspecialchars($assignedAsset['serial'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($assignedAsset['asset_tag'] ?? '-'); ?></td>
+                                    <td>
+                                        <?php if (!empty($assignedAsset['assigned_at'])): ?>
+                                            <?php echo htmlspecialchars(date('d.m.Y H:i', strtotime($assignedAsset['assigned_at']))); ?>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        </table>
+                        <div class="asset-list-controls">
+                            <small style="color: var(--text-muted);">Mehrere Assets markieren und gemeinsam ruecknehmen.</small>
+                            <button type="submit" class="btn btn-small" style="background: rgba(249, 115, 22, 0.16); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.28);">
+                                <i class="fas fa-undo"></i> Auswahl rueckgeben + Protokoll
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            <?php endif; ?>
+
             <?php if ($error): ?>
                 <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
@@ -135,11 +194,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Vorname</label>
-                        <input type="text" name="first_name" class="form-control" value="<?php echo htmlspecialchars($user['first_name']); ?>">
+                        <input type="text" name="first_name" class="form-control" value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>">
                     </div>
                     <div class="form-group">
                         <label>Nachname</label>
-                        <input type="text" name="last_name" class="form-control" value="<?php echo htmlspecialchars($user['last_name']); ?>">
+                        <input type="text" name="last_name" class="form-control" value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>">
                     </div>
                 </div>
 
@@ -150,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="form-group">
                         <label>E-Mail</label>
-                        <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>">
+                        <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>">
                     </div>
                 </div>
 
@@ -235,6 +294,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
             }
+        }
+
+        function validateBulkReturn() {
+            const checked = document.querySelectorAll('.asset-checkbox:checked').length;
+            if (checked === 0) {
+                alert('Bitte waehle mindestens ein Asset fuer die Rueckgabe aus.');
+                return false;
+            }
+            return confirm('Ausgewaehlte Assets jetzt rueckgeben und Rueckgabeprotokoll erzeugen?');
+        }
+
+        const toggleAll = document.getElementById('toggle-all-assets');
+        if (toggleAll) {
+            toggleAll.addEventListener('change', function () {
+                document.querySelectorAll('.asset-checkbox').forEach(cb => cb.checked = this.checked);
+            });
         }
 
         document.getElementById('can_login').addEventListener('change', updatePasswordRequirement);

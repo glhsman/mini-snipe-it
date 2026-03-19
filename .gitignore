@@ -11,7 +11,20 @@
 .DS_Store
 Thumbs.db
 *.url
+*.bak
 
+# Lokale Debug-/Hilfsskripte (nicht für Betrieb)
+phpinfo.php
+verify_delete.php
+temp_*.php
+public/temp_*.php
+
+# Lokale Sync-/Dump-Artefakte
+sync.ffs_db
+DB_Dump_Produktiv.sql
+
+# CSV-Exports nur im Projekt-Root (Unterordner bleiben unberuehrt)
+/*.csv
 
 # IDE-spezifische Dateien
 .idea/

@@ -51,7 +51,15 @@ class SetupController {
                 throw new Exception("Migration-Datei nicht gefunden.");
             }
 
-            $pdo->exec($sql);
+            // Statements einzeln ausführen – PDO::exec() ist bei Multi-Statement-Strings
+            // nicht in allen MySQL/PDO-Konfigurationen zuverlässig.
+            $statements = array_filter(
+                array_map('trim', explode(';', $sql)),
+                fn($s) => $s !== ''
+            );
+            foreach ($statements as $statement) {
+                $pdo->exec($statement);
+            }
             return true;
         } catch (Exception $e) {
             return $e->getMessage();

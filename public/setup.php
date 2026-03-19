@@ -25,8 +25,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $migration = $setup->runMigrations($data);
         if ($migration === true) {
             if ($setup->saveConfig($data)) {
-                $success = "Installation erfolgreich! Du wirst gleich zum Dashboard weitergeleitet.";
-                header("Refresh:3; url=index.php");
+                $success = "Installation erfolgreich! Alle Tabellen und Demo-Daten wurden angelegt.<br><br>"
+                    . "<strong>Demo-Zugangsdaten (Passwort überall: <code>password</code>)</strong><br>"
+                    . "<table style='margin-top:0.5rem; border-collapse:collapse; font-size:0.85rem;'>"
+                    . "<tr><th style='text-align:left; padding:0.2rem 1rem 0.2rem 0; color:inherit;'>Benutzername</th><th style='text-align:left; padding:0.2rem 1rem 0.2rem 0; color:inherit;'>Rolle</th></tr>"
+                    . "<tr><td style='padding:0.15rem 1rem 0.15rem 0;'><strong>admin</strong></td><td>Administrator</td></tr>"
+                    . "<tr><td style='padding:0.15rem 1rem 0.15rem 0;'>mmuster</td><td>Editor</td></tr>"
+                    . "<tr><td style='padding:0.15rem 1rem 0.15rem 0;'>aschmidt</td><td>Benutzer</td></tr>"
+                    . "<tr><td style='padding:0.15rem 1rem 0.15rem 0;'>tmueller</td><td>Benutzer</td></tr>"
+                    . "</table>"
+                    . "<small style='display:block; margin-top:0.75rem;'>Bitte Passwörter nach dem ersten Login unter <em>Profil</em> ändern.</small>";
+                header("Refresh:10; url=login.php");
             } else {
                 $error = "Die .env Datei konnte nicht geschrieben werden. Bitte prüfe die Schreibrechte.";
             }
@@ -42,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup - Mini-Snipe</title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
