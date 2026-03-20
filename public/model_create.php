@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'manufacturer_id'     => !empty($_POST['manufacturer_id']) ? (int)$_POST['manufacturer_id'] : null,
         'category_id'         => !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null,
         'model_number'        => $_POST['model_number'] ?? '',
+        'serial_number_required' => isset($_POST['serial_number_required']) ? 1 : 0,
         'has_sim_fields'      => isset($_POST['has_sim_fields']) ? 1 : 0,
         'has_hardware_fields' => isset($_POST['has_hardware_fields']) ? 1 : 0
     ];
@@ -106,6 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group">
                         <label>Modellnummer</label>
                         <input type="text" name="model_number" class="form-control" placeholder="z.B. A2442" value="<?php echo htmlspecialchars($_POST['model_number'] ?? ''); ?>">
+                    </div>
+
+                    <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="checkbox" name="serial_number_required" id="serial_number_required" value="1" <?php echo !isset($_POST['serial_number_required']) || $_POST['serial_number_required'] ? 'checked' : ''; ?>>
+                        <label for="serial_number_required" style="margin-bottom:0; cursor:pointer;">Seriennummer erforderlich (Ja/Nein)</label>
                     </div>
 
                     <div class="form-group" style="display: flex; gap: 10px; align-items: center;">

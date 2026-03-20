@@ -53,9 +53,13 @@ class Database {
                     site_name VARCHAR(255) DEFAULT 'Mini-Snipe',
                     branding_type VARCHAR(20) DEFAULT 'text',
                     site_logo VARCHAR(255) DEFAULT NULL,
+                    site_favicon VARCHAR(255) DEFAULT NULL,
                     company_address TEXT DEFAULT NULL,
                     protocol_header_text TEXT DEFAULT NULL,
-                    protocol_footer_text TEXT DEFAULT NULL
+                    protocol_footer_text TEXT DEFAULT NULL,
+                    mail_test_success_at DATETIME NULL,
+                    mail_test_recipient VARCHAR(255) NULL,
+                    mail_test_last_error TEXT NULL
                 )");
                 $this->connection->exec("INSERT INTO settings (id, site_name, branding_type, company_address, protocol_header_text, protocol_footer_text) VALUES (1, 'Mini-Snipe', 'text', 'Firmenadresse hier hinterlegen', 'Die unten aufgefuehrte IT-Hardware wird hiermit bestaetigt. Mit Ihrer Unterschrift bestaetigen Sie den ordnungsgemaessen Erhalt bzw. die vollstaendige Rueckgabe der aufgelisteten Geraete.', 'IT-Protokoll. Fuer Ihre/unsere Unterlagen.')");
             }
@@ -65,6 +69,9 @@ class Database {
                 'company_address'      => "ALTER TABLE settings ADD COLUMN company_address TEXT NULL AFTER site_favicon",
                 'protocol_header_text' => "ALTER TABLE settings ADD COLUMN protocol_header_text TEXT NULL AFTER company_address",
                 'protocol_footer_text' => "ALTER TABLE settings ADD COLUMN protocol_footer_text TEXT NULL AFTER protocol_header_text",
+                'mail_test_success_at' => "ALTER TABLE settings ADD COLUMN mail_test_success_at DATETIME NULL AFTER protocol_footer_text",
+                'mail_test_recipient'  => "ALTER TABLE settings ADD COLUMN mail_test_recipient VARCHAR(255) NULL AFTER mail_test_success_at",
+                'mail_test_last_error' => "ALTER TABLE settings ADD COLUMN mail_test_last_error TEXT NULL AFTER mail_test_recipient",
             ];
             foreach ($settingColumns as $column => $sql) {
                 $columnStmt = $this->connection->prepare("SELECT COUNT(*)
@@ -134,6 +141,19 @@ class Database {
                 INDEX idx_asset_requests_category (category_id)
             )");
 
+            $this->connection->exec("CREATE TABLE IF NOT EXISTS password_resets (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                token_hash VARCHAR(255) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME NULL,
+                requested_ip VARCHAR(45) NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                INDEX idx_password_resets_user (user_id),
+                INDEX idx_password_resets_expires (expires_at)
+            )");
+
             $loginReasonStmt = $this->connection->prepare("SELECT COUNT(*)
                 FROM information_schema.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE()
@@ -170,4 +190,3 @@ class Database {
         return $this->connection;
     }
 }
-

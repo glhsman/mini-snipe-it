@@ -291,11 +291,21 @@ class AssetController {
     }
 
     public function createAsset($data) {
-        $sql = "INSERT INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id, purchase_date, notes, pin, puk, rufnummer, mac_adresse, ram, ssd_size, cores, os_version) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $modelId = !empty($data['model_id']) ? (int)$data['model_id'] : null;
+        $serialRequired = array_key_exists('serial_number_required', $data)
+            ? ((int)$data['serial_number_required'] === 1 ? 1 : 0)
+            : ($this->isSerialNumberRequiredForModel($modelId) ? 1 : 0);
+        $serial = strtoupper(trim((string)($data['serial'] ?? '')));
+
+        if ($serial === '' && $serialRequired === 0) {
+            $serial = $this->generatePlaceholderSerial();
+        }
+
+        $sql = "INSERT INTO assets (name, asset_tag, serial, serial_number_required, model_id, status_id, location_id, user_id, purchase_date, notes, pin, puk, rufnummer, mac_adresse, ram, ssd_size, cores, os_version) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            $data['name'], $data['asset_tag'], $data['serial'], $data['model_id'], 
+            $data['name'], $data['asset_tag'], $serial, $serialRequired, $data['model_id'], 
             $data['status_id'], $data['location_id'], $data['user_id'] ?? null, 
             $data['purchase_date'], $data['notes'],
             $data['pin'] ?? null, $data['puk'] ?? null, $data['rufnummer'] ?? null,
@@ -305,11 +315,21 @@ class AssetController {
     }
 
     public function updateAsset($id, $data) {
-        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, model_id=?, status_id=?, location_id=?, user_id=?, purchase_date=?, notes=?, pin=?, puk=?, rufnummer=?, mac_adresse=?, ram=?, ssd_size=?, cores=?, os_version=? 
+        $modelId = !empty($data['model_id']) ? (int)$data['model_id'] : null;
+        $serialRequired = array_key_exists('serial_number_required', $data)
+            ? ((int)$data['serial_number_required'] === 1 ? 1 : 0)
+            : ($this->isSerialNumberRequiredForModel($modelId) ? 1 : 0);
+        $serial = strtoupper(trim((string)($data['serial'] ?? '')));
+
+        if ($serial === '' && $serialRequired === 0) {
+            $serial = $this->generatePlaceholderSerial();
+        }
+
+        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, serial_number_required=?, model_id=?, status_id=?, location_id=?, user_id=?, purchase_date=?, notes=?, pin=?, puk=?, rufnummer=?, mac_adresse=?, ram=?, ssd_size=?, cores=?, os_version=? 
                 WHERE id=?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            $data['name'], $data['asset_tag'], $data['serial'], $data['model_id'], 
+            $data['name'], $data['asset_tag'], $serial, $serialRequired, $data['model_id'], 
             $data['status_id'], $data['location_id'], $data['user_id'] ?? null, 
             $data['purchase_date'], $data['notes'],
             $data['pin'] ?? null, $data['puk'] ?? null, $data['rufnummer'] ?? null,
@@ -317,6 +337,32 @@ class AssetController {
             $data['cores'] ?? null, $data['os_version'] ?? null,
             $id
         ]);
+    }
+
+    public function isSerialNumberRequiredForModel($modelId) {
+        if (empty($modelId)) {
+            return true;
+        }
+
+        $stmt = $this->db->prepare("SELECT serial_number_required FROM asset_models WHERE id = ?");
+        $stmt->execute([(int)$modelId]);
+        $value = $stmt->fetchColumn();
+
+        return $value === false ? true : ((int)$value === 1);
+    }
+
+    public function generatePlaceholderSerial() {
+        do {
+            $serial = 'NA-' . date('YmdHis') . strtoupper(bin2hex(random_bytes(3)));
+        } while ($this->assetSerialExists($serial));
+
+        return $serial;
+    }
+
+    private function assetSerialExists($serial) {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM assets WHERE serial = ?");
+        $stmt->execute([$serial]);
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     public function deleteAsset($id) {

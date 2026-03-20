@@ -67,6 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     $firstName = trim($row[2]);
                     $lastName = trim($row[3]);
                     $locationName = isset($row[4]) ? trim($row[4]) : '';
+                    $personalnummer = isset($row[5]) ? trim($row[5]) : '';
+                    $vorgesetzter = isset($row[6]) ? trim($row[6]) : '';
+                    $isActiv = isset($row[7]) ? trim($row[7]) : '1';
 
                     if (empty($username)) {
                         $failed++;
@@ -93,6 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         'email'       => !empty($email) ? $email : null,
                         'first_name'  => !empty($firstName) ? $firstName : null,
                         'last_name'   => !empty($lastName) ? $lastName : null,
+                        'personalnummer' => $personalnummer !== '' ? $personalnummer : null,
+                        'vorgesetzter' => $vorgesetzter !== '' ? $vorgesetzter : null,
+                        'is_activ'    => in_array(strtolower($isActiv), ['0', 'false', 'nein', 'no'], true) ? 0 : 1,
                         'location_id' => $locationId,
                         'password'    => null, // Kein Passwort da Login standardmäßig deaktiviert
                         'can_login'   => 0    // Importierte Benutzer haben standardmäßig KEIN Login-Recht
@@ -178,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                 <div style="margin-bottom: 2rem;">
                     <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">CSV Datei auswählen</label>
                     <input type="file" name="csv_file" accept=".csv" required style="display: block; width: 100%; padding: 0.75rem; border: 1px dashed var(--glass-border); border-radius: 0.5rem; background: rgba(0,0,0,0.1); color: var(--text-muted); cursor: pointer;">
-                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Erwarteter Aufbau: <code>username; email; first_name; last_name; location_name</code></p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Erwarteter Aufbau: <code>username; email; first_name; last_name; location_name; personalnummer; vorgesetzter; is_activ</code></p>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-file-import"></i> Hochladen & Importieren</button>

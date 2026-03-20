@@ -44,7 +44,7 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 
 ### Optional: PHPMailer installieren (empfohlen)
 
-Für den E-Mail-Test in `Einstellungen -> Sendmail-Konfiguration` wird bevorzugt **PHPMailer** genutzt, wenn es installiert ist.
+Für den E-Mail-Test in `Einstellungen -> Sendmail-Konfiguration` wird die SMTP-Konfiguration aus der `.env` im Projekt-Root gelesen. Bevorzugt wird **PHPMailer** genutzt, wenn es installiert ist.
 
 1.  In das Projektverzeichnis wechseln (z.B. `D:\xampp\htdocs\minisnipeit`)
 2.  Abhängigkeit installieren:

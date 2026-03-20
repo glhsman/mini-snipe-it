@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../src/Helpers/Auth.php';
+require_once __DIR__ . '/../src/Helpers/Mail.php';
 
 $composerAutoload = __DIR__ . '/../vendor/autoload.php';
 if (is_file($composerAutoload)) {
@@ -8,6 +9,7 @@ if (is_file($composerAutoload)) {
 }
 
 use App\Helpers\Auth;
+use App\Helpers\Mail;
 
 Auth::requireAdmin();
 
@@ -15,65 +17,20 @@ if (!isset($_SESSION['csrf_token']) || !is_string($_SESSION['csrf_token']) || $_
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-/**
- * Sendmail-Konfiguration auslesen
- */
-function parseSendmailIni(string $sendmailPath): array {
-    $trimmedPath = trim($sendmailPath);
-    if ($trimmedPath === '') {
-        return [];
-    }
-
-    $binaryPath = '';
-    if (preg_match('/^"([^"]+)"/', $trimmedPath, $matches)) {
-        $binaryPath = $matches[1];
-    } else {
-        $parts = preg_split('/\s+/', $trimmedPath);
-        $binaryPath = $parts[0] ?? '';
-    }
-
-    if ($binaryPath === '') {
-        return [];
-    }
-
-    $iniPath = dirname($binaryPath) . DIRECTORY_SEPARATOR . 'sendmail.ini';
-    if (!is_file($iniPath) || !is_readable($iniPath)) {
-        return [];
-    }
-
-    $parsed = parse_ini_file($iniPath, true, INI_SCANNER_RAW);
-    if (!is_array($parsed)) {
-        return [];
-    }
-
-    if (isset($parsed['sendmail']) && is_array($parsed['sendmail'])) {
-        return $parsed['sendmail'];
-    }
-
-    return $parsed;
-}
-
 function getSendmailConfig() {
-    $sendmail_path = ini_get('sendmail_path') ?: 'sendmail -t -i';
-    $smtp_host_php = ini_get('SMTP') ?: 'localhost';
-    $smtp_port_php = ini_get('smtp_port') ?: 25;
-    $sendmail_ini = parseSendmailIni((string) $sendmail_path);
-
-    $smtp_host = (string) ($sendmail_ini['smtp_server'] ?? $smtp_host_php);
-    $smtp_port = (string) ($sendmail_ini['smtp_port'] ?? $smtp_port_php);
-    $smtp_ssl = strtolower(trim((string) ($sendmail_ini['smtp_ssl'] ?? 'auto')));
-    $auth_username = trim((string) ($sendmail_ini['auth_username'] ?? ''));
-    $auth_password = (string) ($sendmail_ini['auth_password'] ?? '');
-    $smtp_source = isset($sendmail_ini['smtp_server']) || isset($sendmail_ini['smtp_port'])
-        ? 'sendmail.ini'
-        : 'php.ini';
+    $envPath = realpath(__DIR__ . '/../.env') ?: (__DIR__ . '/../.env');
+    $smtp_host = trim((string) getenv('MAIL_HOST'));
+    $smtp_port = (string) (getenv('MAIL_PORT') !== false ? getenv('MAIL_PORT') : '');
+    $smtp_ssl = strtolower(trim((string) (getenv('MAIL_ENCRYPTION') !== false ? getenv('MAIL_ENCRYPTION') : '')));
+    $auth_username = trim((string) (getenv('MAIL_USER') !== false ? getenv('MAIL_USER') : ''));
+    $auth_password = (string) (getenv('MAIL_PASS') !== false ? getenv('MAIL_PASS') : '');
     
     return [
-        'sendmail_path' => $sendmail_path,
+        'env_path' => $envPath,
         'smtp_host' => $smtp_host,
         'smtp_port' => $smtp_port,
-        'smtp_ssl' => $smtp_ssl,
-        'smtp_source' => $smtp_source,
+        'smtp_ssl' => $smtp_ssl !== '' ? $smtp_ssl : 'tls',
+        'smtp_source' => '.env',
         'auth_username' => $auth_username,
         'auth_password' => $auth_password,
     ];
@@ -380,11 +337,7 @@ function testSmtpWithPHPMailer(string $to_email, string $subject, string $messag
  * Test-Mail versenden
  */
 function testSendmail($to_email, $subject, $message) {
-    $cfg = getSendmailConfig();
-    if (class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
-        return testSmtpWithPHPMailer($to_email, $subject, $message, $cfg);
-    }
-    return testSmtpDirect($to_email, $subject, $message, $cfg);
+    return Mail::sendTextMail($to_email, $subject, $message);
 }
 
 /**
@@ -496,8 +449,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_sendmail'])) {
             "Hallo,\n\nDies ist eine Test-E-Mail von Mini-Snipe.\n\nWenn Sie diese Nachricht erhalten haben, funktioniert Ihr E-Mail-System korrekt.\n\nViele Gruesse,\nIhr Mini-Snipe System"
         );
         if ($testMailResult['success']) {
+            $stmt = $db->prepare("UPDATE settings SET mail_test_success_at = NOW(), mail_test_recipient = ?, mail_test_last_error = NULL WHERE id = 1");
+            $stmt->execute([$testEmail]);
+            $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
             $success = $testMailResult['message'];
         } else {
+            $stmt = $db->prepare("UPDATE settings SET mail_test_last_error = ? WHERE id = 1");
+            $stmt->execute([$testMailResult['message']]);
+            $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
             $error = $testMailResult['message'];
         }
     }
@@ -842,8 +801,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div style="background: rgba(99,102,241,0.1); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem;">
                         <div>
-                            <span style="color: var(--text-muted);">Sendmail-Pfad:</span><br>
-                            <code style="color: var(--accent-color); word-break: break-all;"><?php echo htmlspecialchars($sendmailConfig['sendmail_path']); ?></code>
+                            <span style="color: var(--text-muted);">Konfigurationsdatei:</span><br>
+                            <code style="color: var(--accent-color); word-break: break-all;"><?php echo htmlspecialchars($sendmailConfig['env_path']); ?></code>
                         </div>
                         <div>
                             <span style="color: var(--text-muted);">SMTP-Host:</span><br>
@@ -875,7 +834,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <i class="fas fa-paper-plane" style="margin-right:0.5rem;"></i> Test-Mail senden
                     </button>
                 </form>
-                <small style="display: block; color: var(--text-muted); margin-top: 0.75rem;">Eine Test-E-Mail wird an die angegebene Adresse gesendet. Dies hilft zur Überprüfung der Sendmail-Konfiguration.</small>
+                <small style="display: block; color: var(--text-muted); margin-top: 0.75rem;">Eine Test-E-Mail wird an die angegebene Adresse gesendet. Dies hilft zur Überprüfung der Mail-Konfiguration aus der <code>.env</code>.</small>
             </div>
 
             <!-- ===== Login-Protokoll ===== -->

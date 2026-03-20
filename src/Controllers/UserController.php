@@ -39,8 +39,8 @@ class UserController {
     }
 
     public function createUser($data) {
-        $sql = "INSERT INTO users (first_name, last_name, email, username, password, location_id, can_login, role) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO users (first_name, last_name, email, personalnummer, vorgesetzter, is_activ, username, password, location_id, can_login, role) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         $canLogin = array_key_exists('can_login', $data) ? (!empty($data['can_login']) ? 1 : 0) : 1;
         $password = $data['password'] ?? '';
@@ -56,15 +56,21 @@ class UserController {
         $email = (isset($data['email']) && trim($data['email']) !== '') ? $data['email'] : null;
         $firstName = (isset($data['first_name']) && trim($data['first_name']) !== '') ? $data['first_name'] : null;
         $lastName = (isset($data['last_name']) && trim($data['last_name']) !== '') ? $data['last_name'] : null;
+        $personalnummer = (isset($data['personalnummer']) && trim($data['personalnummer']) !== '') ? trim($data['personalnummer']) : null;
+        $vorgesetzter = (isset($data['vorgesetzter']) && trim($data['vorgesetzter']) !== '') ? trim($data['vorgesetzter']) : null;
+        $isActiv = array_key_exists('is_activ', $data) ? (!empty($data['is_activ']) ? 1 : 0) : 1;
 
         $stmt->bindValue(1, $firstName, $firstName !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
         $stmt->bindValue(2, $lastName, $lastName !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
         $stmt->bindValue(3, $email, $email !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
-        $stmt->bindValue(4, $data['username'], \PDO::PARAM_STR);
-        $stmt->bindValue(5, $hashedPassword, $hashedPassword !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
-        $stmt->bindValue(6, $data['location_id'], $data['location_id'] !== null ? \PDO::PARAM_INT : \PDO::PARAM_NULL);
-        $stmt->bindValue(7, $canLogin, \PDO::PARAM_INT);
-        $stmt->bindValue(8, $role, \PDO::PARAM_STR);
+        $stmt->bindValue(4, $personalnummer, $personalnummer !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
+        $stmt->bindValue(5, $vorgesetzter, $vorgesetzter !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
+        $stmt->bindValue(6, $isActiv, \PDO::PARAM_INT);
+        $stmt->bindValue(7, $data['username'], \PDO::PARAM_STR);
+        $stmt->bindValue(8, $hashedPassword, $hashedPassword !== null ? \PDO::PARAM_STR : \PDO::PARAM_NULL);
+        $stmt->bindValue(9, $data['location_id'], $data['location_id'] !== null ? \PDO::PARAM_INT : \PDO::PARAM_NULL);
+        $stmt->bindValue(10, $canLogin, \PDO::PARAM_INT);
+        $stmt->bindValue(11, $role, \PDO::PARAM_STR);
 
         return $stmt->execute();
     }
@@ -151,9 +157,12 @@ class UserController {
         $email = (isset($data['email']) && trim($data['email']) !== '') ? $data['email'] : null;
         $firstName = (isset($data['first_name']) && trim($data['first_name']) !== '') ? $data['first_name'] : null;
         $lastName = (isset($data['last_name']) && trim($data['last_name']) !== '') ? $data['last_name'] : null;
+        $personalnummer = (isset($data['personalnummer']) && trim($data['personalnummer']) !== '') ? trim($data['personalnummer']) : null;
+        $vorgesetzter = (isset($data['vorgesetzter']) && trim($data['vorgesetzter']) !== '') ? trim($data['vorgesetzter']) : null;
+        $isActiv = array_key_exists('is_activ', $data) ? (!empty($data['is_activ']) ? 1 : 0) : 1;
 
-        $fields = ["first_name=?", "last_name=?", "email=?", "username=?", "location_id=?"];
-        $params = [$firstName, $lastName, $email, $data['username'], $data['location_id']];
+        $fields = ["first_name=?", "last_name=?", "email=?", "personalnummer=?", "vorgesetzter=?", "is_activ=?", "username=?", "location_id=?"];
+        $params = [$firstName, $lastName, $email, $personalnummer, $vorgesetzter, $isActiv, $data['username'], $data['location_id']];
 
         $canLogin = null;
         if (array_key_exists('can_login', $data)) {
@@ -213,6 +222,53 @@ class UserController {
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
         $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
         return $stmt->execute([$hashedPassword, $userId]);
+    }
+
+    public function hasSuccessfulMailTest(): bool {
+        $stmt = $this->db->query("SELECT mail_test_success_at FROM settings WHERE id = 1");
+        $value = $stmt->fetchColumn();
+        return !empty($value);
+    }
+
+    public function getPasswordResetUserByUsername(string $username) {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE username = ? AND can_login = 1 LIMIT 1");
+        $stmt->execute([trim($username)]);
+        return $stmt->fetch();
+    }
+
+    public function createPasswordReset(int $userId, string $tokenHash, string $expiresAt, ?string $requestedIp = null): bool {
+        $cleanup = $this->db->prepare("UPDATE password_resets SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL");
+        $cleanup->execute([$userId]);
+
+        $stmt = $this->db->prepare(
+            "INSERT INTO password_resets (user_id, token_hash, expires_at, requested_ip) VALUES (?, ?, ?, ?)"
+        );
+        return $stmt->execute([$userId, $tokenHash, $expiresAt, $requestedIp]);
+    }
+
+    public function getPasswordResetByToken(string $plainToken) {
+        $tokenHash = hash('sha256', $plainToken);
+        $stmt = $this->db->prepare(
+            "SELECT pr.*, u.username, u.can_login, u.email
+             FROM password_resets pr
+             JOIN users u ON u.id = pr.user_id
+             WHERE pr.used_at IS NULL
+               AND pr.expires_at >= NOW()
+               AND pr.token_hash = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$tokenHash]);
+        return $stmt->fetch();
+    }
+
+    public function markPasswordResetUsed(int $resetId): bool {
+        $stmt = $this->db->prepare("UPDATE password_resets SET used_at = NOW() WHERE id = ?");
+        return $stmt->execute([$resetId]);
+    }
+
+    public function updatePasswordHash(int $userId, string $passwordHash): bool {
+        $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$passwordHash, $userId]);
     }
 
     public function countUsersFiltered($search = '') {

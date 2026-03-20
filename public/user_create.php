@@ -30,6 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'first_name'  => $_POST['first_name'] ?? '',
         'last_name'   => $_POST['last_name'] ?? '',
         'email'       => $_POST['email'] ?? '',
+        'personalnummer' => $_POST['personalnummer'] ?? '',
+        'vorgesetzter' => $_POST['vorgesetzter'] ?? '',
+        'is_activ'    => isset($_POST['is_activ']) ? 1 : 0,
         'username'    => $_POST['username'] ?? '',
         'location_id' => !empty($_POST['location_id']) ? (int)$_POST['location_id'] : null,
         'password'    => $password,
@@ -101,7 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" autocomplete="off">
+                <input type="text" name="fake_username" autocomplete="username" style="display:none;">
+                <input type="password" name="fake_password" autocomplete="current-password" style="display:none;">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label style="display: flex; gap: 0.6rem; align-items: center; cursor: pointer; color: var(--text-main);">
                         <input type="checkbox" name="can_login" id="can_login" value="1" <?php echo $canLogin ? 'checked' : ''; ?>>
@@ -113,37 +118,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Vorname</label>
-                        <input type="text" name="first_name" class="form-control" value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>">
+                        <input type="text" name="first_name" class="form-control" autocomplete="off" value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>">
                     </div>
                     <div class="form-group">
                         <label>Nachname</label>
-                        <input type="text" name="last_name" class="form-control" value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>">
+                        <input type="text" name="last_name" class="form-control" autocomplete="off" value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>">
                     </div>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Benutzername (Pflichtfeld)</label>
-                        <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>" required>
+                        <input type="text" name="username" class="form-control" autocomplete="off" autocapitalize="off" spellcheck="false" value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>" required>
                     </div>
                     <div class="form-group">
                         <label>E-Mail</label>
-                        <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                        <input type="email" name="email" class="form-control" autocomplete="off" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                     </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Personalnummer</label>
+                        <input type="text" name="personalnummer" maxlength="10" class="form-control" autocomplete="off" value="<?php echo htmlspecialchars($_POST['personalnummer'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>Vorgesetzter</label>
+                        <input type="text" name="vorgesetzter" maxlength="100" class="form-control" autocomplete="off" value="<?php echo htmlspecialchars($_POST['vorgesetzter'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; gap: 0.6rem; align-items: center; cursor: pointer; color: var(--text-main);">
+                        <input type="checkbox" name="is_activ" value="1" <?php echo !isset($_POST['is_activ']) || $_POST['is_activ'] ? 'checked' : ''; ?>>
+                        Benutzer ist aktiv
+                    </label>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label id="passwordLabel">Passwort (Pflichtfeld bei Web-Login)</label>
                         <div class="password-wrapper">
-                            <input type="password" name="password" id="pwd1" class="form-control">
+                            <input type="password" name="password" id="pwd1" class="form-control" autocomplete="new-password">
                             <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd1', this)"></i>
                         </div>
                     </div>
                     <div class="form-group">
                         <label id="passwordConfirmLabel">Passwort bestätigen</label>
                         <div class="password-wrapper">
-                            <input type="password" name="password_confirm" id="pwd2" class="form-control">
+                            <input type="password" name="password_confirm" id="pwd2" class="form-control" autocomplete="new-password">
                             <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd2', this)"></i>
                         </div>
                     </div>

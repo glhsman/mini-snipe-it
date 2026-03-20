@@ -46,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'first_name'  => $_POST['first_name'] ?? '',
         'last_name'   => $_POST['last_name'] ?? '',
         'email'       => $_POST['email'] ?? '',
+        'personalnummer' => $_POST['personalnummer'] ?? '',
+        'vorgesetzter' => $_POST['vorgesetzter'] ?? '',
+        'is_activ'    => isset($_POST['is_activ']) ? 1 : 0,
         'username'    => $_POST['username'] ?? '',
         'location_id' => !empty($_POST['location_id']) ? (int)$_POST['location_id'] : null,
         'password'    => $password,
@@ -211,6 +214,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>E-Mail</label>
                         <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>">
                     </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Personalnummer</label>
+                        <input type="text" name="personalnummer" maxlength="10" class="form-control" value="<?php echo htmlspecialchars($user['personalnummer'] ?? ''); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>Vorgesetzter</label>
+                        <input type="text" name="vorgesetzter" maxlength="100" class="form-control" value="<?php echo htmlspecialchars($user['vorgesetzter'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: flex; gap: 0.6rem; align-items: center; cursor: pointer; color: var(--text-main);">
+                        <input type="checkbox" name="is_activ" value="1" <?php echo ((int)($user['is_activ'] ?? 1) === 1) ? 'checked' : ''; ?>>
+                        Benutzer ist aktiv
+                    </label>
                 </div>
 
                 <div class="form-grid">

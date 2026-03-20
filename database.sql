@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS asset_models (
     manufacturer_id INT,
     category_id INT,
     model_number VARCHAR(255),
+    serial_number_required BOOLEAN DEFAULT 1,
     has_sim_fields BOOLEAN DEFAULT 0,
     has_hardware_fields BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -58,6 +59,9 @@ CREATE TABLE IF NOT EXISTS users (
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     email VARCHAR(255),
+    personalnummer VARCHAR(10),
+    vorgesetzter VARCHAR(100),
+    is_activ TINYINT(1) NOT NULL DEFAULT 1,
     username VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255),
     can_login TINYINT(1) NOT NULL DEFAULT 1,
@@ -82,7 +86,10 @@ CREATE TABLE IF NOT EXISTS settings (
     site_favicon VARCHAR(255) DEFAULT NULL,
     company_address TEXT DEFAULT NULL,
     protocol_header_text TEXT DEFAULT NULL,
-    protocol_footer_text TEXT DEFAULT NULL
+    protocol_footer_text TEXT DEFAULT NULL,
+    mail_test_success_at DATETIME NULL,
+    mail_test_recipient VARCHAR(255) NULL,
+    mail_test_last_error TEXT NULL
 );
 
 -- 7. Assets (Hardware)
@@ -91,6 +98,7 @@ CREATE TABLE IF NOT EXISTS assets (
     name VARCHAR(255),
     asset_tag VARCHAR(100) UNIQUE,
     serial VARCHAR(100) UNIQUE,
+    serial_number_required TINYINT(1) NOT NULL DEFAULT 1,
     model_id INT,
     status_id INT,
     location_id INT,
@@ -148,6 +156,19 @@ CREATE TABLE IF NOT EXISTS asset_requests (
     INDEX idx_asset_requests_user (user_id),
     INDEX idx_asset_requests_location (location_id),
     INDEX idx_asset_requests_category (category_id)
+);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME NULL,
+    requested_ip VARCHAR(45) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_password_resets_user (user_id),
+    INDEX idx_password_resets_expires (expires_at)
 );
 
 -- ---------------------------------------------------------------------------

@@ -31,9 +31,11 @@ $error = null;
 $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $serialRequired = $assetController->isSerialNumberRequiredForModel(!empty($_POST['model_id']) ? (int)$_POST['model_id'] : null);
     $data = [
         'asset_tag'     => trim($_POST['asset_tag'] ?? ''),
         'serial'        => trim($_POST['serial'] ?? ''),
+        'serial_number_required' => $serialRequired ? 1 : 0,
         'model_id'      => !empty($_POST['model_id']) ? (int)$_POST['model_id'] : null,
         'status_id'     => !empty($_POST['status_id']) ? (int)$_POST['status_id'] : null,
         'location_id'   => !empty($_POST['location_id']) ? (int)$_POST['location_id'] : null,
@@ -55,8 +57,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data['asset_tag'] = $assetController->generateAssetTag($data['location_id'], $data['model_id']);
     }
 
-    if (empty($data['serial']) || empty($data['status_id'])) {
-        $error = "Seriennummer und Status sind Pflichtfelder.";
+    if (($serialRequired && empty($data['serial'])) || empty($data['status_id'])) {
+        $error = $serialRequired
+            ? "Seriennummer und Status sind Pflichtfelder."
+            : "Status ist ein Pflichtfeld.";
     } else {
         try {
             if ($assetController->createAsset($data)) {
@@ -115,8 +119,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="POST">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Seriennummer (Pflichtfeld)</label>
-                        <input type="text" name="serial" class="form-control" required value="<?php echo isset($_POST['serial']) ? htmlspecialchars($_POST['serial']) : ''; ?>">
+                        <label id="serialLabel">Seriennummer</label>
+                        <input type="text" name="serial" id="serialInput" class="form-control" value="<?php echo isset($_POST['serial']) ? htmlspecialchars($_POST['serial']) : ''; ?>">
+                        <small id="serialHint" style="color: var(--text-muted); display: block; margin-top: 0.35rem;"></small>
                     </div>
                     <div class="form-group">
                         <label>Asset-Tag</label>
@@ -138,6 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="">- Kein Modell -</option>
                             <?php foreach ($models as $model): ?>
                                 <option value="<?php echo $model['id']; ?>" 
+                                        data-serial-required="<?php echo (int)($model['serial_number_required'] ?? 1); ?>"
                                         data-sim="<?php echo $model['has_sim_fields'] ?? 0; ?>" 
                                         data-hardware="<?php echo $model['has_hardware_fields'] ?? 0; ?>"
                                         <?php echo (isset($_POST['model_id']) && $_POST['model_id'] == $model['id']) ? 'selected' : ''; ?>>
@@ -342,11 +348,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Toggle Zusatzfelder
             function toggleExtraFields() {
                 const selected = $('select[name="model_id"]').find(':selected');
+                const serialRequired = selected.data('serial-required') != 0;
                 const sim = selected.data('sim') == 1;
                 const hardware = selected.data('hardware') == 1;
+                const serialInput = document.getElementById('serialInput');
+                const serialLabel = document.getElementById('serialLabel');
+                const serialHint = document.getElementById('serialHint');
 
                 $('#group-sim').toggle(sim);
                 $('#group-hardware').toggle(hardware);
+
+                serialInput.required = serialRequired;
+                serialInput.readOnly = !serialRequired;
+                serialInput.placeholder = serialRequired
+                    ? 'Seriennummer eingeben'
+                    : 'Wird beim Speichern automatisch erzeugt';
+                serialLabel.textContent = serialRequired ? 'Seriennummer (Pflichtfeld)' : 'Seriennummer (automatisch)';
+                serialHint.textContent = serialRequired
+                    ? ''
+                    : 'Bei diesem Modell wird automatisch eine eindeutige NA-Seriennummer erzeugt.';
+
+                if (!serialRequired) {
+                    serialInput.value = '';
+                }
             }
 
             $('select[name="model_id"]').on('change', function() {

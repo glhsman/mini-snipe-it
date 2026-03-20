@@ -12,9 +12,11 @@ if (Auth::isLoggedIn()) {
 }
 
 $error = null;
+$db = Database::getInstance();
+$settings = $db->query("SELECT mail_test_success_at FROM settings WHERE id = 1")->fetch() ?: [];
+$passwordResetEnabled = !empty($settings['mail_test_success_at']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $db = Database::getInstance();
     $userController = new UserController($db);
 
     $usernameInput = trim((string) ($_POST['username'] ?? ''));
@@ -156,6 +158,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Passwort</label>
                     <input type="password" name="password" class="form-control" required>
                 </div>
+                <?php if ($passwordResetEnabled): ?>
+                    <div style="margin-top: -0.75rem; margin-bottom: 1.25rem; text-align: right;">
+                        <a href="forgot_password.php" style="color: var(--primary-color); text-decoration: none; font-size: 0.875rem;">Passwort vergessen?</a>
+                    </div>
+                <?php endif; ?>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Anmelden</button>
             </form>
         </div>

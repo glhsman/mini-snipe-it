@@ -28,6 +28,7 @@ $error = null;
 $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
+    $serialRequired = $assetController->isSerialNumberRequiredForModel((int)($_POST['model_id'] ?? 0));
     $common = [
         'model_id'      => (int)($_POST['model_id'] ?? 0),
         'location_id'   => !empty($_POST['location_id']) ? (int)$_POST['location_id'] : null,
@@ -35,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
         'purchase_date' => !empty($_POST['purchase_date']) ? $_POST['purchase_date'] : null,
         'notes'         => $_POST['notes'] ?? '',
         'name'          => '',
+        'serial_number_required' => $serialRequired ? 1 : 0,
         'ram'           => !empty($_POST['ram']) ? (int)$_POST['ram'] : null,
         'ssd_size'      => !empty($_POST['ssd_size']) ? (int)$_POST['ssd_size'] : null,
         'cores'         => !empty($_POST['cores']) ? (int)$_POST['cores'] : null,
@@ -53,11 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
             $successCount = 0;
             foreach ($assets as $a) {
                 $data = $common;
-                $data['serial'] = strtoupper(trim($a['serial']));
+                $data['serial'] = strtoupper(trim((string)($a['serial'] ?? '')));
                 $data['mac_adresse'] = !empty($a['mac']) ? trim($a['mac']) : null;
                 $data['asset_tag'] = !empty($a['inventar']) ? trim($a['inventar']) : '';
                 
-                if (empty($data['serial'])) continue;
+                if ($serialRequired && empty($data['serial'])) continue;
 
                 if (empty($data['asset_tag'])) {
                     $data['asset_tag'] = $assetController->generateAssetTag($data['location_id'], $data['model_id']);
@@ -96,6 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
         .form-control optgroup, .form-control option { background: #1f2937; color: white; }
         .light-mode .form-control optgroup, .light-mode .form-control option { background: #ffffff; color: #1e293b; }
         .alert-error { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.2); }
+        .asset-entry-grid { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr auto; gap: 0.75rem; align-items: start; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 0.5rem; }
+        .asset-entry-add-btn { height: 44px; padding: 0 1rem; align-self: end; }
         
         /* Table Styles */
         .batch-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; background: rgba(0,0,0,0.1); border-radius: 0.5rem; overflow: hidden; }
@@ -197,6 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
                             <option value="">- Modell wählen -</option>
                             <?php foreach ($models as $model): ?>
                                 <option value="<?php echo $model['id']; ?>" 
+                                        data-serial-required="<?php echo (int)($model['serial_number_required'] ?? 1); ?>"
                                         data-hardware="<?php echo $model['has_hardware_fields'] ?? 0; ?>">
                                     <?php echo htmlspecialchars($model['manufacturer_name'] . ' ' . $model['name']); ?>
                                 </option>
@@ -285,10 +290,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
             <div class="card">
                 <h3 style="margin-bottom: 1rem; color: var(--primary-color);">3. Assets erfassen</h3>
                 
-                <div style="display: grid; grid-template-columns: 2fr 1.5fr 1.5fr auto; gap: 0.75rem; align-items: end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 0.5rem;">
+                <div class="asset-entry-grid">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label style="margin-bottom: 0.25rem;">Seriennummer (Pflichtfeld)</label>
+                        <label id="input_serial_label" style="margin-bottom: 0.25rem;">Seriennummer (Pflichtfeld)</label>
                         <input type="text" id="input_serial" class="form-control" placeholder="Seriennummer scannen / eintippen" style="text-transform: uppercase;">
+                        <small id="input_serial_hint" style="color: var(--text-muted); display: block; margin-top: 0.35rem;"></small>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label style="margin-bottom: 0.25rem;">MAC-Adresse (Optional)</label>
@@ -298,7 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
                         <label style="margin-bottom: 0.25rem;">Inventar-Nr / Asset Tag (Optional)</label>
                         <input type="text" id="input_inventar" class="form-control" placeholder="Falls leer: Auto-Generierung">
                     </div>
-                    <button type="button" class="btn btn-primary" onclick="addAssetRow()" style="height: 44px; padding: 0 1rem;"><i class="fas fa-plus"></i></button>
+                    <button type="button" class="btn btn-primary asset-entry-add-btn" onclick="addAssetRow()"><i class="fas fa-plus"></i></button>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
@@ -306,7 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
                         Gesamt: <span id="total_count" style="color: white; font-weight: bold;">0</span> Assets
                     </div>
                     <div>
-                        <button type="button" class="btn btn-sm" style="background: rgba(255,255,255,0.1); margin-right: 0.5rem;" onclick="openClipboardModal()"><i class="fas fa-paste"></i> Aus Zwischenablage</button>
+                        <button type="button" id="clipboardButton" class="btn btn-sm" style="background: rgba(255,255,255,0.1); margin-right: 0.5rem;" onclick="openClipboardModal()"><i class="fas fa-paste"></i> Aus Zwischenablage</button>
                         <button type="button" class="btn btn-sm" style="background: rgba(244, 63, 94, 0.2); border: 1px solid rgba(244, 63, 94, 0.3); color: var(--accent-rose);" onclick="clearList()"><i class="fas fa-trash"></i> Liste leeren</button>
                     </div>
                 </div>
@@ -317,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
                         <thead>
                             <tr>
                                 <th style="width: 50px;">#</th>
-                                <th>Seriennummer</th>
+                                <th id="serial_column_header">Seriennummer</th>
                                 <th>MAC-Adresse</th>
                                 <th>Inventar-Nr / Asset Tag</th>
                                 <th style="width: 50px; text-align: center;">Aktion</th>
@@ -344,7 +350,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
                 <button class="close-btn" onclick="closeClipboardModal()">&times;</button>
             </div>
             <div class="form-group">
-                <label>Fügen Sie hier Ihre Daten ein (Spalten: Seriennummer [Tab] MAC [Tab] Inventar)</label>
+                <label id="clipboard_label">Fügen Sie hier Ihre Daten ein (Spalten: Seriennummer [Tab] MAC [Tab] Inventar)</label>
                 <textarea id="clipboard_input" class="form-control" rows="10" placeholder="Seriennummer1	MAC1	Inventar1&#10;Seriennummer2	MAC2	Inventar2" style="font-family: monospace; white-space: pre; overflow-x: auto;"></textarea>
             </div>
             <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
@@ -358,6 +364,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         let assetsList = [];
+        let serialRequired = true;
 
         $(document).ready(function() {
             // Select2 initialisieren
@@ -366,8 +373,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
             // Toggle Hardware-Felder basierend auf Modell
             $('select[name="model_id"]').on('change', function() {
                 const selected = $(this).find(':selected');
+                serialRequired = selected.data('serial-required') != 0;
                 const hardware = selected.data('hardware') == 1;
                 $('#group-hardware').toggle(hardware);
+                updateSerialInputMode();
             });
 
             // Enter-Taste im Eingabebereich
@@ -379,28 +388,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
             });
         });
 
+        function generatePlaceholderSerial() {
+            return `NA-${Date.now()}${Math.floor(Math.random() * 900000 + 100000)}`;
+        }
+
+        function updateSerialInputMode() {
+            const serialInput = $('#input_serial');
+            $('#clipboardButton').prop('disabled', !serialRequired).css('opacity', serialRequired ? '1' : '0.5');
+
+            if (serialRequired) {
+                $('#input_serial_label').text('Seriennummer (Pflichtfeld)');
+                $('#input_serial_hint').text('');
+                $('#serial_column_header').text('Seriennummer');
+                $('#clipboard_label').text('Fügen Sie hier Ihre Daten ein (Spalten: Seriennummer [Tab] MAC [Tab] Inventar)');
+                serialInput.attr('type', 'text');
+                serialInput.attr('placeholder', 'Seriennummer scannen / eintippen');
+                serialInput.val('');
+                serialInput.css('text-transform', 'uppercase');
+            } else {
+                $('#input_serial_label').text('Stückzahl');
+                $('#input_serial_hint').text('Für dieses Modell werden beim Hinzufügen automatisch eindeutige NA-Seriennummern erzeugt.');
+                $('#serial_column_header').text('Generierte Seriennummer');
+                $('#clipboard_label').text('Zwischenablage-Import ist nur für Modelle mit Seriennummern aktiv.');
+                serialInput.attr('type', 'number');
+                serialInput.attr('min', '1');
+                serialInput.attr('step', '1');
+                serialInput.attr('placeholder', 'Anzahl');
+                serialInput.val('1');
+                serialInput.css('text-transform', 'none');
+            }
+        }
+
         function addAssetRow() {
-            const serial = $('#input_serial').val().trim().toUpperCase();
+            const rawSerialInput = $('#input_serial').val().trim();
             const mac    = $('#input_mac').val().trim();
             const inventar = $('#input_inventar').val().trim();
 
-            if (serial === '') {
-                alert('Seriennummer ist ein Pflichtfeld.');
-                $('#input_serial').focus();
-                return;
-            }
+            if (serialRequired) {
+                const serial = rawSerialInput.toUpperCase();
 
-            // Duplikatsprüfung im Array
-            if (assetsList.some(a => a.serial === serial)) {
-                alert('Diese Seriennummer ist bereits in der Liste.');
-                $('#input_serial').select();
-                return;
-            }
+                if (serial === '') {
+                    alert('Seriennummer ist ein Pflichtfeld.');
+                    $('#input_serial').focus();
+                    return;
+                }
 
-            assetsList.push({ serial: serial, mac: mac, inventar: inventar });
+                if (assetsList.some(a => a.serial === serial)) {
+                    alert('Diese Seriennummer ist bereits in der Liste.');
+                    $('#input_serial').select();
+                    return;
+                }
+
+                assetsList.push({ serial: serial, mac: mac, inventar: inventar });
+            } else {
+                const quantity = parseInt(rawSerialInput || '0', 10);
+
+                if (!quantity || quantity < 1) {
+                    alert('Bitte eine gültige Stückzahl eingeben.');
+                    $('#input_serial').focus();
+                    return;
+                }
+
+                if (quantity > 1 && (mac !== '' || inventar !== '')) {
+                    alert('MAC-Adresse oder Inventar-Nr. können bei mehreren Stück nur leer bleiben, damit je Asset eindeutige Werte entstehen.');
+                    return;
+                }
+
+                for (let i = 0; i < quantity; i++) {
+                    let serial;
+                    do {
+                        serial = generatePlaceholderSerial();
+                    } while (assetsList.some(a => a.serial === serial));
+
+                    assetsList.push({ serial: serial, mac: mac, inventar: inventar });
+                }
+            }
             
             // Felder leeren
-            $('#input_serial').val('');
+            $('#input_serial').val(serialRequired ? '' : '1');
             $('#input_mac').val('');
             $('#input_inventar').val('');
             $('#input_serial').focus();
@@ -414,7 +479,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
             $('#total_count').text(assetsList.length);
 
             if (assetsList.length === 0) {
-                tbody.append('<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Keine Einträge. Scannen Sie ein Asset oder nutzen Sie die Zwischenablage.</td></tr>');
+                tbody.append('<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Keine Einträge. Erfassen Sie Assets manuell oder nutzen Sie die Zwischenablage, sofern Seriennummern erforderlich sind.</td></tr>');
                 return;
             }
 
@@ -448,6 +513,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
 
         /* Clipboard Logic */
         function openClipboardModal() {
+            if (!serialRequired) {
+                alert('Der Zwischenablage-Import ist nur für Modelle mit Seriennummern verfügbar.');
+                return;
+            }
             $('#clipboard_input').val('');
             $('#clipboardModal').addClass('active');
             setTimeout(() => $('#clipboard_input').focus(), 100);
@@ -504,6 +573,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
             $('#mainForm').submit();
         }
 
+        updateSerialInputMode();
         renderTable(); // Initiale Nachricht "Keine Einträge"
     </script>
 </body>

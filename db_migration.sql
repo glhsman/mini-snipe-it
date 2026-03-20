@@ -97,6 +97,60 @@ PREPARE stmt_add_protocol_footer_col FROM @sql_add_protocol_footer_col;
 EXECUTE stmt_add_protocol_footer_col;
 DEALLOCATE PREPARE stmt_add_protocol_footer_col;
 
+SET @has_mail_test_success_at_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'settings'
+      AND COLUMN_NAME = 'mail_test_success_at'
+);
+
+SET @sql_add_mail_test_success_at_col := IF(
+    @has_mail_test_success_at_col = 0,
+    'ALTER TABLE settings ADD COLUMN mail_test_success_at DATETIME NULL AFTER protocol_footer_text',
+    'SELECT ''Spalte settings.mail_test_success_at existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_mail_test_success_at_col FROM @sql_add_mail_test_success_at_col;
+EXECUTE stmt_add_mail_test_success_at_col;
+DEALLOCATE PREPARE stmt_add_mail_test_success_at_col;
+
+SET @has_mail_test_recipient_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'settings'
+      AND COLUMN_NAME = 'mail_test_recipient'
+);
+
+SET @sql_add_mail_test_recipient_col := IF(
+    @has_mail_test_recipient_col = 0,
+    'ALTER TABLE settings ADD COLUMN mail_test_recipient VARCHAR(255) NULL AFTER mail_test_success_at',
+    'SELECT ''Spalte settings.mail_test_recipient existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_mail_test_recipient_col FROM @sql_add_mail_test_recipient_col;
+EXECUTE stmt_add_mail_test_recipient_col;
+DEALLOCATE PREPARE stmt_add_mail_test_recipient_col;
+
+SET @has_mail_test_last_error_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'settings'
+      AND COLUMN_NAME = 'mail_test_last_error'
+);
+
+SET @sql_add_mail_test_last_error_col := IF(
+    @has_mail_test_last_error_col = 0,
+    'ALTER TABLE settings ADD COLUMN mail_test_last_error TEXT NULL AFTER mail_test_recipient',
+    'SELECT ''Spalte settings.mail_test_last_error existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_mail_test_last_error_col FROM @sql_add_mail_test_last_error_col;
+EXECUTE stmt_add_mail_test_last_error_col;
+DEALLOCATE PREPARE stmt_add_mail_test_last_error_col;
+
 UPDATE settings
 SET company_address = COALESCE(NULLIF(company_address, ''), 'Firmenadresse hier hinterlegen'),
     protocol_header_text = COALESCE(NULLIF(protocol_header_text, ''), 'Die unten aufgefuehrte IT-Hardware wird hiermit bestaetigt. Mit Ihrer Unterschrift bestaetigen Sie den ordnungsgemaessen Erhalt bzw. die vollstaendige Rueckgabe der aufgelisteten Geraete.'),
@@ -291,10 +345,12 @@ ALTER TABLE assets MODIFY COLUMN asset_tag VARCHAR(100) NULL;
 
 -- 11) Zusatzfelder für SIM und Hardware
 ALTER TABLE asset_models 
+    ADD COLUMN IF NOT EXISTS serial_number_required BOOLEAN DEFAULT 1,
     ADD COLUMN IF NOT EXISTS has_sim_fields BOOLEAN DEFAULT 0,
     ADD COLUMN IF NOT EXISTS has_hardware_fields BOOLEAN DEFAULT 0;
 
 ALTER TABLE assets 
+    ADD COLUMN IF NOT EXISTS serial_number_required TINYINT(1) NOT NULL DEFAULT 1,
     ADD COLUMN IF NOT EXISTS pin VARCHAR(4) NULL,
     ADD COLUMN IF NOT EXISTS puk VARCHAR(8) NULL,
     ADD COLUMN IF NOT EXISTS rufnummer VARCHAR(20) NULL,
@@ -303,6 +359,11 @@ ALTER TABLE assets
     ADD COLUMN IF NOT EXISTS ssd_size INT NULL,
     ADD COLUMN IF NOT EXISTS cores INT NULL,
     ADD COLUMN IF NOT EXISTS os_version VARCHAR(100) NULL;
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS personalnummer VARCHAR(10) NULL AFTER email,
+    ADD COLUMN IF NOT EXISTS vorgesetzter VARCHAR(100) NULL AFTER personalnummer,
+    ADD COLUMN IF NOT EXISTS is_activ TINYINT(1) NOT NULL DEFAULT 1 AFTER vorgesetzter;
 
 -- 12) Status labels erweitern (Defekt & Ausgegeben)
 INSERT INTO status_labels (name, status_type)
@@ -440,4 +501,17 @@ CREATE TABLE IF NOT EXISTS asset_requests (
     INDEX idx_asset_requests_user (user_id),
     INDEX idx_asset_requests_location (location_id),
     INDEX idx_asset_requests_category (category_id)
+);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME NULL,
+    requested_ip VARCHAR(45) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_password_resets_user (user_id),
+    INDEX idx_password_resets_expires (expires_at)
 );
