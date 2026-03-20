@@ -12,6 +12,30 @@ use App\Helpers\Auth;
 
 Auth::requireEditor();
 
+function getSafeAssetsReturnUrl($candidate) {
+    $candidate = is_string($candidate) ? trim($candidate) : '';
+    if ($candidate === '') {
+        return 'assets.php';
+    }
+
+    $parts = parse_url($candidate);
+    if ($parts === false) {
+        return 'assets.php';
+    }
+
+    if (isset($parts['scheme']) || isset($parts['host']) || isset($parts['user']) || isset($parts['pass'])) {
+        return 'assets.php';
+    }
+
+    $path = $parts['path'] ?? '';
+    if ($path !== 'assets.php' && $path !== '/assets.php') {
+        return 'assets.php';
+    }
+
+    $query = isset($parts['query']) && $parts['query'] !== '' ? '?' . $parts['query'] : '';
+    return 'assets.php' . $query;
+}
+
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('Location: assets.php');
     exit;
@@ -38,6 +62,8 @@ $ramOptions = $masterData->getLookupOptions('ram');
 $ssdOptions = $masterData->getLookupOptions('ssd');
 $coresOptions = $masterData->getLookupOptions('cores');
 $osOptions = $masterData->getLookupOptions('os');
+
+$returnUrl = getSafeAssetsReturnUrl($_POST['return_url'] ?? $_GET['return_url'] ?? 'assets.php');
 
 $error = null;
 $success = null;
@@ -72,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             if ($assetController->updateAsset($assetId, $data)) {
-                header('Location: assets.php');
+                header('Location: ' . $returnUrl);
                 exit;
             } else {
                 $error = "Fehler beim Bearbeiten des Assets.";
@@ -107,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .light-mode .form-control optgroup, .light-mode .form-control option { background: #ffffff; color: #1e293b; }
         .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; }
         .alert-error { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.2); }
+        .field-help { margin-top: 0.35rem; color: var(--text-muted); font-size: 0.8rem; }
     </style>
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
@@ -125,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST">
+                <input type="hidden" name="return_url" value="<?php echo htmlspecialchars($returnUrl); ?>">
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Seriennummer (Pflichtfeld)</label>
@@ -146,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Modell</label>
-                        <select name="model_id" class="form-control">
+                        <select name="model_id" id="model-select" class="form-control">
                             <option value="">- Kein Modell -</option>
                             <?php foreach ($models as $model): ?>
                                 <?php $selectedModel = isset($_POST['model_id']) ? $_POST['model_id'] : $asset['model_id']; ?>
@@ -158,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <div class="field-help">Du kannst im Feld tippen, um Hersteller oder Modell direkt zu suchen.</div>
                     </div>
                     <div class="form-group">
                         <label>Status (Pflichtfeld)</label>
@@ -276,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div style="margin-top: 2rem;">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Eigenschaften speichern</button>
-                    <a href="assets.php" class="btn" style="background: rgba(255,255,255,0.1); margin-left: 10px;">Abbrechen</a>
+                    <a href="<?php echo htmlspecialchars($returnUrl); ?>" class="btn" style="background: rgba(255,255,255,0.1); margin-left: 10px;">Abbrechen</a>
                 </div>
             </form>
         </div>
@@ -351,8 +380,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         $(document).ready(function() {
             // Select2 für alle Dropdowns aktivieren, damit sie alle exakt gleich aussehen
-            $('select.form-control').select2({
+            $('select.form-control').not('#model-select').select2({
                 width: '100%'
+            });
+
+            $('#model-select').select2({
+                width: '100%',
+                placeholder: 'Modell suchen...',
+                allowClear: true
             });
 
             // Toggle Zusatzfelder

@@ -194,6 +194,14 @@ SELECT 'Spalte assets.os_version ist INT' AS check_name,
              AND DATA_TYPE = 'int'
        ), 'OK', 'FEHLT/FALSCHER TYP') AS result;
 
+SELECT 'Spalte assets.archiv_bit vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'assets'
+             AND COLUMN_NAME = 'archiv_bit'
+       ), 'OK', 'FEHLT') AS result;
+
 SELECT 'Spalte asset_requests.status vorhanden' AS check_name,
        IF(EXISTS(
            SELECT 1 FROM information_schema.COLUMNS

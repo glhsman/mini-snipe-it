@@ -21,6 +21,11 @@ $masterData = new MasterDataController($db);
 $error = null;
 $success = null;
 
+if (!isset($_SESSION['settings_export_csrf']) || !is_string($_SESSION['settings_export_csrf']) || $_SESSION['settings_export_csrf'] === '') {
+    $_SESSION['settings_export_csrf'] = bin2hex(random_bytes(32));
+}
+$exportCsrf = $_SESSION['settings_export_csrf'];
+
 // GET-Handling für Statusmeldungen
 if (isset($_GET['success'])) {
     $success = $_GET['success'];
@@ -28,6 +33,146 @@ if (isset($_GET['success'])) {
 if (isset($_GET['error'])) {
     $error = $_GET['error'];
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_assets_csv'])) {
+    $postedToken = (string) ($_POST['csrf_token'] ?? '');
+    if (!hash_equals((string) ($_SESSION['settings_export_csrf'] ?? ''), $postedToken)) {
+        header('Location: settings.php?error=' . urlencode('Ungueltiges Formular-Token. Bitte Seite neu laden.'));
+        exit;
+    }
+
+    $stmt = $db->query("SELECT a.id,
+                               a.asset_tag,
+                               a.serial,
+                               m.name AS model_name,
+                               mf.name AS manufacturer_name,
+                               c.name AS category_name,
+                               s.name AS status_name,
+                               l.name AS location_name,
+                               u.first_name AS assigned_first_name,
+                               u.last_name AS assigned_last_name,
+                               u.vorgesetzter AS vorgesetzter,
+                               a.mac_adresse AS mac,
+                               a.puk,
+                               a.rufnummer,
+                               a.notes,
+                               a.updated_at,
+                               a.purchase_date
+                        FROM assets a
+                        LEFT JOIN asset_models m ON m.id = a.model_id
+                        LEFT JOIN manufacturers mf ON mf.id = m.manufacturer_id
+                        LEFT JOIN categories c ON c.id = m.category_id
+                        LEFT JOIN status_labels s ON s.id = a.status_id
+                        LEFT JOIN locations l ON l.id = a.location_id
+                        INNER JOIN users u ON u.id = a.user_id
+                        WHERE COALESCE(a.archiv_bit, 0) = 0
+                        ORDER BY a.id ASC");
+
+    $rows = $stmt->fetchAll();
+    if (empty($rows)) {
+        header('Location: settings.php?success=' . urlencode('Keine nicht exportierten Assets vorhanden.'));
+        exit;
+    }
+
+    $ids = array_map(static fn($row) => (int) $row['id'], $rows);
+
+    $stream = fopen('php://temp', 'r+');
+    $header = [
+        'Hauptbenutzer',
+        'Sammelaccount/Asset-Verantwortlicher',
+        'Seriennummer',
+        'Inventarnummer',
+        'Typ',
+        'Kennung',
+        'Standort',
+        'Hersteller',
+        'Modell',
+        'Status',
+        'Letzte manuelle Inventur',
+        'SAP-Bestellnummer',
+        'Rechnungsdatum',
+        'Kostenstelle',
+        'MAC-Adresse',
+        'Beschreibung',
+        'Gebäude',
+        'Raum',
+        'SIM Karte',
+        'Vertrag',
+        'PUK 1',
+    ];
+    fputcsv($stream, $header, ';', '"', '\\');
+    foreach ($rows as $row) {
+        $statusName = $row['status_name'] ?? '';
+        $statusAktiv = (in_array($statusName, ['Einsatzbereit', 'Ausgegeben'], true)) ? 'Aktiv' : 'Inaktiv';
+
+        $firstName = $row['assigned_first_name'] ?? '';
+        $lastName  = $row['assigned_last_name'] ?? '';
+        if ($firstName !== '' || $lastName !== '') {
+            $hauptbenutzer = trim($lastName . ', ' . $firstName, ', ');
+        } else {
+            $hauptbenutzer = '';
+        }
+
+        $letzteInventur = '';
+        if (!empty($row['updated_at'])) {
+            $letzteInventur = $row['updated_at'];
+        } elseif (!empty($row['purchase_date'])) {
+            $letzteInventur = $row['purchase_date'];
+        }
+
+        fputcsv($stream, [
+            $hauptbenutzer,
+            $hauptbenutzer,
+            $row['serial'] ?? '',
+            $row['asset_tag'] ?? '',
+            $row['category_name'] ?? '',
+            $row['asset_tag'] ?? '',
+            $row['location_name'] ?? '',
+            $row['manufacturer_name'] ?? '',
+            $row['model_name'] ?? '',
+            $statusAktiv,
+            $letzteInventur,
+            '',
+            '',
+            '',
+            $row['mac'] ?? '',
+            $row['notes'] ?? '',
+            '',
+            '',
+            $row['rufnummer'] ?? '',
+            '',
+            $row['puk'] ?? '',
+        ], ';', '"', '\\');
+    }
+    rewind($stream);
+    $csvData = stream_get_contents($stream);
+    fclose($stream);
+
+    $db->beginTransaction();
+    try {
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $updateStmt = $db->prepare("UPDATE assets SET archiv_bit = 1 WHERE id IN ($placeholders)");
+        $updateStmt->execute($ids);
+        $db->commit();
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        header('Location: settings.php?error=' . urlencode('Export fehlgeschlagen: ' . $e->getMessage()));
+        exit;
+    }
+
+    $filename = 'jira_asset_export.csv';
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    echo "\xEF\xBB\xBF";
+    echo $csvData;
+    exit;
+}
+
+$pendingExportCount = (int) $db->query("SELECT COUNT(*) FROM assets WHERE COALESCE(archiv_bit, 0) = 0")->fetchColumn();
 
 $categories = $masterData->getCategories();
 $manufacturers = $masterData->getManufacturers();
@@ -252,6 +397,24 @@ $osOptions = $masterData->getLookupOptions('os');
 <div class="settings-section" style="margin-top: 3rem;">
             <div class="settings-header">
                 <h2>Datenimport (CSV)</h2>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.25rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                    <div>
+                        <h3 style="margin:0 0 0.35rem 0;">Asset-Export fuer Drittanwendung</h3>
+                        <p style="margin:0; color: var(--text-muted); font-size: 0.875rem;">
+                            Exportiert nur Assets mit archiv_bit = 0 und setzt diese danach auf archiv_bit = 1.
+                            Aktuell exportierbar: <strong><?php echo (int) $pendingExportCount; ?></strong>
+                        </p>
+                    </div>
+                    <form method="POST" style="display:flex; gap:0.5rem; align-items:center;">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($exportCsrf); ?>">
+                        <button type="submit" name="export_assets_csv" value="1" class="btn btn-primary">
+                            <i class="fas fa-file-export"></i> Assets als CSV exportieren
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <!-- Import Order Hint -->

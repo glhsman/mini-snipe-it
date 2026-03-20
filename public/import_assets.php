@@ -159,10 +159,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     $assignedLastName  = $getVal(['last_name', 'nachname'], 10);
 
                     // Neue Zusatzfelder
-                    $macAddress = $getVal(['mac_adresse', 'mac'], 11);
-                    $pin = $getVal(['pin'], 12);
-                    $puk = $getVal(['puk'], 13);
-                    $rufnummer = $getVal(['rufnummer'], 14);
+                    $macAddress = $getVal(['mac_adresse', 'mac', 'mac_address'], 11);
+                    $pin = $getVal(['pin', 'pin_code', 'pinkode'], 12);
+                    $puk = $getVal(['puk', 'puk_code', 'pukkode'], 13);
+                    $rufnummer = $getVal(['rufnummer', 'phone', 'telefon', 'phone_number', 'sim karte', 'sim_karte'], 14);
                     $ram = $getVal(['ram'], 15);
                     $ssd = $getVal(['ssd_size', 'ssd'], 16);
                     $cores = $getVal(['cores', 'kerne'], 17);

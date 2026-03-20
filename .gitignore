@@ -12,6 +12,7 @@
 Thumbs.db
 *.url
 *.bak
+*.xlsx
 
 # Lokale Debug-/Hilfsskripte (nicht für Betrieb)
 phpinfo.php

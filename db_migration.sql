@@ -480,6 +480,14 @@ PREPARE stmt_set_os_version_int FROM @sql_set_os_version_int;
 EXECUTE stmt_set_os_version_int;
 DEALLOCATE PREPARE stmt_set_os_version_int;
 
+-- 17b) assets.archiv_bit für Drittanbieter-Export (0=nicht exportiert, 1=exportiert)
+ALTER TABLE assets
+    ADD COLUMN IF NOT EXISTS archiv_bit TINYINT(1) NOT NULL DEFAULT 0;
+
+UPDATE assets
+SET archiv_bit = 0
+WHERE archiv_bit IS NULL;
+
 -- 18) Asset-Anforderungen (oeffentlich) speichern
 CREATE TABLE IF NOT EXISTS asset_requests (
     id INT AUTO_INCREMENT PRIMARY KEY,

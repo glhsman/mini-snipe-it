@@ -239,7 +239,7 @@ class AssetController {
                 $stmt->execute([$operatorId, $openAssignment['id']]);
             }
 
-            $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$userId, $assetId]);
 
             $stmt = $this->db->prepare("INSERT INTO asset_assignments (asset_id, user_id, checkout_by_user_id) VALUES (?, ?, ?)");
@@ -277,7 +277,7 @@ class AssetController {
                 throw new \RuntimeException('Asset ist keinem Benutzer zugewiesen.');
             }
 
-            $stmt = $this->db->prepare("UPDATE assets SET user_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE assets SET user_id = NULL, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$assetId]);
 
             $this->db->commit();
@@ -301,8 +301,8 @@ class AssetController {
             $serial = $this->generatePlaceholderSerial();
         }
 
-        $sql = "INSERT INTO assets (name, asset_tag, serial, serial_number_required, model_id, status_id, location_id, user_id, purchase_date, notes, pin, puk, rufnummer, mac_adresse, ram, ssd_size, cores, os_version) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO assets (name, asset_tag, serial, serial_number_required, model_id, status_id, location_id, user_id, purchase_date, notes, pin, puk, rufnummer, mac_adresse, ram, ssd_size, cores, os_version, archiv_bit) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $data['name'], $data['asset_tag'], $serial, $serialRequired, $data['model_id'], 
@@ -310,7 +310,7 @@ class AssetController {
             $data['purchase_date'], $data['notes'],
             $data['pin'] ?? null, $data['puk'] ?? null, $data['rufnummer'] ?? null,
             $data['mac_adresse'] ?? null, $data['ram'] ?? null, $data['ssd_size'] ?? null,
-            $data['cores'] ?? null, $data['os_version'] ?? null
+            $data['cores'] ?? null, $data['os_version'] ?? null, 0
         ]);
     }
 
@@ -325,7 +325,7 @@ class AssetController {
             $serial = $this->generatePlaceholderSerial();
         }
 
-        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, serial_number_required=?, model_id=?, status_id=?, location_id=?, user_id=?, purchase_date=?, notes=?, pin=?, puk=?, rufnummer=?, mac_adresse=?, ram=?, ssd_size=?, cores=?, os_version=? 
+        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, serial_number_required=?, model_id=?, status_id=?, location_id=?, user_id=?, purchase_date=?, notes=?, pin=?, puk=?, rufnummer=?, mac_adresse=?, ram=?, ssd_size=?, cores=?, os_version=?, archiv_bit=0 
                 WHERE id=?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([

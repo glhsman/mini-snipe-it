@@ -99,6 +99,11 @@ function statusQuickFilterUrl($statusId = null) {
     return '?' . http_build_query($params);
 }
 
+$currentListUrl = 'assets.php';
+if (!empty($_SERVER['QUERY_STRING'])) {
+    $currentListUrl .= '?' . $_SERVER['QUERY_STRING'];
+}
+
 $statusClasses = [
     'einsatzbereit' => 'badge-success',
     'ausgegeben' => 'badge-warning',
@@ -291,7 +296,7 @@ function renderPagination($page, $totalPages, $perPage) {
                                         </a>
                                     <?php endif; ?>
 
-                                    <a href="asset_edit.php?id=<?php echo $asset['id']; ?>" class="btn-icon" title="Bearbeiten">
+                                    <a href="asset_edit.php?id=<?php echo $asset['id']; ?>&amp;return_url=<?php echo urlencode($currentListUrl); ?>" class="btn-icon" title="Bearbeiten">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <form method="POST" action="asset_delete.php" style="display:inline;" onsubmit="return confirm('Möchten Sie das Asset \'<?php echo htmlspecialchars(addslashes($asset['name'] ?: $asset['asset_tag'])); ?>\' wirklich löschen?');">

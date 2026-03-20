@@ -42,7 +42,7 @@ class MasterDataController {
                                   FROM asset_models m 
                                   LEFT JOIN manufacturers ma ON m.manufacturer_id = ma.id 
                                   LEFT JOIN categories c ON m.category_id = c.id 
-                                  ORDER BY m.name");
+                                  ORDER BY COALESCE(ma.name, ''), m.name");
         return $stmt->fetchAll();
     }
 
