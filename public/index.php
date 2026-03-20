@@ -49,6 +49,12 @@ $statusClasses = [
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .user-info:hover {
+            background: rgba(255,255,255,0.12) !important;
+            border-color: var(--primary-color) !important;
+        }
+    </style>
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
     <?php include_once __DIR__ . '/includes/top_navbar.php'; ?>
@@ -61,9 +67,12 @@ $statusClasses = [
                 <p style="color: var(--text-muted); margin-top: 0.25rem;">Willkommen zurück! Hier ist der aktuelle Status deiner Bestände.</p>
             </div>
             <div class="user-profile" style="display: flex; align-items: center;">
-                <a href="profile.php" class="user-info" style="display: flex; align-items: center; gap: 0.5rem; margin-right: 1.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; color: inherit;">
-                    <i class="fas fa-user-circle" style="color: var(--primary-color); font-size: 1.15rem;"></i>
-                    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-main);"><?php echo htmlspecialchars(\App\Helpers\Auth::getUsername()); ?></span>
+                <a href="profile.php" class="user-info" title="Profilverwaltung" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; margin-right: 1.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; color: inherit; transition: all 0.2s ease; border: 1px solid transparent;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-user-circle" style="color: var(--primary-color); font-size: 1.15rem;"></i>
+                        <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-main);"><?php echo htmlspecialchars(\App\Helpers\Auth::getUsername()); ?></span>
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--text-main); font-weight: 500;">Profilverwaltung</span>
                 </a>
                 <?php if (Auth::isEditor()): ?>
                     <a href="asset_add.php" class="btn btn-primary"><i class="fas fa-plus"></i> Neues Asset</a>
