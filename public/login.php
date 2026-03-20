@@ -97,12 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .request-entry-card h2 {
             margin: 0 0 0.6rem;
             font-size: 1.35rem;
+            color: #e2e8f0;
         }
         .request-entry-card p {
             margin: 0;
             color: #94a3b8;
             font-size: 0.9rem;
             line-height: 1.5;
+        }
+        body.light-mode .request-entry-card h2 {
+            color: #f8fafc;
+        }
+        body.light-mode .request-entry-card p {
+            color: #cbd5e1;
         }
         .request-cta {
             display: inline-flex;
@@ -139,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
+<body>
     <div class="login-layout">
         <div class="card login-card">
             <h1 style="margin-bottom: 0.5rem;">Login</h1>

@@ -10,6 +10,8 @@ class Mail {
             'smtp_ssl' => strtolower(trim((string) (getenv('MAIL_ENCRYPTION') !== false ? getenv('MAIL_ENCRYPTION') : 'tls'))),
             'auth_username' => trim((string) (getenv('MAIL_USER') !== false ? getenv('MAIL_USER') : '')),
             'auth_password' => (string) (getenv('MAIL_PASS') !== false ? getenv('MAIL_PASS') : ''),
+            'from_address' => trim((string) (getenv('MAIL_FROM_ADDRESS') !== false ? getenv('MAIL_FROM_ADDRESS') : '')),
+            'from_name' => trim((string) (getenv('MAIL_FROM_NAME') !== false ? getenv('MAIL_FROM_NAME') : '')),
         ];
     }
 
@@ -46,6 +48,25 @@ class Mail {
             'ok' => in_array($code, $okCodes, true),
             'response' => trim($response),
             'code' => $code,
+        ];
+    }
+
+    private static function resolveFrom(array $cfg): array {
+        $username = trim((string) ($cfg['auth_username'] ?? ''));
+        $fromAddress = trim((string) ($cfg['from_address'] ?? ''));
+        $fromName = trim((string) ($cfg['from_name'] ?? ''));
+
+        if (!filter_var($fromAddress, FILTER_VALIDATE_EMAIL)) {
+            $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
+        }
+
+        if ($fromName === '') {
+            $fromName = 'Mini-Snipe';
+        }
+
+        return [
+            'address' => $fromAddress,
+            'name' => $fromName,
         ];
     }
 
@@ -144,7 +165,9 @@ class Mail {
             }
         }
 
-        $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
+        $from = self::resolveFrom($cfg);
+        $fromAddress = $from['address'];
+        $fromName = $from['name'];
         $mailFrom = self::sendCommand($socket, 'MAIL FROM:<' . $fromAddress . '>', [250]);
         if (!$mailFrom['ok']) {
             fclose($socket);
@@ -164,7 +187,7 @@ class Mail {
         }
 
         $headers = [
-            'From: ' . $fromAddress,
+            'From: ' . $fromName . ' <' . $fromAddress . '>',
             'To: ' . $toEmail,
             'Subject: ' . $subject,
             'Reply-To: ' . $fromAddress,
@@ -226,8 +249,8 @@ class Mail {
                 $mail->SMTPAutoTLS = true;
             }
 
-            $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
-            $mail->setFrom($fromAddress, 'Mini-Snipe');
+            $from = self::resolveFrom($cfg);
+            $mail->setFrom($from['address'], $from['name']);
             $mail->addAddress($toEmail);
             $mail->Subject = $subject;
             $mail->Body = $message;

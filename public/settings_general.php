@@ -25,6 +25,8 @@ function getSendmailConfig() {
     $smtp_ssl = strtolower(trim((string) (getenv('MAIL_ENCRYPTION') !== false ? getenv('MAIL_ENCRYPTION') : '')));
     $auth_username = trim((string) (getenv('MAIL_USER') !== false ? getenv('MAIL_USER') : ''));
     $auth_password = (string) (getenv('MAIL_PASS') !== false ? getenv('MAIL_PASS') : '');
+    $from_address = trim((string) (getenv('MAIL_FROM_ADDRESS') !== false ? getenv('MAIL_FROM_ADDRESS') : ''));
+    $from_name = trim((string) (getenv('MAIL_FROM_NAME') !== false ? getenv('MAIL_FROM_NAME') : ''));
     
     return [
         'env_path' => $envPath,
@@ -34,6 +36,27 @@ function getSendmailConfig() {
         'smtp_source' => '.env',
         'auth_username' => $auth_username,
         'auth_password' => $auth_password,
+        'from_address' => $from_address,
+        'from_name' => $from_name,
+    ];
+}
+
+function resolveFromConfig(array $cfg): array {
+    $username = trim((string) ($cfg['auth_username'] ?? ''));
+    $fromAddress = trim((string) ($cfg['from_address'] ?? ''));
+    $fromName = trim((string) ($cfg['from_name'] ?? ''));
+
+    if (!filter_var($fromAddress, FILTER_VALIDATE_EMAIL)) {
+        $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
+    }
+
+    if ($fromName === '') {
+        $fromName = 'Mini-Snipe';
+    }
+
+    return [
+        'address' => $fromAddress,
+        'name' => $fromName,
     ];
 }
 
@@ -191,7 +214,9 @@ function testSmtpDirect(string $to_email, string $subject, string $message, arra
         }
     }
 
-    $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
+    $from = resolveFromConfig($cfg);
+    $fromAddress = $from['address'];
+    $fromName = $from['name'];
     $mailFrom = smtpSendCommand($socket, 'MAIL FROM:<' . $fromAddress . '>', [250]);
     if (!$mailFrom['ok']) {
         fclose($socket);
@@ -220,7 +245,7 @@ function testSmtpDirect(string $to_email, string $subject, string $message, arra
     }
 
     $headers = [
-        'From: ' . $fromAddress,
+        'From: ' . $fromName . ' <' . $fromAddress . '>',
         'To: ' . $to_email,
         'Subject: ' . $subject,
         'Reply-To: ' . $fromAddress,
@@ -310,8 +335,8 @@ function testSmtpWithPHPMailer(string $to_email, string $subject, string $messag
             $mail->SMTPAutoTLS = true;
         }
 
-        $fromAddress = filter_var($username, FILTER_VALIDATE_EMAIL) ? $username : 'no-reply@localhost';
-        $mail->setFrom($fromAddress, 'Mini-Snipe');
+        $from = resolveFromConfig($cfg);
+        $mail->setFrom($from['address'], $from['name']);
         $mail->addAddress($to_email);
         $mail->Subject = $subject;
         $mail->Body = $message;
@@ -850,6 +875,14 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <span style="color: var(--text-muted);">SMTP-Host:</span><br>
                             <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['smtp_host']); ?>:<?php echo htmlspecialchars($sendmailConfig['smtp_port']); ?></code>
                             <div style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.78rem;">Quelle: <?php echo htmlspecialchars($sendmailConfig['smtp_source']); ?></div>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted);">Absender-Adresse:</span><br>
+                            <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['from_address'] !== '' ? $sendmailConfig['from_address'] : '(Fallback auf MAIL_USER)'); ?></code>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted);">Absender-Name:</span><br>
+                            <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['from_name'] !== '' ? $sendmailConfig['from_name'] : 'Mini-Snipe'); ?></code>
                         </div>
                     </div>
                 </div>
