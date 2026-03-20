@@ -4,15 +4,18 @@ require_once __DIR__ . '/../src/Controllers/AssetController.php';
 require_once __DIR__ . '/../src/Controllers/UserController.php';
 require_once __DIR__ . '/../src/Controllers/DashboardController.php';
 require_once __DIR__ . '/../src/Helpers/Auth.php';
+require_once __DIR__ . '/../src/Helpers/Settings.php';
 
 use App\Controllers\AssetController;
 use App\Controllers\DashboardController;
 use App\Helpers\Auth;
+use App\Helpers\Settings;
 
 Auth::requireLogin();
 $userRole = Auth::getRole();
 
 $db = Database::getInstance();
+Settings::load($db);
 $assetController = new AssetController($db);
 $dashboardController = new DashboardController($db);
 
@@ -41,7 +44,7 @@ $statusClasses = [
     <meta charset="UTF-8">
     <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini-Snipe Asset Management</title>
+    <title><?php echo Settings::getPageTitle('Dashboard'); ?></title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->

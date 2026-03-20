@@ -3,10 +3,12 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../src/Controllers/AssetController.php';
 require_once __DIR__ . '/../src/Controllers/MasterDataController.php';
 require_once __DIR__ . '/../src/Helpers/Auth.php';
+require_once __DIR__ . '/../src/Helpers/Settings.php';
 
 use App\Controllers\AssetController;
 use App\Controllers\MasterDataController;
 use App\Helpers\Auth;
+use App\Helpers\Settings;
 
 Auth::requireEditor();
 

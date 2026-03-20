@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../src/Helpers/Auth.php';
+require_once __DIR__ . '/../src/Helpers/Settings.php';
 \App\Helpers\Auth::startSession();
 
 // Einfache Hilfsfunktion zum Laden der .env Datei

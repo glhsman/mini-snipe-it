@@ -7,10 +7,12 @@ require_once __DIR__ . '/../src/Helpers/Auth.php';
 use App\Controllers\AssetController;
 use App\Controllers\MasterDataController;
 use App\Helpers\Auth;
+use App\Helpers\Settings;
 
 Auth::requireLogin();
 
 $db = Database::getInstance();
+\App\Helpers\Settings::load($db);
 $assetController = new AssetController($db);
 $masterData = new MasterDataController($db);
 
@@ -140,7 +142,7 @@ function renderPagination($page, $totalPages, $perPage) {
     <meta charset="UTF-8">
     <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assets - Mini-Snipe</title>
+    <title><?php echo Settings::getPageTitle('Assets'); ?></title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>

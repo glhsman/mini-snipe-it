@@ -10,6 +10,7 @@ if (is_file($composerAutoload)) {
 
 use App\Helpers\Auth;
 use App\Helpers\Mail;
+use App\Helpers\Settings;
 
 Auth::requireAdmin();
 
@@ -429,6 +430,7 @@ function resizeFavicon($sourceFile, $targetFile) {
 }
 
 $db = Database::getInstance();
+\App\Helpers\Settings::load($db);
 
 // Einstellungen laden
 $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
@@ -439,30 +441,40 @@ $testMailResult = null;
 
 // Test-Mail-Versand
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_sendmail'])) {
-    $testEmail = trim($_POST['test_email'] ?? '');
-    if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Bitte eine gueltige E-Mail-Adresse eingeben.';
+    $postedToken = (string) ($_POST['csrf_token'] ?? '');
+    if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
+        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
     } else {
-        $testMailResult = testSendmail(
-            $testEmail,
-            'Mini-Snipe Sendmail Test',
-            "Hallo,\n\nDies ist eine Test-E-Mail von Mini-Snipe.\n\nWenn Sie diese Nachricht erhalten haben, funktioniert Ihr E-Mail-System korrekt.\n\nViele Gruesse,\nIhr Mini-Snipe System"
-        );
-        if ($testMailResult['success']) {
-            $stmt = $db->prepare("UPDATE settings SET mail_test_success_at = NOW(), mail_test_recipient = ?, mail_test_last_error = NULL WHERE id = 1");
-            $stmt->execute([$testEmail]);
-            $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
-            $success = $testMailResult['message'];
+        $testEmail = trim($_POST['test_email'] ?? '');
+        if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Bitte eine gueltige E-Mail-Adresse eingeben.';
         } else {
-            $stmt = $db->prepare("UPDATE settings SET mail_test_last_error = ? WHERE id = 1");
-            $stmt->execute([$testMailResult['message']]);
-            $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
-            $error = $testMailResult['message'];
+            $testMailResult = testSendmail(
+                $testEmail,
+                'Mini-Snipe Sendmail Test',
+                "Hallo,\n\nDies ist eine Test-E-Mail von Mini-Snipe.\n\nWenn Sie diese Nachricht erhalten haben, funktioniert Ihr E-Mail-System korrekt.\n\nViele Gruesse,\nIhr Mini-Snipe System"
+            );
+            if ($testMailResult['success']) {
+                $stmt = $db->prepare("UPDATE settings SET mail_test_success_at = NOW(), mail_test_recipient = ?, mail_test_last_error = NULL WHERE id = 1");
+                $stmt->execute([$testEmail]);
+                $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
+                $success = $testMailResult['message'];
+            } else {
+                $stmt = $db->prepare("UPDATE settings SET mail_test_last_error = ? WHERE id = 1");
+                $stmt->execute([$testMailResult['message']]);
+                $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch();
+                $error = $testMailResult['message'];
+            }
         }
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['test_sendmail'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
+    $postedToken = (string) ($_POST['csrf_token'] ?? '');
+    if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
+        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
+    }
+
     $siteName = $_POST['site_name'] ?? 'Mini-Snipe';
     $brandingType = $_POST['branding_type'] ?? 'text';
     $companyAddress = trim($_POST['company_address'] ?? '');
@@ -547,6 +559,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['test_sendmail'])) {
     }
 }
 
+// Log-Cleanup Handler
+$logCleanupSuccess = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cleanup_logs'])) {
+    $postedToken = (string) ($_POST['csrf_token'] ?? '');
+    if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
+        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
+    } else {
+        $keepCount = (int) ($_POST['keep_count'] ?? 10);
+        if (in_array($keepCount, [10, 25, 50, 100], true)) {
+            try {
+                // DELETE Einträge, die älter sind als die keepCount neuesten
+                $stmt = $db->prepare("
+                    DELETE FROM login_logs 
+                    WHERE id NOT IN (
+                        SELECT id FROM (
+                            SELECT id FROM login_logs 
+                            ORDER BY created_at DESC 
+                            LIMIT ?
+                        ) AS newest
+                    )
+                ");
+                $stmt->execute([$keepCount]);
+                $logCleanupSuccess = "Log erfolgreich bereinigt. Die neuesten {$keepCount} Einträge wurden beibehalten.";
+            } catch (\Throwable $e) {
+                $error = "Fehler beim Bereinigen des Logs: " . $e->getMessage();
+            }
+        }
+    }
+}
+
 // Login-Logs laden (neueste 200 Einträge)
 $loginLogs = [];
 try {
@@ -571,7 +613,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
     <meta charset="UTF-8">
     <?php include_once __DIR__ . '/includes/head_favicon.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Globale Einstellungen - Mini-Snipe</title>
+    <title><?php echo Settings::getPageTitle('Globale Einstellungen'); ?></title>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -692,6 +734,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                <input type="hidden" name="save_settings" value="1">
                 <div class="form-section">
                     <h2>Logos & Bildschirm</h2>
                     
@@ -732,8 +776,6 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <?php endif; ?>
                         </div>
                     </div>
-                </div>
-
                     <div class="form-group">
                         <label>Favicon</label>
                         <div>
@@ -762,8 +804,8 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <?php endif; ?>
                         </div>
                     </div>
-                </div>
 
+                    <div class="form-group">
                         <label>Firmenadresse</label>
                         <div>
                             <textarea name="company_address" class="form-control" rows="3"><?php echo htmlspecialchars($settings['company_address'] ?? ''); ?></textarea>
@@ -841,6 +883,30 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             <div class="form-section" style="margin-top: 2.5rem;">
                 <h2><i class="fas fa-list-alt" style="margin-right:0.5rem; color:var(--primary-color);"></i> Login-Protokoll</h2>
                 <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:1.25rem;">Die letzten 200 Login-Events inkl. Fehlversuche und gesperrte Anmeldungen.</p>
+
+                <?php if (!empty($logCleanupSuccess)): ?>
+                    <div style="background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; color: #10b981;">
+                        <i class="fas fa-check-circle" style="margin-right:0.5rem;"></i> <?php echo htmlspecialchars($logCleanupSuccess); ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Log-Cleanup Button Section -->
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <form method="POST" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                        <label for="keep_count" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Behalte die neuesten</label>
+                        <select name="keep_count" id="keep_count" class="form-control" style="width: auto; padding: 0.5rem 0.75rem;">
+                            <option value="10">10 Einträge</option>
+                            <option value="25">25 Einträge</option>
+                            <option value="50">50 Einträge</option>
+                            <option value="100">100 Einträge</option>
+                        </select>
+                        <button type="submit" name="cleanup_logs" value="1" class="btn" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.35); padding: 0.5rem 1rem; font-size: 0.875rem; cursor: pointer; border-radius: 0.375rem;">
+                            <i class="fas fa-trash-alt" style="margin-right:0.5rem;"></i> Log bereinigen
+                        </button>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Ältere Einträge werden gelöscht.</small>
+                    </form>
+                </div>
 
                 <?php if (empty($loginLogs)): ?>
                     <p style="color:var(--text-muted); font-size:0.875rem;">Noch keine Einträge vorhanden.</p>
