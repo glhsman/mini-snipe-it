@@ -30,3 +30,6 @@ DB_Dump_Produktiv.sql
 .idea/
 .vscode/
 nbproject/
+
+# Lokale Agent-/Skill-Dateien
+.agents/
