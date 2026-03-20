@@ -35,6 +35,15 @@ $assignedAssetCount = count($assignedAssets);
 $error = null;
 $success = null;
 
+if (isset($_GET['return_status'])) {
+    $returnMessage = trim((string) ($_GET['return_message'] ?? ''));
+    if ($_GET['return_status'] === 'error') {
+        $error = $returnMessage !== '' ? $returnMessage : 'Rueckgabe konnte nicht verarbeitet werden.';
+    } elseif ($_GET['return_status'] === 'success') {
+        $success = $returnMessage !== '' ? $returnMessage : 'Rueckgabe wurde verarbeitet.';
+    }
+}
+
 $canLogin = isset($user['can_login']) ? (int)$user['can_login'] : 1;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -183,6 +192,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <?php if ($error): ?>
                 <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+            <?php if ($success): ?>
+                <div class="alert" style="background: rgba(16, 185, 129, 0.1); color: #86efac; border: 1px solid rgba(16, 185, 129, 0.2);"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
 
             <form method="POST" autocomplete="off">

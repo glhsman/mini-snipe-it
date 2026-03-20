@@ -17,16 +17,32 @@ class SetupController {
         return file_exists($this->dbPath);
     }
 
+    private function envLine(string $key, $value): string {
+        $value = (string) ($value ?? '');
+        $value = str_replace(["\r\n", "\r", "\n"], ' ', $value);
+        return $key . "=" . $value . "\n";
+    }
+
     public function saveConfig($data) {
         $content = "# Datenbank-Konfiguration\n";
-        $content .= "DB_HOST=" . $data['db_host'] . "\n";
-        $content .= "DB_NAME=" . $data['db_name'] . "\n";
-        $content .= "DB_USER=" . $data['db_user'] . "\n";
-        $content .= "DB_PASS=" . $data['db_pass'] . "\n\n";
+        $content .= $this->envLine('DB_HOST', $data['db_host'] ?? '');
+        $content .= $this->envLine('DB_NAME', $data['db_name'] ?? '');
+        $content .= $this->envLine('DB_USER', $data['db_user'] ?? '');
+        $content .= $this->envLine('DB_PASS', $data['db_pass'] ?? '');
+        $content .= "\n";
         $content .= "# App-Einstellungen\n";
-        $content .= "APP_NAME=Mini-Snipe\n";
-        $content .= "APP_ENV=local\n";
-        $content .= "APP_DEBUG=true\n";
+        $content .= $this->envLine('APP_NAME', 'Mini-Snipe');
+        $content .= $this->envLine('APP_ENV', 'local');
+        $content .= $this->envLine('APP_DEBUG', 'true');
+        $content .= "\n";
+        $content .= "# Mail-Konfiguration\n";
+        $content .= $this->envLine('MAIL_HOST', $data['mail_host'] ?? '');
+        $content .= $this->envLine('MAIL_PORT', $data['mail_port'] ?? '');
+        $content .= $this->envLine('MAIL_ENCRYPTION', $data['mail_encryption'] ?? 'tls');
+        $content .= $this->envLine('MAIL_USER', $data['mail_user'] ?? '');
+        $content .= $this->envLine('MAIL_PASS', $data['mail_pass'] ?? '');
+        $content .= $this->envLine('MAIL_FROM_ADDRESS', $data['mail_from_address'] ?? '');
+        $content .= $this->envLine('MAIL_FROM_NAME', $data['mail_from_name'] ?? '');
 
         return file_put_contents($this->dbPath, $content);
     }

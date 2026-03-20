@@ -155,6 +155,17 @@ class Database {
                 INDEX idx_password_resets_expires (expires_at)
             )");
 
+            $assetArchivBitStmt = $this->connection->prepare("SELECT COUNT(*)
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'assets'
+                  AND COLUMN_NAME = 'archiv_bit'");
+            $assetArchivBitStmt->execute();
+            if ((int) $assetArchivBitStmt->fetchColumn() === 0) {
+                $this->connection->exec("ALTER TABLE assets ADD COLUMN archiv_bit TINYINT(1) NOT NULL DEFAULT 0 AFTER os_version");
+            }
+            $this->connection->exec("UPDATE assets SET archiv_bit = 0 WHERE archiv_bit IS NULL");
+
             $loginReasonStmt = $this->connection->prepare("SELECT COUNT(*)
                 FROM information_schema.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE()

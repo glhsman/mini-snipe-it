@@ -1,5 +1,5 @@
--- Tabellen für Mini-Snipe IT Asset Management
--- (Die Datenbank muss bereits existieren und über den Wizard ausgewählt worden sein)
+-- Tabellen fuer Mini-Snipe IT Asset Management
+-- (Die Datenbank muss bereits existieren und ueber den Wizard ausgewaehlt worden sein)
 
 -- 1. Standorte (Locations)
 CREATE TABLE IF NOT EXISTS locations (
@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS locations (
     name VARCHAR(255) NOT NULL,
     address VARCHAR(255),
     city VARCHAR(100),
-    kuerzel VARCHAR(2), -- NEU: 2-Buchstaben-Kürzel
+    kuerzel VARCHAR(2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS manufacturers (
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    kuerzel VARCHAR(2) UNIQUE, -- 2-Buchstaben-Kuerzel fuer Asset-Tag-Generierung
+    kuerzel VARCHAR(2) UNIQUE,
     category_type ENUM('asset', 'accessory', 'consumable', 'component') DEFAULT 'asset',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -71,11 +71,23 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL
 );
 
--- 6b. Lookup-Tabellen für Hardware (NEU)
-CREATE TABLE IF NOT EXISTS lookup_ram (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
-CREATE TABLE IF NOT EXISTS lookup_ssd (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
-CREATE TABLE IF NOT EXISTS lookup_cores (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(50) UNIQUE);
-CREATE TABLE IF NOT EXISTS lookup_os (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(100) UNIQUE);
+-- 6b. Lookup-Tabellen fuer Hardware
+CREATE TABLE IF NOT EXISTS lookup_ram (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(50) UNIQUE
+);
+CREATE TABLE IF NOT EXISTS lookup_ssd (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(50) UNIQUE
+);
+CREATE TABLE IF NOT EXISTS lookup_cores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(50) UNIQUE
+);
+CREATE TABLE IF NOT EXISTS lookup_os (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    value VARCHAR(100) UNIQUE
+);
 
 -- 6c. Allgemeine Einstellungen
 CREATE TABLE IF NOT EXISTS settings (
@@ -102,7 +114,7 @@ CREATE TABLE IF NOT EXISTS assets (
     model_id INT,
     status_id INT,
     location_id INT,
-    user_id INT, -- Derzeitiger Besitzer
+    user_id INT,
     purchase_date DATE,
     notes TEXT,
     pin VARCHAR(4) NULL,
@@ -172,96 +184,161 @@ CREATE TABLE IF NOT EXISTS password_resets (
     INDEX idx_password_resets_expires (expires_at)
 );
 
+CREATE TABLE IF NOT EXISTS login_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    username VARCHAR(100) NOT NULL,
+    action ENUM('login','logout','login_failed','login_blocked') NOT NULL,
+    reason VARCHAR(100) NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_login_logs_created (created_at),
+    INDEX idx_login_logs_user (user_id)
+);
+
 -- ---------------------------------------------------------------------------
--- Demo-Stammdaten (4 Eintraege je Tabelle fuer Neuinstallationen)
--- Alle INSERT IGNORE: sicher bei mehrfachem Ausfuehren wo UNIQUE-Keys greifen
+-- Demo-Stammdaten fuer Neuinstallationen
+-- Wiederholbares Seed-Schema, damit ein erneuter Lauf nach Teilerfolg nicht
+-- an doppelten Vorbelegungen scheitert.
 -- ---------------------------------------------------------------------------
 
-INSERT INTO locations (name, address, city, kuerzel) VALUES
-    ('Hauptstandort',    'Musterstraße 1',   'Berlin',   'HS'),
-    ('Zweigstelle Süd', 'Bahnhofstr. 10',   'München',  'ZS'),
-    ('Zweigstelle Nord', 'Hafenweg 5',       'Hamburg',  'ZN'),
-    ('Homeoffice Pool',  NULL,               NULL,       'HO');
+INSERT INTO locations (name, address, city, kuerzel)
+SELECT 'Hauptstandort', 'Musterstrasse 1', 'Berlin', 'HS'
+WHERE NOT EXISTS (SELECT 1 FROM locations WHERE kuerzel = 'HS');
+INSERT INTO locations (name, address, city, kuerzel)
+SELECT 'Zweigstelle Sued', 'Bahnhofstr. 10', 'Muenchen', 'ZS'
+WHERE NOT EXISTS (SELECT 1 FROM locations WHERE kuerzel = 'ZS');
+INSERT INTO locations (name, address, city, kuerzel)
+SELECT 'Zweigstelle Nord', 'Hafenweg 5', 'Hamburg', 'ZN'
+WHERE NOT EXISTS (SELECT 1 FROM locations WHERE kuerzel = 'ZN');
+INSERT INTO locations (name, address, city, kuerzel)
+SELECT 'Homeoffice Pool', NULL, NULL, 'HO'
+WHERE NOT EXISTS (SELECT 1 FROM locations WHERE kuerzel = 'HO');
 
-INSERT INTO status_labels (name, status_type) VALUES
-    ('Einsatzbereit', 'deployable'),
-    ('Ausgegeben',    'deployable'),
-    ('In Reparatur',  'pending'),
-    ('Defekt',        'undeployable'),
-    ('Ausgemustert',  'archived');
+INSERT INTO status_labels (name, status_type)
+SELECT 'Einsatzbereit', 'deployable'
+WHERE NOT EXISTS (SELECT 1 FROM status_labels WHERE name = 'Einsatzbereit');
+INSERT INTO status_labels (name, status_type)
+SELECT 'Ausgegeben', 'deployable'
+WHERE NOT EXISTS (SELECT 1 FROM status_labels WHERE name = 'Ausgegeben');
+INSERT INTO status_labels (name, status_type)
+SELECT 'In Reparatur', 'pending'
+WHERE NOT EXISTS (SELECT 1 FROM status_labels WHERE name = 'In Reparatur');
+INSERT INTO status_labels (name, status_type)
+SELECT 'Defekt', 'undeployable'
+WHERE NOT EXISTS (SELECT 1 FROM status_labels WHERE name = 'Defekt');
+INSERT INTO status_labels (name, status_type)
+SELECT 'Ausgemustert', 'archived'
+WHERE NOT EXISTS (SELECT 1 FROM status_labels WHERE name = 'Ausgemustert');
 
-INSERT INTO categories (name, kuerzel) VALUES
-    ('Laptops',      'LP'),
-    ('Smartphones',  'SP'),
-    ('Monitore',     'MN'),
-    ('Tablets',      'TB');
+INSERT INTO categories (name, kuerzel)
+SELECT 'Laptops', 'LP'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE kuerzel = 'LP');
+INSERT INTO categories (name, kuerzel)
+SELECT 'Smartphones', 'SP'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE kuerzel = 'SP');
+INSERT INTO categories (name, kuerzel)
+SELECT 'Monitore', 'MN'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE kuerzel = 'MN');
+INSERT INTO categories (name, kuerzel)
+SELECT 'Tablets', 'TB'
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE kuerzel = 'TB');
 
-INSERT INTO manufacturers (name) VALUES
-    ('Apple'),
-    ('Dell'),
-    ('Lenovo'),
-    ('Samsung');
+INSERT INTO manufacturers (name)
+SELECT 'Apple'
+WHERE NOT EXISTS (SELECT 1 FROM manufacturers WHERE name = 'Apple');
+INSERT INTO manufacturers (name)
+SELECT 'Dell'
+WHERE NOT EXISTS (SELECT 1 FROM manufacturers WHERE name = 'Dell');
+INSERT INTO manufacturers (name)
+SELECT 'Lenovo'
+WHERE NOT EXISTS (SELECT 1 FROM manufacturers WHERE name = 'Lenovo');
+INSERT INTO manufacturers (name)
+SELECT 'Samsung'
+WHERE NOT EXISTS (SELECT 1 FROM manufacturers WHERE name = 'Samsung');
 
--- Modelle: manufacturer_id / category_id entsprechen der Reihenfolge der INSERTs oben
-INSERT INTO asset_models (name, manufacturer_id, category_id, has_hardware_fields) VALUES
-    ('MacBook Pro 14"',    1, 1, 1),   -- Apple   / Laptops
-    ('Latitude 5420',      2, 1, 1),   -- Dell    / Laptops
-    ('ThinkPad X1 Carbon', 3, 1, 1),   -- Lenovo  / Laptops
-    ('Galaxy S24',         4, 2, 0);   -- Samsung / Smartphones
+INSERT INTO asset_models (name, manufacturer_id, category_id, has_hardware_fields)
+SELECT 'MacBook Pro 14"', ma.id, c.id, 1
+FROM manufacturers ma
+INNER JOIN categories c ON c.kuerzel = 'LP'
+WHERE ma.name = 'Apple'
+  AND NOT EXISTS (SELECT 1 FROM asset_models WHERE name = 'MacBook Pro 14"');
+INSERT INTO asset_models (name, manufacturer_id, category_id, has_hardware_fields)
+SELECT 'Latitude 5420', ma.id, c.id, 1
+FROM manufacturers ma
+INNER JOIN categories c ON c.kuerzel = 'LP'
+WHERE ma.name = 'Dell'
+  AND NOT EXISTS (SELECT 1 FROM asset_models WHERE name = 'Latitude 5420');
+INSERT INTO asset_models (name, manufacturer_id, category_id, has_hardware_fields)
+SELECT 'ThinkPad X1 Carbon', ma.id, c.id, 1
+FROM manufacturers ma
+INNER JOIN categories c ON c.kuerzel = 'LP'
+WHERE ma.name = 'Lenovo'
+  AND NOT EXISTS (SELECT 1 FROM asset_models WHERE name = 'ThinkPad X1 Carbon');
+INSERT INTO asset_models (name, manufacturer_id, category_id, has_hardware_fields)
+SELECT 'Galaxy S24', ma.id, c.id, 0
+FROM manufacturers ma
+INNER JOIN categories c ON c.kuerzel = 'SP'
+WHERE ma.name = 'Samsung'
+  AND NOT EXISTS (SELECT 1 FROM asset_models WHERE name = 'Galaxy S24');
 
 -- Benutzer (alle Demo-Passwoerter: password)
--- admin    = System-Administrator
--- mmuster  = Lager-Editor
--- aschmidt = normaler Benutzer (Berlin)
--- tmueller = normaler Benutzer (Hamburg)
 INSERT IGNORE INTO users
-    (first_name, last_name, email,                         username,   password,                                                      can_login, role,   location_id) VALUES
-    ('System',  'Admin',   'admin@example.com',            'admin',    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'admin',  1),
-    ('Max',     'Muster',  'max.muster@example.com',       'mmuster',  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'editor', 1),
-    ('Anna',    'Schmidt', 'anna.schmidt@example.com',     'aschmidt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'user',   1),
-    ('Thomas',  'Müller',  'thomas.mueller@example.com',   'tmueller', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'user',   3);
+    (first_name, last_name, email, username, password, can_login, role, location_id)
+VALUES
+    ('System', 'Admin', 'admin@example.com', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'admin', 1),
+    ('Max', 'Muster', 'max.muster@example.com', 'mmuster', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'editor', 1),
+    ('Anna', 'Schmidt', 'anna.schmidt@example.com', 'aschmidt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'user', 1),
+    ('Thomas', 'Mueller', 'thomas.mueller@example.com', 'tmueller', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'user', 3);
 
 INSERT INTO settings (id, site_name, branding_type, company_address, protocol_header_text, protocol_footer_text)
 VALUES (
     1,
     'Mini-Snipe',
     'text',
-    'Musterstraße 1, 10115 Berlin',
-    'Die unten aufgeführte IT-Hardware wird hiermit bestätigt. Mit Ihrer Unterschrift bestätigen Sie den ordnungsgemäßen Erhalt bzw. die vollständige Rückgabe der aufgelisteten Geräte.',
-    'IT-Protokoll – Für Ihre/unsere Unterlagen.'
+    'Musterstrasse 1, 10115 Berlin',
+    'Die unten aufgefuehrte IT-Hardware wird hiermit bestaetigt. Mit Ihrer Unterschrift bestaetigen Sie den ordnungsgemaessen Erhalt bzw. die vollstaendige Rueckgabe der aufgelisteten Geraete.',
+    'IT-Protokoll - Fuer Ihre und unsere Unterlagen.'
 )
-ON DUPLICATE KEY UPDATE id = id;
-
--- Login-Protokoll
-CREATE TABLE IF NOT EXISTS login_logs (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT  NULL,
-    username    VARCHAR(100) NOT NULL,
-    action      ENUM('login','logout','login_failed','login_blocked') NOT NULL,
-    reason      VARCHAR(100) NULL,
-    ip_address  VARCHAR(45) NULL,
-    user_agent  VARCHAR(255) NULL,
-    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_login_logs_created (created_at),
-    INDEX idx_login_logs_user    (user_id)
-);
 ON DUPLICATE KEY UPDATE
-    company_address      = COALESCE(NULLIF(settings.company_address, ''),      VALUES(company_address)),
+    company_address = COALESCE(NULLIF(settings.company_address, ''), VALUES(company_address)),
     protocol_header_text = COALESCE(NULLIF(settings.protocol_header_text, ''), VALUES(protocol_header_text)),
     protocol_footer_text = COALESCE(NULLIF(settings.protocol_footer_text, ''), VALUES(protocol_footer_text));
 
 -- Demo-Assets
--- IDs beziehen sich auf die oben eingefuegten Stammdaten (Frisch-Installation)
--- status_id: 1=Einsatzbereit  2=Ausgegeben  3=In Reparatur
--- user_id 3 = aschmidt (haelt das ausgegebene Geraet)
-INSERT IGNORE INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id) VALUES
-    ('MacBook Pro 14 – #001', 'HSLP0001', 'SN-MBP-2024-001', 1, 1, 1, NULL),
-    ('Dell Latitude – #001',  'HSLP0002', 'SN-DL-2024-001',  2, 2, 1, 3),
-    ('ThinkPad X1 – #001',    'ZNLP0001', 'SN-TP-2024-001',  3, 3, 3, NULL),
-    ('Galaxy S24 – #001',     'ZSSP0001', 'SN-GS-2024-001',  4, 1, 2, NULL);
+INSERT INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id)
+SELECT 'MacBook Pro 14 - #001', 'HSLP0001', 'SN-MBP-2024-001', am.id, sl.id, l.id, NULL
+FROM asset_models am
+INNER JOIN status_labels sl ON sl.name = 'Einsatzbereit'
+INNER JOIN locations l ON l.kuerzel = 'HS'
+WHERE am.name = 'MacBook Pro 14"'
+  AND NOT EXISTS (SELECT 1 FROM assets WHERE asset_tag = 'HSLP0001');
+INSERT INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id)
+SELECT 'Dell Latitude - #001', 'HSLP0002', 'SN-DL-2024-001', am.id, sl.id, l.id, u.id
+FROM asset_models am
+INNER JOIN status_labels sl ON sl.name = 'Ausgegeben'
+INNER JOIN locations l ON l.kuerzel = 'HS'
+INNER JOIN users u ON u.username = 'aschmidt'
+WHERE am.name = 'Latitude 5420'
+  AND NOT EXISTS (SELECT 1 FROM assets WHERE asset_tag = 'HSLP0002');
+INSERT INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id)
+SELECT 'ThinkPad X1 - #001', 'ZNLP0001', 'SN-TP-2024-001', am.id, sl.id, l.id, NULL
+FROM asset_models am
+INNER JOIN status_labels sl ON sl.name = 'In Reparatur'
+INNER JOIN locations l ON l.kuerzel = 'ZN'
+WHERE am.name = 'ThinkPad X1 Carbon'
+  AND NOT EXISTS (SELECT 1 FROM assets WHERE asset_tag = 'ZNLP0001');
+INSERT INTO assets (name, asset_tag, serial, model_id, status_id, location_id, user_id)
+SELECT 'Galaxy S24 - #001', 'ZSSP0001', 'SN-GS-2024-001', am.id, sl.id, l.id, NULL
+FROM asset_models am
+INNER JOIN status_labels sl ON sl.name = 'Einsatzbereit'
+INNER JOIN locations l ON l.kuerzel = 'ZS'
+WHERE am.name = 'Galaxy S24'
+  AND NOT EXISTS (SELECT 1 FROM assets WHERE asset_tag = 'ZSSP0001');
 
 -- Lookup-Standardwerte
-INSERT IGNORE INTO lookup_ram    (value) VALUES ('4 GB'),   ('8 GB'),   ('16 GB'),  ('32 GB'),  ('64 GB');
-INSERT IGNORE INTO lookup_ssd    (value) VALUES ('128 GB'), ('256 GB'), ('512 GB'), ('1 TB'),   ('2 TB');
-INSERT IGNORE INTO lookup_cores  (value) VALUES ('2'),      ('4'),      ('6'),      ('8'),      ('10'),  ('12'),  ('16');
-INSERT IGNORE INTO lookup_os     (value) VALUES ('Windows 10'), ('Windows 11'), ('macOS'), ('Linux'), ('Android'), ('iOS');
+INSERT IGNORE INTO lookup_ram (value) VALUES ('4 GB'), ('8 GB'), ('16 GB'), ('32 GB'), ('64 GB');
+INSERT IGNORE INTO lookup_ssd (value) VALUES ('128 GB'), ('256 GB'), ('512 GB'), ('1 TB'), ('2 TB');
+INSERT IGNORE INTO lookup_cores (value) VALUES ('2'), ('4'), ('6'), ('8'), ('10'), ('12'), ('16');
+INSERT IGNORE INTO lookup_os (value) VALUES ('Windows 10'), ('Windows 11'), ('macOS'), ('Linux'), ('Android'), ('iOS');

@@ -219,4 +219,26 @@ class AssetRequestController {
         $stmt->execute([$processedByUserId, $notePayload, $requestId]);
         return $stmt->rowCount() > 0;
     }
+
+    public function deleteCompletedRequests(array $requestIds): int {
+        $requestIds = array_values(array_unique(array_filter(array_map('intval', $requestIds), static function ($id) {
+            return $id > 0;
+        })));
+
+        if (empty($requestIds)) {
+            return 0;
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($requestIds), '?'));
+        $params = array_merge($requestIds, ['approved', 'rejected']);
+
+        $stmt = $this->db->prepare(
+            "DELETE FROM asset_requests
+             WHERE id IN ($placeholders)
+               AND status IN (?, ?)"
+        );
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
+    }
 }

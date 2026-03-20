@@ -19,7 +19,6 @@ if (!isset($_SESSION['csrf_token']) || !is_string($_SESSION['csrf_token']) || $_
 }
 
 function getSendmailConfig() {
-    $envPath = realpath(__DIR__ . '/../.env') ?: (__DIR__ . '/../.env');
     $smtp_host = trim((string) getenv('MAIL_HOST'));
     $smtp_port = (string) (getenv('MAIL_PORT') !== false ? getenv('MAIL_PORT') : '');
     $smtp_ssl = strtolower(trim((string) (getenv('MAIL_ENCRYPTION') !== false ? getenv('MAIL_ENCRYPTION') : '')));
@@ -27,15 +26,22 @@ function getSendmailConfig() {
     $auth_password = (string) (getenv('MAIL_PASS') !== false ? getenv('MAIL_PASS') : '');
     $from_address = trim((string) (getenv('MAIL_FROM_ADDRESS') !== false ? getenv('MAIL_FROM_ADDRESS') : ''));
     $from_name = trim((string) (getenv('MAIL_FROM_NAME') !== false ? getenv('MAIL_FROM_NAME') : ''));
+    $transport = $smtp_ssl !== '' ? $smtp_ssl : 'tls';
+    $transportLabel = 'STARTTLS / TLS';
+    if (in_array($transport, ['ssl', 'smtps'], true)) {
+        $transportLabel = 'SSL';
+    } elseif (in_array($transport, ['none', 'off', 'plain', 'unencrypted'], true)) {
+        $transportLabel = 'Unverschluesselt';
+    }
     
     return [
-        'env_path' => $envPath,
         'smtp_host' => $smtp_host,
         'smtp_port' => $smtp_port,
-        'smtp_ssl' => $smtp_ssl !== '' ? $smtp_ssl : 'tls',
-        'smtp_source' => '.env',
+        'smtp_ssl' => $transport,
+        'transport_label' => $transportLabel,
         'auth_username' => $auth_username,
         'auth_password' => $auth_password,
+        'auth_configured' => $auth_username !== '' && $auth_password !== '',
         'from_address' => $from_address,
         'from_name' => $from_name,
     ];
@@ -868,13 +874,13 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                 <div style="background: rgba(99,102,241,0.1); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem;">
                         <div>
-                            <span style="color: var(--text-muted);">Konfigurationsdatei:</span><br>
-                            <code style="color: var(--accent-color); word-break: break-all;"><?php echo htmlspecialchars($sendmailConfig['env_path']); ?></code>
+                            <span style="color: var(--text-muted);">Transport:</span><br>
+                            <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['transport_label']); ?></code>
                         </div>
                         <div>
                             <span style="color: var(--text-muted);">SMTP-Host:</span><br>
                             <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['smtp_host']); ?>:<?php echo htmlspecialchars($sendmailConfig['smtp_port']); ?></code>
-                            <div style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.78rem;">Quelle: <?php echo htmlspecialchars($sendmailConfig['smtp_source']); ?></div>
+                            <div style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.78rem;">Verbindungsart fuer ausgehende SMTP-Mails.</div>
                         </div>
                         <div>
                             <span style="color: var(--text-muted);">Absender-Adresse:</span><br>
@@ -883,6 +889,10 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <div>
                             <span style="color: var(--text-muted);">Absender-Name:</span><br>
                             <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['from_name'] !== '' ? $sendmailConfig['from_name'] : 'Mini-Snipe'); ?></code>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted);">Authentifizierung:</span><br>
+                            <code style="color: var(--accent-color);"><?php echo !empty($sendmailConfig['auth_configured']) ? 'Zugangsdaten hinterlegt' : 'Keine Zugangsdaten hinterlegt'; ?></code>
                         </div>
                     </div>
                 </div>
@@ -909,7 +919,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <i class="fas fa-paper-plane" style="margin-right:0.5rem;"></i> Test-Mail senden
                     </button>
                 </form>
-                <small style="display: block; color: var(--text-muted); margin-top: 0.75rem;">Eine Test-E-Mail wird an die angegebene Adresse gesendet. Dies hilft zur Überprüfung der Mail-Konfiguration aus der <code>.env</code>.</small>
+                <small style="display: block; color: var(--text-muted); margin-top: 0.75rem;">Eine Test-E-Mail wird an die angegebene Adresse gesendet. So laesst sich die aktuelle Mail-Konfiguration pruefen, ohne interne Dateipfade oder Konfigurationsquellen offenzulegen.</small>
             </div>
 
             <!-- ===== Login-Protokoll ===== -->

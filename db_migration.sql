@@ -480,9 +480,24 @@ PREPARE stmt_set_os_version_int FROM @sql_set_os_version_int;
 EXECUTE stmt_set_os_version_int;
 DEALLOCATE PREPARE stmt_set_os_version_int;
 
--- 17b) assets.archiv_bit für Drittanbieter-Export (0=nicht exportiert, 1=exportiert)
-ALTER TABLE assets
-    ADD COLUMN IF NOT EXISTS archiv_bit TINYINT(1) NOT NULL DEFAULT 0;
+-- 17b) assets.archiv_bit fuer Drittanbieter-Export (0=nicht exportiert, 1=exportiert)
+SET @has_archiv_bit_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'assets'
+      AND COLUMN_NAME = 'archiv_bit'
+);
+
+SET @sql_add_archiv_bit_col := IF(
+    @has_archiv_bit_col = 0,
+    'ALTER TABLE assets ADD COLUMN archiv_bit TINYINT(1) NOT NULL DEFAULT 0 AFTER os_version',
+    'SELECT ''Spalte assets.archiv_bit existiert bereits'' AS info'
+);
+
+PREPARE stmt_add_archiv_bit_col FROM @sql_add_archiv_bit_col;
+EXECUTE stmt_add_archiv_bit_col;
+DEALLOCATE PREPARE stmt_add_archiv_bit_col;
 
 UPDATE assets
 SET archiv_bit = 0

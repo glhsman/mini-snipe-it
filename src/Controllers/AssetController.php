@@ -180,30 +180,10 @@ class AssetController {
         $limit = max(1, min($limit, 1000));
         $search = trim($search);
 
-        $sql = "SELECT aa.id,
-                       aa.asset_id,
-                       aa.user_id,
-                       aa.checkout_at,
-                       aa.checkin_at,
-                       a.asset_tag,
-                       a.serial,
-                       a.name AS asset_name,
-                       m.name AS model_name,
-                       u.username,
-                       u.first_name,
-                       u.last_name,
-                       cbu.username AS checkout_by_username,
-                       ibu.username AS checkin_by_username
-                FROM asset_assignments aa
-                INNER JOIN assets a ON a.id = aa.asset_id
-                LEFT JOIN asset_models m ON m.id = a.model_id
-                INNER JOIN users u ON u.id = aa.user_id
-                LEFT JOIN users cbu ON cbu.id = aa.checkout_by_user_id
-                LEFT JOIN users ibu ON ibu.id = aa.checkin_by_user_id";
-
         $params = [];
+        $conditions = [];
         if ($search !== '') {
-            $sql .= " WHERE (
+            $conditions[] = "(
                 COALESCE(a.asset_tag, '') LIKE ?
                 OR COALESCE(a.serial, '') LIKE ?
                 OR COALESCE(a.name, '') LIKE ?
@@ -215,11 +195,108 @@ class AssetController {
             $params = [$term, $term, $term, $term, $term, $term];
         }
 
-        $sql .= " ORDER BY aa.checkout_at DESC, aa.id DESC LIMIT " . (int) $limit;
+        $whereSql = '';
+        $checkinWhereSql = ' WHERE aa.checkin_at IS NOT NULL';
+        if (!empty($conditions)) {
+            $conditionSql = implode(' AND ', $conditions);
+            $whereSql = ' WHERE ' . $conditionSql;
+            $checkinWhereSql = ' WHERE ' . $conditionSql . ' AND aa.checkin_at IS NOT NULL';
+        }
+
+        $sql = "SELECT *
+                FROM (
+                    SELECT aa.id,
+                           aa.asset_id,
+                           aa.user_id,
+                           aa.checkout_at,
+                           aa.checkin_at,
+                           aa.checkout_at AS booking_at,
+                           'checkout' AS booking_type,
+                           a.asset_tag,
+                           a.serial,
+                           a.name AS asset_name,
+                           m.name AS model_name,
+                           u.username,
+                           u.first_name,
+                           u.last_name,
+                           cbu.username AS operator_username
+                    FROM asset_assignments aa
+                    INNER JOIN assets a ON a.id = aa.asset_id
+                    LEFT JOIN asset_models m ON m.id = a.model_id
+                    INNER JOIN users u ON u.id = aa.user_id
+                    LEFT JOIN users cbu ON cbu.id = aa.checkout_by_user_id
+                    $whereSql
+
+                    UNION ALL
+
+                    SELECT aa.id,
+                           aa.asset_id,
+                           aa.user_id,
+                           aa.checkout_at,
+                           aa.checkin_at,
+                           aa.checkin_at AS booking_at,
+                           'checkin' AS booking_type,
+                           a.asset_tag,
+                           a.serial,
+                           a.name AS asset_name,
+                           m.name AS model_name,
+                           u.username,
+                           u.first_name,
+                           u.last_name,
+                           ibu.username AS operator_username
+                    FROM asset_assignments aa
+                    INNER JOIN assets a ON a.id = aa.asset_id
+                    LEFT JOIN asset_models m ON m.id = a.model_id
+                    INNER JOIN users u ON u.id = aa.user_id
+                    LEFT JOIN users ibu ON ibu.id = aa.checkin_by_user_id
+                    $checkinWhereSql
+                ) booking_history
+                ORDER BY booking_at DESC, id DESC, booking_type DESC
+                LIMIT " . (int) $limit;
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute(array_merge($params, $params));
         return $stmt->fetchAll();
+    }
+
+    public function deleteAssignmentHistoryEntry(int $assignmentId): bool {
+        if ($assignmentId <= 0) {
+            return false;
+        }
+
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM asset_assignments WHERE id = ? LIMIT 1");
+            $stmt->execute([$assignmentId]);
+            $assignment = $stmt->fetch();
+
+            if (!$assignment) {
+                throw new \RuntimeException('Buchung nicht gefunden.');
+            }
+
+            $isOpenAssignment = empty($assignment['checkin_at']);
+            if ($isOpenAssignment) {
+                $assetStmt = $this->db->prepare("SELECT user_id FROM assets WHERE id = ? LIMIT 1");
+                $assetStmt->execute([(int) $assignment['asset_id']]);
+                $asset = $assetStmt->fetch();
+
+                if ($asset && (int) ($asset['user_id'] ?? 0) === (int) $assignment['user_id']) {
+                    $updateAssetStmt = $this->db->prepare("UPDATE assets SET user_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                    $updateAssetStmt->execute([(int) $assignment['asset_id']]);
+                }
+            }
+
+            $deleteStmt = $this->db->prepare("DELETE FROM asset_assignments WHERE id = ?");
+            $deleteStmt->execute([$assignmentId]);
+
+            $this->db->commit();
+            return $deleteStmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
     }
 
     private function getOpenAssignmentForAsset($assetId) {

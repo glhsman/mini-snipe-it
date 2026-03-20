@@ -25,9 +25,26 @@ if ($sessionCsrf === '' || !hash_equals($sessionCsrf, $postedCsrf)) {
 $requestId = (int) ($_POST['request_id'] ?? 0);
 $status = (string) ($_POST['status'] ?? '');
 $note = trim((string) ($_POST['internal_note'] ?? ''));
+$action = (string) ($_POST['action'] ?? '');
 
 $db = Database::getInstance();
 $requestController = new AssetRequestController($db);
+
+if ($action === 'delete_selected') {
+    $requestIds = $_POST['request_ids'] ?? [];
+    if (!is_array($requestIds)) {
+        $requestIds = [];
+    }
+
+    $deletedCount = $requestController->deleteCompletedRequests($requestIds);
+    if ($deletedCount > 0) {
+        header('Location: asset_requests.php?deleted=' . $deletedCount);
+    } else {
+        header('Location: asset_requests.php?error=delete');
+    }
+    exit;
+}
+
 $updated = $requestController->updateRequestStatus($requestId, $status, $note, (int) Auth::getUserId());
 
 if ($updated) {
