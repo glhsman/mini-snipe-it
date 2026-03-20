@@ -2,6 +2,12 @@
 namespace App\Helpers;
 
 class Auth {
+    /** Inaktivitäts-Timeout in Sekunden (2 Stunden) */
+    private const INACTIVITY_TIMEOUT = 7200;
+
+    /** Wird gesetzt wenn die Session durch Inaktivität beendet wurde */
+    private static bool $timedOut = false;
+
     public static function startSession() {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -13,6 +19,7 @@ class Auth {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
+        $_SESSION['last_activity'] = time();
         self::logAction($user['id'], $user['username'], 'login');
     }
 
@@ -32,9 +39,24 @@ class Auth {
         self::logAction($userId, $username, 'login_blocked', $reason);
     }
 
-    public static function isLoggedIn() {
+    public static function isLoggedIn(): bool {
         self::startSession();
-        return isset($_SESSION['user_id']);
+        if (!isset($_SESSION['user_id'])) {
+            return false;
+        }
+        // Inaktivitäts-Timeout prüfen
+        $lastActivity = $_SESSION['last_activity'] ?? 0;
+        if (time() - $lastActivity > self::INACTIVITY_TIMEOUT) {
+            self::$timedOut = true;
+            $userId   = $_SESSION['user_id']   ?? null;
+            $username = $_SESSION['username']  ?? 'unbekannt';
+            self::logAction($userId, $username, 'logout', 'session_timeout');
+            session_destroy();
+            return false;
+        }
+        // Aktivitäts-Zeitstempel aktualisieren
+        $_SESSION['last_activity'] = time();
+        return true;
     }
 
     public static function getRole() {
@@ -61,9 +83,13 @@ class Auth {
         return $role === 'admin' || $role === 'editor';
     }
 
-    public static function requireLogin() {
+    public static function requireLogin(): void {
         if (!self::isLoggedIn()) {
-            header('Location: login.php');
+            if (self::$timedOut) {
+                header('Location: login.php?timeout=1');
+            } else {
+                header('Location: login.php');
+            }
             exit;
         }
     }

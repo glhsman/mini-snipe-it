@@ -152,6 +152,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1 style="margin-bottom: 0.5rem;">Login</h1>
             <p style="color: var(--text-muted); margin-bottom: 2rem;">Bitte melde dich an, um fortzufahren.</p>
 
+            <?php if (isset($_GET['timeout']) && $_GET['timeout'] === '1'): ?>
+                <div class="alert" style="background: rgba(234,179,8,0.12); color: #fbbf24; border-color: rgba(234,179,8,0.3);">
+                    <i class="fas fa-clock" style="margin-right:0.5rem;"></i>
+                    Deine Sitzung wurde nach 2 Stunden Inaktivität automatisch beendet. Bitte melde dich erneut an.
+                </div>
+            <?php endif; ?>
             <?php if ($error): ?>
                 <div class="alert"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
