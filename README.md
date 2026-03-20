@@ -14,7 +14,10 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
     -   Asset-Modelle (Asset Models)
 -   **Benutzerverwaltung**: Rollenbasiertes System (Admin, Editor, User) mit wählbarer Rolle und optionalem Web-Login bei der Erstellung.
 -   **Asset Check-in / Check-out**: Assets direkt aus Dashboard und Assetliste einem Benutzer zuweisen (Check-out) oder die Zuweisung aufheben (Check-in).
+    -   Check-out nur fuer einsatzbereite Assets verfuegbar (UI + serverseitige Pruefung)
 -   **Asset-Suche & Filter**: Freitextsuche nach Asset-Tag, Seriennummer und Name sowie Filterung nach Asset-Modell in der Assetliste.
+-   **Session-Sicherheit**: Automatischer Logout nach 2 Stunden Inaktivitaet.
+-   **Hardware-Anforderungen**: Bei Statuswechsel auf *In Arbeit* oder *Abgelehnt* wird der anfordernde Benutzer automatisch per E-Mail informiert (falls gueltige E-Mail hinterlegt).
 -   **Profilverwaltung & Designs**:
     -   **Dark & Light Mode**: Modernes Design mit standardmäßigem Dark Mode, umschaltbar auf Light Mode.
     -   **Profilseite**: Benutzer können ihr eigenes Passwort ändern und das Design-Theme auswählen.
@@ -69,6 +72,8 @@ Wenn der SMTP-Host nicht zum Zertifikat passt, schlägt die TLS-Verbindung fehl 
 Wenn Sie eine ältere Version aktualisieren möchten, führen Sie die folgende Migrationsdatei auf Ihrer Datenbank aus (z.B. via phpMyAdmin oder CLI):
 
 -   `db_migration.sql`
+
+Hinweis: Fuer die zuletzt ergaenzten Funktionen (Inaktivitaets-Timeout, Check-out-Statuslogik, E-Mail-Benachrichtigung bei Anforderungen) sind keine neuen SQL-Tabellen oder Spalten notwendig.
 
 ### Empfohlener Rollout (Produktiv)
 

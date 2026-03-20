@@ -27,12 +27,23 @@ if (!$asset) {
     exit;
 }
 
+$isReadyForCheckout = strtolower(trim((string) ($asset['status_name'] ?? ''))) === 'einsatzbereit';
+if (!$isReadyForCheckout || !empty($asset['user_id'])) {
+    header('Location: assets.php');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userId = $_POST['user_id'] ? (int)$_POST['user_id'] : null;
     if ($userId) {
-        $assignmentId = $assetController->checkoutAsset($id, $userId, Auth::getUserId());
-        header('Location: user_protocol.php?type=handover&history_id=' . $assignmentId);
-        exit;
+        try {
+            $assignmentId = $assetController->checkoutAsset($id, $userId, Auth::getUserId());
+            header('Location: user_protocol.php?type=handover&history_id=' . $assignmentId);
+            exit;
+        } catch (\Throwable $e) {
+            header('Location: assets.php');
+            exit;
+        }
     }
 }
 

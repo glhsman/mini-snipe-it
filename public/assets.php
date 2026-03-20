@@ -282,6 +282,7 @@ function renderPagination($page, $totalPages, $perPage) {
                         <td><?php echo $asset['assigned_to'] ? htmlspecialchars($asset['assigned_to']) : '-'; ?></td>
                         <td>
                             <?php if (Auth::isEditor()): ?>
+                                    <?php $isReadyForCheckout = strtolower(trim((string)($asset['status_name'] ?? ''))) === 'einsatzbereit'; ?>
                                     <!-- Ausgabe / Rücknahme -->
                                     <?php if ($asset['assigned_to']): ?>
                                         <form method="POST" action="asset_checkin.php" style="display:inline;">
@@ -290,10 +291,14 @@ function renderPagination($page, $totalPages, $perPage) {
                                                 <i class="fas fa-undo"></i>
                                             </button>
                                         </form>
-                                    <?php else: ?>
+                                    <?php elseif ($isReadyForCheckout): ?>
                                         <a href="asset_checkout.php?id=<?php echo $asset['id']; ?>" class="btn-icon" title="Ausgabe (Check-out)" style="color: #a855f7;">
                                             <i class="fas fa-hand-holding"></i>
                                         </a>
+                                    <?php else: ?>
+                                        <span class="btn-icon" title="Nur einsatzbereite Assets können ausgegeben werden." style="opacity:0.45; cursor:not-allowed; color:#64748b;">
+                                            <i class="fas fa-hand-holding"></i>
+                                        </span>
                                     <?php endif; ?>
 
                                     <a href="asset_edit.php?id=<?php echo $asset['id']; ?>&amp;return_url=<?php echo urlencode($currentListUrl); ?>" class="btn-icon" title="Bearbeiten">

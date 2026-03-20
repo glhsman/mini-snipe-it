@@ -130,6 +130,28 @@ class AssetRequestController {
         return $stmt->fetchAll();
     }
 
+    public function getRequestByIdWithUser(int $requestId): ?array {
+        if ($requestId <= 0) {
+            return null;
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT ar.*, u.username, u.first_name, u.last_name, u.email,
+                    l.name AS location_name,
+                    c.name AS category_name
+             FROM asset_requests ar
+             INNER JOIN users u ON u.id = ar.user_id
+             INNER JOIN locations l ON l.id = ar.location_id
+             INNER JOIN categories c ON c.id = ar.category_id
+             WHERE ar.id = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$requestId]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     public function updateRequestStatus(int $requestId, string $status, ?string $internalNote, int $processedByUserId): bool {
         if ($requestId <= 0 || $processedByUserId <= 0 || !in_array($status, ['in_progress', 'approved', 'rejected'], true)) {
             return false;

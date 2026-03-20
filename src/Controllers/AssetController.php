@@ -11,7 +11,7 @@ class AssetController {
     }
 
     public function getAllAssets() {
-        $query = "SELECT a.*, m.name as model_name, s.name as status_name, l.name as location_name, u.username as assigned_to, mf.name as manufacturer_name 
+        $query = "SELECT a.*, m.name as model_name, s.name as status_name, s.status_type as status_type, l.name as location_name, u.username as assigned_to, mf.name as manufacturer_name 
                   FROM assets a 
                   LEFT JOIN asset_models m ON a.model_id = m.id 
                   LEFT JOIN manufacturers mf ON m.manufacturer_id = mf.id
@@ -90,7 +90,7 @@ class AssetController {
         $orderBy = $sortMap[$sort] ?? 'a.created_at';
 
         $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
-        $query = "SELECT a.*, m.name as model_name, s.name as status_name, l.name as location_name, u.username as assigned_to, mf.name as manufacturer_name 
+        $query = "SELECT a.*, m.name as model_name, s.name as status_name, s.status_type as status_type, l.name as location_name, u.username as assigned_to, mf.name as manufacturer_name 
                   FROM assets a 
                   LEFT JOIN asset_models m ON a.model_id = m.id 
                   LEFT JOIN manufacturers mf ON m.manufacturer_id = mf.id
@@ -112,13 +112,16 @@ class AssetController {
     }
 
     public function getAssetById($id) {
-        $stmt = $this->db->prepare("SELECT * FROM assets WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT a.*, s.name AS status_name, s.status_type AS status_type
+                                   FROM assets a
+                                   LEFT JOIN status_labels s ON a.status_id = s.id
+                                   WHERE a.id = ?");
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
 
     public function getAssetsByUserId($userId) {
-                $stmt = $this->db->prepare("SELECT a.*, m.name AS model_name, s.name AS status_name, aa.checkout_at AS assigned_at
+                $stmt = $this->db->prepare("SELECT a.*, m.name AS model_name, s.name AS status_name, s.status_type AS status_type, aa.checkout_at AS assigned_at
                                    FROM assets a
                                    LEFT JOIN asset_models m ON a.model_id = m.id
                                    LEFT JOIN status_labels s ON a.status_id = s.id
@@ -231,6 +234,14 @@ class AssetController {
             $asset = $this->getAssetById($assetId);
             if (!$asset) {
                 throw new \RuntimeException('Asset nicht gefunden.');
+            }
+
+            $statusName = strtolower(trim((string) ($asset['status_name'] ?? '')));
+            if ($statusName !== 'einsatzbereit') {
+                throw new \RuntimeException('Asset ist nicht einsatzbereit und kann nicht ausgegeben werden.');
+            }
+            if (!empty($asset['user_id'])) {
+                throw new \RuntimeException('Asset ist bereits ausgegeben.');
             }
 
             $openAssignment = $this->getOpenAssignmentForAsset($assetId);

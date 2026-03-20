@@ -154,6 +154,19 @@ function requestUserLabel(array $row): string {
         <?php if (isset($_GET['success'])): ?>
             <div class="alert alert-success">Status der Anforderung wurde aktualisiert.</div>
         <?php endif; ?>
+        <?php if (isset($_GET['mail'])): ?>
+            <?php if ($_GET['mail'] === 'sent'): ?>
+                <div class="alert alert-success">Benachrichtigungs-Mail wurde an den Benutzer versendet.</div>
+            <?php elseif ($_GET['mail'] === 'no_email'): ?>
+                <div class="alert" style="background: rgba(245, 158, 11, 0.12); color: #facc15; border: 1px solid rgba(245, 158, 11, 0.28);">
+                    Keine Benachrichtigungs-Mail versendet: Beim Benutzer ist keine gueltige E-Mail-Adresse hinterlegt.
+                </div>
+            <?php elseif ($_GET['mail'] === 'failed'): ?>
+                <div class="alert" style="background: rgba(239, 68, 68, 0.14); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.35);">
+                    Status wurde gespeichert, aber die Benachrichtigungs-Mail konnte nicht versendet werden.
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
         <?php if (isset($_GET['error'])): ?>
             <div class="alert alert-error">
                 <?php if ($_GET['error'] === 'csrf'): ?>
