@@ -185,7 +185,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" autocomplete="off">
+                <input type="text" name="fake_username" autocomplete="username" style="display:none;">
+                <input type="password" name="fake_password" autocomplete="current-password" style="display:none;">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label style="display: flex; gap: 0.6rem; align-items: center; cursor: pointer; color: var(--text-main);">
                         <input type="checkbox" name="can_login" id="can_login" value="1" <?php echo $canLogin ? 'checked' : ''; ?>>
@@ -284,14 +286,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script>
+        const userHasPassword = <?php echo empty($user['password']) ? 'false' : 'true'; ?>;
+
         function updatePasswordRequirement() {
             const canLogin = document.getElementById('can_login').checked;
             const pwd1 = document.getElementById('pwd1');
             const pwd2 = document.getElementById('pwd2');
             const passwordLabel = document.getElementById('passwordLabel');
 
-            pwd1.required = canLogin;
-            pwd2.required = canLogin;
+            const mustSetPassword = canLogin && !userHasPassword;
+            pwd1.required = mustSetPassword;
+            pwd2.required = mustSetPassword;
             pwd1.disabled = !canLogin;
             pwd2.disabled = !canLogin;
 
@@ -299,8 +304,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 pwd1.value = '';
                 pwd2.value = '';
                 passwordLabel.textContent = 'Passwort (nicht erforderlich)';
+            } else if (mustSetPassword) {
+                passwordLabel.textContent = 'Passwort (Pflichtfeld, da noch keines gesetzt ist)';
             } else {
-                passwordLabel.textContent = 'Passwort (Pflichtfeld bei Web-Login)';
+                passwordLabel.textContent = 'Passwort (optional, nur bei Änderung)';
             }
         }
 

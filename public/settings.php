@@ -91,10 +91,10 @@ $osOptions = $masterData->getLookupOptions('os');
         <header class="header">
             <h1>Stammdatenverwaltung</h1>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem; margin-bottom: 2rem;">
-            <a href="#models" class="btn btn-sm" style="background: rgba(255,255,255,0.05);">Modelle</a>
-            <a href="#categories" class="btn btn-sm" style="background: rgba(255,255,255,0.05);">Kategorien</a>
-            <a href="#manufacturers" class="btn btn-sm" style="background: rgba(255,255,255,0.05);">Hersteller</a>
-            <a href="#hardware-options" class="btn btn-sm" style="background: var(--primary-color); color: white;">Hardware-Optionen</a>
+            <a href="#models" class="btn btn-secondary btn-sm">Modelle</a>
+            <a href="#categories" class="btn btn-secondary btn-sm">Kategorien</a>
+            <a href="#manufacturers" class="btn btn-secondary btn-sm">Hersteller</a>
+            <a href="#hardware-options" class="btn btn-primary btn-sm">Hardware-Optionen</a>
         </div>
 
         </header>

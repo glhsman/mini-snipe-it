@@ -266,21 +266,57 @@ body {
 .badge-danger { background: rgba(244, 63, 94, 0.1); color: var(--accent-rose); }
 .badge-info { background: rgba(168, 85, 247, 0.1); color: #a855f7; } /* Purple */
 .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
     padding: 0.625rem 1.25rem;
     border-radius: 0.5rem;
-    border: none;
+    border: 1px solid var(--glass-border);
     cursor: pointer;
     font-weight: 500;
+    text-decoration: none;
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.08);
     transition: all 0.2s;
+}
+
+.btn:link,
+.btn:visited,
+.btn:hover,
+.btn:active {
+    text-decoration: none;
+    color: var(--text-main);
+}
+
+.btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.16);
 }
 
 .btn-primary {
     background: var(--primary-color);
     color: white;
+    border-color: transparent;
 }
 
 .btn-primary:hover {
     background: var(--primary-hover);
+    color: white;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.btn-sm {
+    padding: 0.55rem 1rem;
+    font-size: 0.92rem;
 }
 
 /* Shared form controls */
@@ -759,5 +795,4 @@ body.light-mode .data-table td a[style*="color: white"]:hover,
 body.light-mode .data-table td a[style*="color:white"]:hover {
     color: var(--primary-color) !important;
 }
-
 

@@ -20,41 +20,105 @@ $report = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     $delimiter = $_POST['delimiter'] ?? ';';
-    if ($delimiter === 'tab') $delimiter = "\t";
+    if ($delimiter === 'tab') {
+        $delimiter = "\t";
+    }
     $file = $_FILES['csv_file']['tmp_name'];
 
     if (!is_uploaded_file($file)) {
         $error = "Dateiupload fehlgeschlagen.";
     } else {
-        // Locations für Lookup laden
         $locations = $masterData->getLocations();
         $locationMap = [];
         foreach ($locations as $loc) {
-            $locationMap[strtolower(trim($loc['name']))] = $loc['id'];
+            $locationMap[strtolower(trim((string) $loc['name']))] = $loc['id'];
         }
 
-        // User für Lookup laden (für UPDATE statt INSERT bei Duplikaten)
         $users = $userController->getAllUsers();
         $userMap = [];
+        $emailMap = [];
+        $personalnummerMap = [];
         foreach ($users as $u) {
-            $userMap[strtolower(trim($u['username']))] = $u['id'];
+            $usernameKey = strtolower(trim((string) ($u['username'] ?? '')));
+            $emailKey = strtolower(trim((string) ($u['email'] ?? '')));
+            $personalnummerKey = trim((string) ($u['personalnummer'] ?? ''));
+
+            if ($usernameKey !== '') {
+                $userMap[$usernameKey] = $u['id'];
+            }
+            if ($emailKey !== '') {
+                $emailMap[$emailKey] = $u['id'];
+            }
+            if ($personalnummerKey !== '') {
+                $personalnummerMap[$personalnummerKey] = $u['id'];
+            }
         }
 
-        if (($handle = fopen($file, "r")) !== FALSE) {
-            // Kopfzeile überspringen / lesen
+        if (($handle = fopen($file, "r")) !== false) {
             $header = fgetcsv($handle, 1000, $delimiter, '"', "");
-            
+
             if (!$header || count($header) < 4) {
-                $error = "Ungültiges CSV-Format. Erkannt: " . ($header ? count($header) : 0) . " Spalte(n). " .
-                         "Inhalt: '" . htmlspecialchars($header[0] ?? '-') . "'. " .
-                         "Tipp: Datei-Trennzeichen prüfen! (Erwartet: username, email, first_name, last_name)";
+                $error = "Ungültiges CSV-Format. Erkannt: " . ($header ? count($header) : 0) . " Spalte(n). "
+                    . "Inhalt: '" . htmlspecialchars($header[0] ?? '-') . "'. "
+                    . "Tipp: Datei-Trennzeichen prüfen! (Erwartet: username, email, first_name, last_name, location_name, personalnummer, vorgesetzter, status)";
             } else {
+                $normalizeHeaderValue = static function ($value): string {
+                    $value = trim((string) $value);
+                    $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
+                    $value = strtolower($value);
+                    $value = str_replace(['ä', 'ö', 'ü', 'ß'], ['ae', 'oe', 'ue', 'ss'], $value);
+                    $value = preg_replace('/[^a-z0-9]+/', '_', $value);
+                    return trim((string) $value, '_');
+                };
+
+                $normalizedHeader = array_map($normalizeHeaderValue, $header);
+                $headerMap = array_flip($normalizedHeader);
+
+                $resolveHeaderIndex = static function (array $headerMap, array $aliases): ?int {
+                    foreach ($aliases as $alias) {
+                        if (array_key_exists($alias, $headerMap)) {
+                            return (int) $headerMap[$alias];
+                        }
+                    }
+                    return null;
+                };
+
+                $columnIndexes = [
+                    'username' => $resolveHeaderIndex($headerMap, ['username', 'benutzername', 'login', 'user']),
+                    'email' => $resolveHeaderIndex($headerMap, ['email', 'e_mail', 'mail']),
+                    'first_name' => $resolveHeaderIndex($headerMap, ['first_name', 'firstname', 'vorname']),
+                    'last_name' => $resolveHeaderIndex($headerMap, ['last_name', 'lastname', 'nachname']),
+                    'location_name' => $resolveHeaderIndex($headerMap, ['location_name', 'location', 'standort', 'standort_name']),
+                    'personalnummer' => $resolveHeaderIndex($headerMap, ['personalnummer', 'personal_nr', 'personalnr', 'personnel_number']),
+                    'vorgesetzter' => $resolveHeaderIndex($headerMap, ['vorgesetzter', 'vorgesetzte', 'vorgesetzter_name', 'supervisor', 'manager']),
+                    'status' => $resolveHeaderIndex($headerMap, ['status', 'is_activ', 'is_active', 'aktiv']),
+                ];
+
+                $requiredColumns = ['username', 'email', 'first_name', 'last_name'];
+                $missingColumns = array_filter($requiredColumns, static function ($column) use ($columnIndexes) {
+                    return $columnIndexes[$column] === null;
+                });
+
+                if (!empty($missingColumns)) {
+                    $error = "CSV-Kopfzeile unvollständig. Fehlend: " . implode(', ', $missingColumns);
+                }
+            }
+
+            if (!$error) {
+                $getCsvValue = static function (array $row, array $columnIndexes, string $column, string $default = ''): string {
+                    $index = $columnIndexes[$column] ?? null;
+                    if ($index === null) {
+                        return $default;
+                    }
+                    return trim((string) ($row[$index] ?? $default));
+                };
+
                 $rowCount = 0;
                 $inserted = 0;
                 $updated = 0;
                 $failed = 0;
 
-                while (($row = fgetcsv($handle, 1000, $delimiter, '"', "")) !== FALSE) {
+                while (($row = fgetcsv($handle, 1000, $delimiter, '"', "")) !== false) {
                     $rowCount++;
                     if (count($row) < 4) {
                         $failed++;
@@ -62,24 +126,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         continue;
                     }
 
-                    $username = trim($row[0]);
-                    $email = trim($row[1]);
-                    $firstName = trim($row[2]);
-                    $lastName = trim($row[3]);
-                    $locationName = isset($row[4]) ? trim($row[4]) : '';
-                    $personalnummer = isset($row[5]) ? trim($row[5]) : '';
-                    $vorgesetzter = isset($row[6]) ? trim($row[6]) : '';
-                    $isActiv = isset($row[7]) ? trim($row[7]) : '1';
+                    $username = $getCsvValue($row, $columnIndexes, 'username');
+                    $email = $getCsvValue($row, $columnIndexes, 'email');
+                    $firstName = $getCsvValue($row, $columnIndexes, 'first_name');
+                    $lastName = $getCsvValue($row, $columnIndexes, 'last_name');
+                    $locationName = $getCsvValue($row, $columnIndexes, 'location_name');
+                    $personalnummer = $getCsvValue($row, $columnIndexes, 'personalnummer');
+                    $vorgesetzter = $getCsvValue($row, $columnIndexes, 'vorgesetzter');
 
-                    if (empty($username)) {
+                    $statusIndex = $columnIndexes['status'] ?? null;
+                    $statusValue = $statusIndex !== null ? trim((string) ($row[$statusIndex] ?? '1')) : '1';
+
+                    if ($username === '') {
                         $failed++;
                         $report[] = "Zeile $rowCount: Benutzername fehlt.";
                         continue;
                     }
 
-                    // Lookup Standort
                     $locationId = null;
-                    if (!empty($locationName)) {
+                    if ($locationName !== '') {
                         $lowerLoc = strtolower($locationName);
                         if (isset($locationMap[$lowerLoc])) {
                             $locationId = $locationMap[$lowerLoc];
@@ -90,36 +155,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         }
                     }
 
-                    // User Daten vorbereiten
-                    $userData = [
-                        'username'    => $username,
-                        'email'       => !empty($email) ? $email : null,
-                        'first_name'  => !empty($firstName) ? $firstName : null,
-                        'last_name'   => !empty($lastName) ? $lastName : null,
+                    $baseUserData = [
+                        'username' => $username,
+                        'email' => $email !== '' ? $email : null,
+                        'first_name' => $firstName !== '' ? $firstName : null,
+                        'last_name' => $lastName !== '' ? $lastName : null,
                         'personalnummer' => $personalnummer !== '' ? $personalnummer : null,
                         'vorgesetzter' => $vorgesetzter !== '' ? $vorgesetzter : null,
-                        'is_activ'    => in_array(strtolower($isActiv), ['0', 'false', 'nein', 'no'], true) ? 0 : 1,
+                        'is_activ' => in_array(strtolower($statusValue), ['0', 'false', 'nein', 'no', 'inaktiv'], true) ? 0 : 1,
                         'location_id' => $locationId,
-                        'password'    => null, // Kein Passwort da Login standardmäßig deaktiviert
-                        'can_login'   => 0    // Importierte Benutzer haben standardmäßig KEIN Login-Recht
                     ];
 
                     try {
                         $uKey = strtolower($username);
-                        if (isset($userMap[$uKey])) {
-                            // Update
+                        $eKey = strtolower($email);
+                        $pKey = $personalnummer;
+                        $userId = null;
+
+                        if ($uKey !== '' && isset($userMap[$uKey])) {
                             $userId = $userMap[$uKey];
-                            if ($userController->updateUser($userId, $userData)) {
+                        } elseif ($pKey !== '' && isset($personalnummerMap[$pKey])) {
+                            $userId = $personalnummerMap[$pKey];
+                        } elseif ($eKey !== '' && isset($emailMap[$eKey])) {
+                            $userId = $emailMap[$eKey];
+                        }
+
+                        if ($userId !== null) {
+                            if ($userController->updateUser($userId, $baseUserData)) {
                                 $updated++;
+                                $userMap[$uKey] = $userId;
+                                if ($eKey !== '') {
+                                    $emailMap[$eKey] = $userId;
+                                }
+                                if ($pKey !== '') {
+                                    $personalnummerMap[$pKey] = $userId;
+                                }
                             } else {
                                 $failed++;
                                 $report[] = "Zeile $rowCount: Fehler beim Aktualisieren von '$username'.";
                             }
                         } else {
-                            // Insert
-                            if ($userController->createUser($userData)) {
+                            $createUserData = $baseUserData + [
+                                'password' => null,
+                                'can_login' => 0,
+                            ];
+
+                            if ($userController->createUser($createUserData)) {
                                 $inserted++;
-                                $userMap[$uKey] = $db->lastInsertId();
+                                $newUserId = (int) $db->lastInsertId();
+                                $userMap[$uKey] = $newUserId;
+                                if ($eKey !== '') {
+                                    $emailMap[$eKey] = $newUserId;
+                                }
+                                if ($pKey !== '') {
+                                    $personalnummerMap[$pKey] = $newUserId;
+                                }
                             } else {
                                 $failed++;
                                 $report[] = "Zeile $rowCount: Fehler beim Erstellen von '$username'.";
@@ -130,6 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                         $report[] = "Zeile $rowCount: " . $e->getMessage();
                     }
                 }
+
                 fclose($handle);
                 $success = "Import abgeschlossen. Erstellt: $inserted, Aktualisiert: $updated, Fehlgeschlagen: $failed.";
             }
@@ -184,7 +275,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                 <div style="margin-bottom: 2rem;">
                     <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">CSV Datei auswählen</label>
                     <input type="file" name="csv_file" accept=".csv" required style="display: block; width: 100%; padding: 0.75rem; border: 1px dashed var(--glass-border); border-radius: 0.5rem; background: rgba(0,0,0,0.1); color: var(--text-muted); cursor: pointer;">
-                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Erwarteter Aufbau: <code>username; email; first_name; last_name; location_name; personalnummer; vorgesetzter; is_activ</code></p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Erwarteter Aufbau: <code>username; email; first_name; last_name; location_name; personalnummer; vorgesetzter; status</code></p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Status: <code>1</code> = aktiv, <code>0</code> = inaktiv.</p>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-file-import"></i> Hochladen & Importieren</button>

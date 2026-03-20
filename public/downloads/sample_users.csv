@@ -1,4 +1,4 @@
-username;email;first_name;last_name;location_name
-max.mustermann;max.mustermann@example.com;Max;Mustermann;SLH - Zwickau
-erika.muster;erika.muster@example.com;Erika;Muster;Weidlich - Dortmund
-test.user;test.user@example.com;Test;User;
+username;email;first_name;last_name;location_name;personalnummer;vorgesetzter;status
+max.mustermann;max.mustermann@example.com;Max;Mustermann;SLH - Zwickau;0000123456;Sabine Leitung;1
+erika.muster;erika.muster@example.com;Erika;Muster;Weidlich - Dortmund;0000456789;Thomas Chef;1
+test.user;test.user@example.com;Test;User;;0000001001;Max Mustermann;0

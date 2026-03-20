@@ -42,6 +42,12 @@ SELECT 'Tabelle asset_requests vorhanden' AS check_name,
        WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'asset_requests'
      ), 'OK', 'FEHLT') AS result;
 
+SELECT 'Tabelle password_resets vorhanden' AS check_name,
+     IF(EXISTS(
+       SELECT 1 FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'password_resets'
+     ), 'OK', 'FEHLT') AS result;
+
 -- 2) Kritische Spalten vorhanden?
 SELECT 'Spalte categories.kuerzel vorhanden' AS check_name,
        IF(EXISTS(
@@ -83,6 +89,30 @@ SELECT 'Spalte users.can_login vorhanden' AS check_name,
              AND COLUMN_NAME = 'can_login'
        ), 'OK', 'FEHLT') AS result;
 
+SELECT 'Spalte users.personalnummer vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'users'
+             AND COLUMN_NAME = 'personalnummer'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte users.vorgesetzter vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'users'
+             AND COLUMN_NAME = 'vorgesetzter'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte users.is_activ vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'users'
+             AND COLUMN_NAME = 'is_activ'
+       ), 'OK', 'FEHLT') AS result;
+
 SELECT 'Spalte settings.site_favicon vorhanden' AS check_name,
        IF(EXISTS(
            SELECT 1 FROM information_schema.COLUMNS
@@ -113,6 +143,46 @@ SELECT 'Spalte settings.protocol_footer_text vorhanden' AS check_name,
            WHERE TABLE_SCHEMA = @schema_name
              AND TABLE_NAME = 'settings'
              AND COLUMN_NAME = 'protocol_footer_text'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte settings.mail_test_success_at vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'settings'
+             AND COLUMN_NAME = 'mail_test_success_at'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte settings.mail_test_recipient vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'settings'
+             AND COLUMN_NAME = 'mail_test_recipient'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte settings.mail_test_last_error vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'settings'
+             AND COLUMN_NAME = 'mail_test_last_error'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_models.serial_number_required vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_models'
+             AND COLUMN_NAME = 'serial_number_required'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte assets.serial_number_required vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'assets'
+             AND COLUMN_NAME = 'serial_number_required'
        ), 'OK', 'FEHLT') AS result;
 
 SELECT 'Spalte assets.os_version ist INT' AS check_name,
