@@ -37,7 +37,7 @@ if (isset($_GET['error'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_assets_csv'])) {
     $postedToken = (string) ($_POST['csrf_token'] ?? '');
     if (!hash_equals((string) ($_SESSION['settings_export_csrf'] ?? ''), $postedToken)) {
-        header('Location: settings.php?error=' . urlencode('Ungueltiges Formular-Token. Bitte Seite neu laden.'));
+        header('Location: settings.php?error=' . urlencode('Ungültiges Formular-Token. Bitte Seite neu laden.'));
         exit;
     }
 
@@ -402,7 +402,7 @@ $osOptions = $masterData->getLookupOptions('os');
             <div class="card" style="margin-bottom: 1.25rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
                     <div>
-                        <h3 style="margin:0 0 0.35rem 0;">Asset-Export fuer Drittanwendung</h3>
+                        <h3 style="margin:0 0 0.35rem 0;">Asset-Export für Drittanwendung</h3>
                         <p style="margin:0; color: var(--text-muted); font-size: 0.875rem;">
                             Exportiert nur Assets mit archiv_bit = 0 und setzt diese danach auf archiv_bit = 1.
                             Aktuell exportierbar: <strong><?php echo (int) $pendingExportCount; ?></strong>

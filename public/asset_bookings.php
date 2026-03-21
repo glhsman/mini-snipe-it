@@ -95,19 +95,19 @@ function displayUserName(array $row): string {
         <header class="header">
             <div>
                 <h1>Asset-Buchungen</h1>
-                <p style="color: var(--text-muted); margin-top: 0.25rem;">Ausgabe und Ruecknahme pro Benutzer zur Information fuer berechtigte Bearbeiter.</p>
+                <p style="color: var(--text-muted); margin-top: 0.25rem;">Ausgabe und Rücknahme pro Benutzer zur Information für berechtigte Bearbeiter.</p>
             </div>
         </header>
 
         <?php if (isset($_GET['deleted'])): ?>
-            <div class="alert alert-success">Die Buchung wurde geloescht.</div>
+                <div class="alert alert-success">Die Buchung wurde gelöscht.</div>
         <?php endif; ?>
         <?php if (isset($_GET['error'])): ?>
             <div class="alert alert-error">
                 <?php if ($_GET['error'] === 'csrf'): ?>
                     Sicherheitspruefung fehlgeschlagen. Bitte erneut versuchen.
                 <?php else: ?>
-                    Die Buchung konnte nicht geloescht werden.
+                    Die Buchung konnte nicht gelöscht werden.
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -127,7 +127,7 @@ function displayUserName(array $row): string {
         <div class="card">
             <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:1rem;">
                 <h2 style="margin:0;">Letzte Buchungen (max. 250)</h2>
-                <span style="color: var(--text-muted); font-size: 0.875rem;"><?php echo count($bookings); ?> Eintraege</span>
+                    <span style="color: var(--text-muted); font-size: 0.875rem;"><?php echo count($bookings); ?> Einträge</span>
             </div>
 
             <div style="overflow-x:auto;">
@@ -179,7 +179,7 @@ function displayUserName(array $row): string {
                                 <?php if ($isCheckout): ?>
                                     <span class="badge badge-warning"><i class="fas fa-arrow-right"></i> Ausgabe</span>
                                 <?php else: ?>
-                                    <span class="badge badge-success"><i class="fas fa-undo"></i> Ruecknahme</span>
+                                    <span class="badge badge-success"><i class="fas fa-undo"></i> Rücknahme</span>
                                 <?php endif; ?>
                             </td>
                             <td style="white-space:nowrap;"><?php echo h($row['booking_at'] ?? ''); ?></td>
@@ -189,12 +189,12 @@ function displayUserName(array $row): string {
                                     <?php if ($isCheckout): ?>
                                         <span class="badge badge-warning"><i class="fas fa-box-open"></i> Ausgegeben</span>
                                     <?php else: ?>
-                                        <span class="badge badge-success"><i class="fas fa-undo"></i> Zurueckgenommen</span>
+                                        <span class="badge badge-success"><i class="fas fa-undo"></i> Zurückgenommen</span>
                                     <?php endif; ?>
-                                    <form method="POST" style="display:inline;" onsubmit="return confirm('Diese Buchung wirklich loeschen?');">
+                                    <form method="POST" style="display:inline;" onsubmit="return confirm('Diese Buchung wirklich löschen?');">
                                         <input type="hidden" name="csrf_token" value="<?php echo h($csrfToken); ?>">
                                         <input type="hidden" name="assignment_id" value="<?php echo (int) $row['id']; ?>">
-                                        <button type="submit" class="btn-icon-delete" title="Buchung loeschen" aria-label="Buchung loeschen">
+                                        <button type="submit" class="btn-icon-delete" title="Buchung löschen" aria-label="Buchung löschen">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>

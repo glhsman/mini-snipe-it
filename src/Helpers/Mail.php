@@ -107,7 +107,7 @@ class Mail {
         $sslMode = strtolower(trim((string) ($cfg['smtp_ssl'] ?? 'auto')));
 
         if ($host === '' || $port <= 0) {
-            return ['success' => false, 'message' => 'SMTP-Konfiguration unvollstaendig: Host oder Port fehlt.'];
+            return ['success' => false, 'message' => 'SMTP-Konfiguration unvollständig: Host oder Port fehlt.'];
         }
 
         $transport = ($sslMode === 'ssl' || $port === 465) ? 'ssl' : 'tcp';
@@ -131,7 +131,7 @@ class Mail {
         $greeting = self::readResponse($socket);
         if ((int) substr($greeting, 0, 3) !== 220) {
             fclose($socket);
-            return ['success' => false, 'message' => 'SMTP-Server meldet keinen gueltigen Start: ' . trim($greeting)];
+            return ['success' => false, 'message' => 'SMTP-Server meldet keinen gültigen Start: ' . trim($greeting)];
         }
 
         $heloHost = gethostname() ?: 'localhost';
@@ -276,7 +276,7 @@ class Mail {
         $sslMode = strtolower(trim((string) ($cfg['smtp_ssl'] ?? 'auto')));
 
         if ($host === '' || $port <= 0) {
-            return ['success' => false, 'message' => 'SMTP-Konfiguration unvollstaendig: Host oder Port fehlt.'];
+            return ['success' => false, 'message' => 'SMTP-Konfiguration unvollständig: Host oder Port fehlt.'];
         }
 
         $pmClass = '\\PHPMailer\\PHPMailer\\PHPMailer';

@@ -31,7 +31,7 @@ function getSendmailConfig() {
     if (in_array($transport, ['ssl', 'smtps'], true)) {
         $transportLabel = 'SSL';
     } elseif (in_array($transport, ['none', 'off', 'plain', 'unencrypted'], true)) {
-        $transportLabel = 'Unverschluesselt';
+        $transportLabel = 'Unverschlüsselt';
     }
     
     return [
@@ -102,7 +102,7 @@ function testSmtpDirect(string $to_email, string $subject, string $message, arra
     if ($host === '' || $port <= 0) {
         return [
             'success' => false,
-            'message' => 'SMTP-Konfiguration unvollstaendig: Host oder Port fehlt.',
+            'message' => 'SMTP-Konfiguration unvollständig: Host oder Port fehlt.',
         ];
     }
 
@@ -132,7 +132,7 @@ function testSmtpDirect(string $to_email, string $subject, string $message, arra
         fclose($socket);
         return [
             'success' => false,
-            'message' => 'SMTP-Server meldet keinen gueltigen Start: ' . trim($greeting),
+            'message' => 'SMTP-Server meldet keinen gültigen Start: ' . trim($greeting),
         ];
     }
 
@@ -286,7 +286,7 @@ function buildTlsHostnameHint(string $reason): string {
         $certName = trim((string) ($matches[1] ?? ''));
         $expectedName = trim((string) ($matches[2] ?? ''));
         if ($certName !== '' && $expectedName !== '') {
-            return " Hinweis: Zertifikat-Hostname passt nicht. Server-Zertifikat ist fuer '{$certName}', konfiguriert ist '{$expectedName}'. Setze smtp_server={$certName} oder fordere ein passendes Zertifikat beim Provider an.";
+            return " Hinweis: Zertifikat-Hostname passt nicht. Server-Zertifikat ist für '{$certName}', konfiguriert ist '{$expectedName}'. Setze smtp_server={$certName} oder fordere ein passendes Zertifikat beim Provider an.";
         }
     }
     return '';
@@ -296,7 +296,7 @@ function testSmtpWithPHPMailer(string $to_email, string $subject, string $messag
     if (!class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
         return [
             'success' => false,
-            'message' => 'PHPMailer nicht verfuegbar (vendor/autoload.php nicht gefunden).',
+            'message' => 'PHPMailer nicht verfügbar (vendor/autoload.php nicht gefunden).',
         ];
     }
 
@@ -309,7 +309,7 @@ function testSmtpWithPHPMailer(string $to_email, string $subject, string $messag
     if ($host === '' || $port <= 0) {
         return [
             'success' => false,
-            'message' => 'SMTP-Konfiguration unvollstaendig: Host oder Port fehlt.',
+            'message' => 'SMTP-Konfiguration unvollständig: Host oder Port fehlt.',
         ];
     }
 
@@ -474,11 +474,11 @@ $testMailResult = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_sendmail'])) {
     $postedToken = (string) ($_POST['csrf_token'] ?? '');
     if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
-        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
+        $error = 'Ungültiges Formular-Token. Bitte Seite neu laden.';
     } else {
         $testEmail = trim($_POST['test_email'] ?? '');
         if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
-            $error = 'Bitte eine gueltige E-Mail-Adresse eingeben.';
+            $error = 'Bitte eine gültige E-Mail-Adresse eingeben.';
         } else {
             $testMailResult = testSendmail(
                 $testEmail,
@@ -503,7 +503,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_sendmail'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     $postedToken = (string) ($_POST['csrf_token'] ?? '');
     if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
-        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
+        $error = 'Ungültiges Formular-Token. Bitte Seite neu laden.';
     }
 
     $siteName = $_POST['site_name'] ?? 'Mini-Snipe';
@@ -595,7 +595,7 @@ $assetLogCleanupSuccess = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cleanup_asset_logs'])) {
     $postedToken = (string) ($_POST['csrf_token'] ?? '');
     if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
-        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
+        $error = 'Ungültiges Formular-Token. Bitte Seite neu laden.';
     } else {
         $keepCount = (int) ($_POST['asset_keep_count'] ?? 10);
         if (in_array($keepCount, [10, 25, 50, 100], true)) {
@@ -628,7 +628,7 @@ $logCleanupSuccess = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cleanup_logs'])) {
     $postedToken = (string) ($_POST['csrf_token'] ?? '');
     if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
-        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
+        $error = 'Ungültiges Formular-Token. Bitte Seite neu laden.';
     } else {
         $keepCount = (int) ($_POST['keep_count'] ?? 10);
         if (in_array($keepCount, [10, 25, 50, 100], true)) {
@@ -927,7 +927,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <label>Header-Text</label>
                         <div>
                             <textarea name="protocol_header_text" class="form-control" rows="6"><?php echo htmlspecialchars($settings['protocol_header_text'] ?? ''); ?></textarea>
-                            <small class="form-help">Einleitungstext oberhalb der Asset-Tabelle fuer Ausgabe- und Rueckgabeprotokolle.</small>
+                            <small class="form-help">Einleitungstext oberhalb der Asset-Tabelle für Ausgabe- und Rückgabeprotokolle.</small>
                         </div>
                     </div>
 
@@ -935,7 +935,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <label>Footer-Text</label>
                         <div>
                             <textarea name="protocol_footer_text" class="form-control" rows="2"><?php echo htmlspecialchars($settings['protocol_footer_text'] ?? ''); ?></textarea>
-                            <small class="form-help">Kurzer Fusszeilentext fuer Ausdrucke und Ablage.</small>
+                            <small class="form-help">Kurzer Fußzeilentext für Ausdrucke und Ablage.</small>
                         </div>
                     </div>
                 </div>
@@ -959,7 +959,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                         <div>
                             <span style="color: var(--text-muted);">SMTP-Host:</span><br>
                             <code style="color: var(--accent-color);"><?php echo htmlspecialchars($sendmailConfig['smtp_host']); ?>:<?php echo htmlspecialchars($sendmailConfig['smtp_port']); ?></code>
-                            <div style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.78rem;">Verbindungsart fuer ausgehende SMTP-Mails.</div>
+                            <div style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.78rem;">Verbindungsart für ausgehende SMTP-Mails.</div>
                         </div>
                         <div>
                             <span style="color: var(--text-muted);">Absender-Adresse:</span><br>

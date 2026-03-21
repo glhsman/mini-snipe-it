@@ -38,9 +38,9 @@ $success = null;
 if (isset($_GET['return_status'])) {
     $returnMessage = trim((string) ($_GET['return_message'] ?? ''));
     if ($_GET['return_status'] === 'error') {
-        $error = $returnMessage !== '' ? $returnMessage : 'Rueckgabe konnte nicht verarbeitet werden.';
+        $error = $returnMessage !== '' ? $returnMessage : 'Rückgabe konnte nicht verarbeitet werden.';
     } elseif ($_GET['return_status'] === 'success') {
-        $success = $returnMessage !== '' ? $returnMessage : 'Rueckgabe wurde verarbeitet.';
+        $success = $returnMessage !== '' ? $returnMessage : 'Rückgabe wurde verarbeitet.';
     }
 }
 
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($data['username'])) {
         $error = "Benutzername darf nicht leer sein.";
     } elseif ($canLogin === 1 && $password !== $password_confirm) {
-        $error = "Die eingegebenen Passwoerter stimmen nicht ueberein.";
+            $error = "Die eingegebenen Passwörter stimmen nicht überein.";
     } elseif (
         $canLogin === 1 &&
         empty($password) &&
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: users.php');
                 exit;
             } else {
-                $error = "Fehler beim Speichern der Benutzerdaten. Moeglicherweise existiert der Benutzername oder die E-Mail bereits.";
+                $error = "Fehler beim Speichern der Benutzerdaten. Möglicherweise existiert der Benutzername oder die E-Mail bereits.";
             }
         } catch (\RuntimeException $e) {
             $error = $e->getMessage();
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="main-content">
         <header class="header">
             <h1>Benutzer bearbeiten</h1>
-            <a href="users.php" class="btn" style="background: rgba(255,255,255,0.1);"><i class="fas fa-arrow-left"></i> Zurueck</a>
+            <a href="users.php" class="btn" style="background: rgba(255,255,255,0.1);"><i class="fas fa-arrow-left"></i> Zurück</a>
         </header>
 
         <div class="card" style="max-width: 800px;">
@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <table>
                         <thead>
                             <tr>
-                                <th class="checkbox-col"><input type="checkbox" id="toggle-all-assets" title="Alle auswaehlen"></th>
+                                            <th class="checkbox-col"><input type="checkbox" id="toggle-all-assets" title="Alle auswählen"></th>
                                 <th>Asset</th>
                                 <th>Seriennummer</th>
                                 <th>Inventar-Nr</th>
@@ -186,9 +186,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </tbody>
                         </table>
                         <div class="asset-list-controls">
-                            <small style="color: var(--text-muted);">Mehrere Assets markieren und gemeinsam ruecknehmen.</small>
+                                    <small style="color: var(--text-muted);">Mehrere Assets markieren und gemeinsam rücknehmen.</small>
                             <button type="submit" class="btn btn-small" style="background: rgba(249, 115, 22, 0.16); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.28);">
-                                <i class="fas fa-undo"></i> Auswahl rueckgeben + Protokoll
+                                    <i class="fas fa-undo"></i> Auswahl rückgeben + Protokoll
                             </button>
                         </div>
                     </form>
@@ -265,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Passwort bestaetigen</label>
+                                <label>Passwort bestätigen</label>
                         <div class="password-wrapper">
                             <input type="password" name="password_confirm" id="pwd2" class="form-control" placeholder="********">
                             <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd2', this)"></i>
@@ -327,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else if (mustSetPassword) {
                 passwordLabel.textContent = 'Passwort (Pflichtfeld, da noch keines gesetzt ist)';
             } else {
-                passwordLabel.textContent = 'Passwort (optional, nur bei Aenderung)';
+                passwordLabel.textContent = 'Passwort (optional, nur bei Änderung)';
             }
         }
 
@@ -347,10 +347,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function validateBulkReturn() {
             const checked = document.querySelectorAll('.asset-checkbox:checked').length;
             if (checked === 0) {
-                alert('Bitte waehle mindestens ein Asset fuer die Rueckgabe aus.');
+                alert('Bitte wähle mindestens ein Asset für die Rückgabe aus.');
                 return false;
             }
-            return confirm('Ausgewaehlte Assets jetzt rueckgeben und Rueckgabeprotokoll erzeugen?');
+            return confirm('Ausgewählte Assets jetzt rückgeben und Rückgabeprotokoll erzeugen?');
         }
 
         const toggleAll = document.getElementById('toggle-all-assets');

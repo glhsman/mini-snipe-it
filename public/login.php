@@ -182,9 +182,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="request-entry-card">
             <div class="request-content">
-                <div class="request-kicker"><i class="fas fa-paper-plane"></i> Oeffentliche Anforderung</div>
+                <div class="request-kicker"><i class="fas fa-paper-plane"></i> Öffentliche Anforderung</div>
                 <h2>Neues Geraet benoetigt?</h2>
-                <p>Wenn Sie keinen Zugang zum Asset-System haben, koennen Sie hier direkt eine neue Anforderung einreichen.</p>
+                <p>Wenn Sie keinen Zugang zum Asset-System haben, können Sie hier direkt eine neue Anforderung einreichen.</p>
                 <a href="asset_request_public.php" class="request-cta">
                     <i class="fas fa-clipboard-check"></i>
                     Nur neues Geraet anfordern

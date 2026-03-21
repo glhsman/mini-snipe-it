@@ -210,7 +210,7 @@ function requestUserLabel(array $row): string {
         <header class="header">
             <div>
                 <h1>Anforderungen</h1>
-                <p style="color: var(--text-muted); margin-top: 0.25rem;">Eingehende oeffentliche Geraeteanforderungen.</p>
+                <p style="color: var(--text-muted); margin-top: 0.25rem;">Eingehende öffentliche Geräteanforderungen.</p>
             </div>
         </header>
 
@@ -218,14 +218,14 @@ function requestUserLabel(array $row): string {
             <div class="alert alert-success">Status der Anforderung wurde aktualisiert.</div>
         <?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?>
-            <div class="alert alert-success"><?php echo (int) $_GET['deleted']; ?> abgeschlossene Anforderung(en) wurden geloescht.</div>
+                    <div class="alert alert-success"><?php echo (int) $_GET['deleted']; ?> abgeschlossene Anforderung(en) wurden gelöscht.</div>
         <?php endif; ?>
         <?php if (isset($_GET['mail'])): ?>
             <?php if ($_GET['mail'] === 'sent'): ?>
                 <div class="alert alert-success">Benachrichtigungs-Mail wurde an den Benutzer versendet.</div>
             <?php elseif ($_GET['mail'] === 'no_email'): ?>
                 <div class="alert" style="background: rgba(245, 158, 11, 0.12); color: #facc15; border: 1px solid rgba(245, 158, 11, 0.28);">
-                    Keine Benachrichtigungs-Mail versendet: Beim Benutzer ist keine gueltige E-Mail-Adresse hinterlegt.
+                    Keine Benachrichtigungs-Mail versendet: Beim Benutzer ist keine gültige E-Mail-Adresse hinterlegt.
                 </div>
             <?php elseif ($_GET['mail'] === 'failed'): ?>
                 <div class="alert" style="background: rgba(239, 68, 68, 0.14); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.35);">
@@ -238,9 +238,9 @@ function requestUserLabel(array $row): string {
                 <?php if ($_GET['error'] === 'csrf'): ?>
                     Sicherheitspruefung fehlgeschlagen. Bitte erneut versuchen.
                 <?php elseif ($_GET['error'] === 'delete'): ?>
-                    Es konnten keine abgeschlossenen Anforderungen geloescht werden.
+                    Es konnten keine abgeschlossenen Anforderungen gelöscht werden.
                 <?php else: ?>
-                    Status konnte nicht geaendert werden.
+                    Status konnte nicht geändert werden.
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -248,7 +248,7 @@ function requestUserLabel(array $row): string {
         <div class="card" style="margin-bottom: 1.25rem;">
             <form method="GET" style="display:grid; grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(160px, 220px)) auto; gap: 0.75rem; align-items: center;">
                 <div class="filter-search-group">
-                    <button type="button" class="btn delete-mode-toggle" id="delete-mode-toggle" title="Loeschmodus anzeigen" aria-label="Loeschmodus anzeigen" aria-pressed="false">
+                    <button type="button" class="btn delete-mode-toggle" id="delete-mode-toggle" title="Löschmodus anzeigen" aria-label="Löschmodus anzeigen" aria-pressed="false">
                         <i class="fas fa-trash"></i>
                     </button>
                     <input type="text" name="q" class="form-control" placeholder="Suche Benutzer, Standort, Kategorie, Begruendung" value="<?php echo h($search); ?>">
@@ -288,21 +288,21 @@ function requestUserLabel(array $row): string {
         <div class="card request-list-card delete-mode-off" id="request-list-card">
             <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 1rem; gap: 0.75rem; flex-wrap: wrap;">
                 <h2 style="margin:0;">Anforderungsliste</h2>
-                <span style="color: var(--text-muted); font-size: 0.875rem;"><?php echo count($requests); ?> Eintraege</span>
+                    <span style="color: var(--text-muted); font-size: 0.875rem;"><?php echo count($requests); ?> Einträge</span>
             </div>
 
             <form method="POST" action="asset_request_update.php" id="bulk-delete-form" class="bulk-toolbar">
                 <input type="hidden" name="csrf_token" value="<?php echo h($csrfToken); ?>">
                 <div class="bulk-toolbar-left">
                     <select name="action" id="bulk-action-select" class="form-control">
-                        <option value="">Aktion auswaehlen</option>
-                        <option value="delete_selected">Auswahl loeschen</option>
+                            <option value="">Aktion auswählen</option>
+                            <option value="delete_selected">Auswahl löschen</option>
                     </select>
                     <button class="btn btn-reject bulk-delete-button" type="submit" id="bulk-delete-button" disabled>
                         <i class="fas fa-trash"></i> Ausfuehren
                     </button>
                 </div>
-                <span id="bulk-selection-info" style="color: var(--text-muted); font-size: 0.85rem;">Nur erledigte oder abgelehnte Anforderungen koennen geloescht werden.</span>
+                        <span id="bulk-selection-info" style="color: var(--text-muted); font-size: 0.85rem;">Nur erledigte oder abgelehnte Anforderungen können gelöscht werden.</span>
             </form>
 
             <div style="overflow-x:auto;">
@@ -310,7 +310,7 @@ function requestUserLabel(array $row): string {
                     <thead>
                         <tr>
                             <th class="selection-cell">
-                                <input type="checkbox" id="select-all-completed" class="selection-checkbox" aria-label="Alle abgeschlossenen Anforderungen auswaehlen">
+                                <input type="checkbox" id="select-all-completed" class="selection-checkbox" aria-label="Alle abgeschlossenen Anforderungen auswählen">
                             </th>
                             <th>ID</th>
                             <th>Benutzer</th>
@@ -341,7 +341,7 @@ function requestUserLabel(array $row): string {
                                         class="selection-checkbox request-select-checkbox"
                                         form="bulk-delete-form"
                                         <?php echo $isCompleted ? '' : 'disabled'; ?>
-                                        aria-label="Anforderung #<?php echo (int) $row['id']; ?> auswaehlen"
+                                        aria-label="Anforderung #<?php echo (int) $row['id']; ?> auswählen"
                                     >
                                 </td>
                                 <td>#<?php echo (int) $row['id']; ?></td>
@@ -426,8 +426,8 @@ function requestUserLabel(array $row): string {
                 requestListCard.classList.toggle('delete-mode-off', !deleteModeEnabled);
                 deleteModeToggle.classList.toggle('is-active', deleteModeEnabled);
                 deleteModeToggle.setAttribute('aria-pressed', deleteModeEnabled ? 'true' : 'false');
-                deleteModeToggle.setAttribute('title', deleteModeEnabled ? 'Loeschmodus ausblenden' : 'Loeschmodus anzeigen');
-                deleteModeToggle.setAttribute('aria-label', deleteModeEnabled ? 'Loeschmodus ausblenden' : 'Loeschmodus anzeigen');
+                deleteModeToggle.setAttribute('title', deleteModeEnabled ? 'Löschmodus ausblenden' : 'Löschmodus anzeigen');
+                deleteModeToggle.setAttribute('aria-label', deleteModeEnabled ? 'Löschmodus ausblenden' : 'Löschmodus anzeigen');
 
                 if (emptyStateCell) {
                     emptyStateCell.colSpan = deleteModeEnabled ? 10 : 9;
@@ -452,9 +452,9 @@ function requestUserLabel(array $row): string {
                 selectAll.indeterminate = selectedCount > 0 && selectedCount < checkboxes.length;
 
                 if (selectedCount > 0) {
-                    selectionInfo.textContent = selectedCount + ' abgeschlossene Anforderung(en) ausgewaehlt.';
+                    selectionInfo.textContent = selectedCount + ' abgeschlossene Anforderung(en) ausgewählt.';
                 } else {
-                    selectionInfo.textContent = 'Nur erledigte oder abgelehnte Anforderungen koennen geloescht werden.';
+                    selectionInfo.textContent = 'Nur erledigte oder abgelehnte Anforderungen können gelöscht werden.';
                 }
             }
 
@@ -486,7 +486,7 @@ function requestUserLabel(array $row): string {
                     return;
                 }
 
-                if (!window.confirm('Die ausgewaehlten abgeschlossenen Anforderungen wirklich loeschen?')) {
+                if (!window.confirm('Die ausgewählten abgeschlossenen Anforderungen wirklich löschen?')) {
                     event.preventDefault();
                 }
             });

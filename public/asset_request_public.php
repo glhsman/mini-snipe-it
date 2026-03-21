@@ -51,16 +51,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $formData['username'];
 
     if ($locationId <= 0) {
-        $errors[] = 'Bitte einen Standort auswaehlen.';
+        $errors[] = 'Bitte einen Standort auswählen.';
     }
     if ($username === '') {
         $errors[] = 'Bitte den Benutzernamen angeben.';
     }
     if ($categoryId <= 0) {
-        $errors[] = 'Bitte eine Kategorie auswaehlen.';
+        $errors[] = 'Bitte eine Kategorie auswählen.';
     }
     if ($quantity < 1 || $quantity > 20) {
-        $errors[] = 'Bitte eine gueltige Anzahl zwischen 1 und 20 angeben.';
+        $errors[] = 'Bitte eine gültige Anzahl zwischen 1 und 20 angeben.';
     }
     if ($reason === '') {
         $errors[] = 'Bitte eine Begruendung eintragen.';
@@ -200,7 +200,7 @@ if ($success) {
         <?php endif; ?>
 
         <?php if ($success): ?>
-            <div class="alert alert-success">Ihre Anforderung wurde gespeichert und an das Asset-Management uebermittelt.</div>
+            <div class="alert alert-success">Ihre Anforderung wurde gespeichert und an das Asset-Management übermittelt.</div>
         <?php endif; ?>
 
         <form method="POST" action="asset_request_public.php" novalidate>
@@ -212,7 +212,7 @@ if ($success) {
                 <div class="form-group">
                     <label for="location_id">Standort *</label>
                     <select id="location_id" name="location_id" class="form-control" required>
-                        <option value="">Bitte waehlen</option>
+                                <option value="">Bitte wählen</option>
                         <?php foreach ($locations as $location): ?>
                             <option value="<?php echo (int) $location['id']; ?>" <?php echo $formData['location_id'] === (string) $location['id'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars((string) $location['name'], ENT_QUOTES, 'UTF-8'); ?>
@@ -229,7 +229,7 @@ if ($success) {
                 <div class="form-group">
                     <label for="category_id">Kategorie *</label>
                     <select id="category_id" name="category_id" class="form-control" required>
-                        <option value="">Bitte waehlen</option>
+                                <option value="">Bitte wählen</option>
                         <?php foreach ($categories as $category): ?>
                             <option value="<?php echo (int) $category['id']; ?>" <?php echo $formData['category_id'] === (string) $category['id'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8'); ?>
@@ -250,10 +250,10 @@ if ($success) {
             </div>
 
             <div class="card-actions">
-                <a href="login.php" class="btn btn-secondary">Zurueck zum Login</a>
+                    <a href="login.php" class="btn btn-secondary">Zurück zum Login</a>
                 <button type="submit" class="btn btn-primary">Anforderung absenden</button>
             </div>
-            <p class="hint">* Pflichtfelder. Die Anforderung wird nur gespeichert, wenn Benutzername und Standort zusammen eindeutig zugeordnet werden koennen.</p>
+                        <p class="hint">* Pflichtfelder. Die Anforderung wird nur gespeichert, wenn Benutzername und Standort zusammen eindeutig zugeordnet werden können.</p>
         </form>
     </div>
 </body>

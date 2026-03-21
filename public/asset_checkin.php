@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors = [];
 
         if (empty($assetIds)) {
-            header('Location: ' . ($returnTo !== '' ? $returnTo : buildReturnRedirectUrl($userId, 'error', 'Bitte mindestens ein Asset fuer die Rueckgabe auswaehlen.')));
+            header('Location: ' . ($returnTo !== '' ? $returnTo : buildReturnRedirectUrl($userId, 'error', 'Bitte mindestens ein Asset für die Rückgabe auswählen.')));
             exit;
         }
 
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $message = !empty($errors) ? $errors[0] : 'Rueckgabe konnte nicht verarbeitet werden.';
+        $message = !empty($errors) ? $errors[0] : 'Rückgabe konnte nicht verarbeitet werden.';
         header('Location: ' . buildReturnRedirectUrl($userId, 'error', $message));
         exit;
     }

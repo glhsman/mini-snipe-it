@@ -104,10 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data['db_pass'] = '';
             $data['mail_pass'] = '';
         } elseif (!hasValidSetupData($data)) {
-            $error = 'Bitte DB Host, DB Name und DB User vollstaendig angeben.';
+            $error = 'Bitte DB Host, DB Name und DB User vollständig angeben.';
             $stage = 'input';
         } elseif (!hasValidMailData($data)) {
-            $error = 'Mail-Konfiguration ungueltig. Wenn du Maildaten eintraegst, muessen Host, numerischer Port und eine gueltige Verschluesselungsart gesetzt sein.';
+            $error = 'Mail-Konfiguration ungültig. Wenn du Maildaten einträgst, müssen Host, numerischer Port und eine gültige Verschlüsselungsart gesetzt sein.';
             $stage = 'input';
         } else {
             if ($action === 'review_connection') {
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $saveResult = $setup->saveConfig($data);
                     if ($saveResult) {
                         $success = "Installation erfolgreich! Alle Tabellen und Demo-Daten wurden angelegt.<br><br>"
-                            . "<strong>Demo-Zugangsdaten (Passwort ueberall: <code>password</code>)</strong><br>"
+                            . "<strong>Demo-Zugangsdaten (Passwort überall: <code>password</code>)</strong><br>"
                             . "<table style='margin-top:0.5rem; border-collapse:collapse; font-size:0.85rem;'>"
                             . "<tr><th style='text-align:left; padding:0.2rem 1rem 0.2rem 0; color:inherit;'>Benutzername</th><th style='text-align:left; padding:0.2rem 1rem 0.2rem 0; color:inherit;'>Rolle</th></tr>"
                             . "<tr><td style='padding:0.15rem 1rem 0.15rem 0;'><strong>admin</strong></td><td>Administrator</td></tr>"
@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             . "<tr><td style='padding:0.15rem 1rem 0.15rem 0;'>aschmidt</td><td>Benutzer</td></tr>"
                             . "<tr><td style='padding:0.15rem 1rem 0.15rem 0;'>tmueller</td><td>Benutzer</td></tr>"
                             . "</table>"
-                            . "<small style='display:block; margin-top:0.75rem;'>Bitte Passwoerter nach dem ersten Login unter <em>Profil</em> aendern.</small>";
+                            . "<small style='display:block; margin-top:0.75rem;'>Bitte Passwörter nach dem ersten Login unter <em>Profil</em> ändern.</small>";
                         header('Refresh:10; url=login.php');
                     } else {
                         $error = 'Die .env Datei konnte nicht geschrieben werden. Bitte pruefe die Schreibrechte.';
@@ -211,7 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
     <div class="card setup-card">
         <h1 style="margin-bottom: 0.5rem;">Willkommen</h1>
-        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Konfiguriere deine Datenbank fuer Mini-Snipe. Vor jedem kritischen Schritt gibt es jetzt einen separaten Stopp-Punkt.</p>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Konfiguriere deine Datenbank für Mini-Snipe. Vor jedem kritischen Schritt gibt es jetzt einen separaten Stopp-Punkt.</p>
 
         <div class="step-list">
             <div class="step-item">
@@ -268,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <select name="mail_encryption" class="form-control">
                         <option value="tls" <?php echo $data['mail_encryption'] === 'tls' ? 'selected' : ''; ?>>STARTTLS / TLS</option>
                         <option value="ssl" <?php echo $data['mail_encryption'] === 'ssl' ? 'selected' : ''; ?>>SSL</option>
-                        <option value="none" <?php echo $data['mail_encryption'] === 'none' ? 'selected' : ''; ?>>Unverschluesselt</option>
+                                    <option value="none" <?php echo $data['mail_encryption'] === 'none' ? 'selected' : ''; ?>>Unverschlüsselt</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -366,7 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="alert alert-success">Verbindung zur Datenbank wurde erfolgreich getestet.</div>
                 <div class="stop-marker">
                     <h2>Stopp vor Schritt 2</h2>
-                    <p style="margin:0;">Der naechste Schritt legt Tabellen, Indizes und Vorbelegungen in der ausgewaehlten Datenbank an. Wenn die Datenbank doch nicht leer oder nicht fuer dieses System vorgesehen ist, hier abbrechen.</p>
+                    <p style="margin:0;">Der nächste Schritt legt Tabellen, Indizes und Vorbelegungen in der ausgewählten Datenbank an. Wenn die Datenbank doch nicht leer oder nicht für dieses System vorgesehen ist, hier abbrechen.</p>
                 </div>
                 <form method="POST">
                     <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['setup_wizard_csrf']); ?>">

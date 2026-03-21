@@ -47,7 +47,7 @@ class AssetRequestController {
         $stmt = $this->db->prepare("SELECT id FROM categories WHERE id = ?");
         $stmt->execute([$categoryId]);
         if (!$stmt->fetch()) {
-            return ['success' => false, 'error' => 'Kategorie ist ungueltig.'];
+            return ['success' => false, 'error' => 'Kategorie ist ungültig.'];
         }
 
         $insert = $this->db->prepare(

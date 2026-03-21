@@ -328,22 +328,22 @@ if ($historyEntry) {
     $eventDateRaw = $protocolType === 'return' ? ($firstEntry['checkin_at'] ?? null) : ($firstEntry['checkout_at'] ?? null);
 }
 $protocolDate = $eventDateRaw ? date('d.m.Y', strtotime($eventDateRaw)) : date('d.m.Y');
-$protocolTitle = $protocolType === 'return' ? 'RUECKGABEPROTOKOLL IT-HARDWARE' : 'AUSGABEPROTOKOLL IT-HARDWARE';
-$protocolVerb = $protocolType === 'return' ? 'Rueckgabe' : 'Ausgabe';
+$protocolTitle = $protocolType === 'return' ? 'RÜCKGABEPROTOKOLL IT-HARDWARE' : 'AUSGABEPROTOKOLL IT-HARDWARE';
+$protocolVerb = $protocolType === 'return' ? 'Rückgabe' : 'Ausgabe';
 $companyAddress = trim((string) ($settings['company_address'] ?? ''));
 $headerText = trim((string) ($settings['protocol_header_text'] ?? ''));
 $footerText = trim((string) ($settings['protocol_footer_text'] ?? ''));
 
 if ($headerText === '') {
-    $headerText = 'Die unten aufgefuehrte IT-Hardware wird hiermit dokumentiert. Mit Ihrer Unterschrift bestaetigen Sie den ordnungsgemaessen Vorgang.';
+    $headerText = 'Die unten aufgeführte IT-Hardware wird hiermit dokumentiert. Mit Ihrer Unterschrift bestätigen Sie den ordnungsgemäßen Vorgang.';
 }
 if ($footerText === '') {
-    $footerText = 'IT-Protokoll. Fuer Ihre/unsere Unterlagen.';
+    $footerText = 'IT-Protokoll. Für Ihre/unsere Unterlagen.';
 }
 
 $typeExplanation = $protocolType === 'return'
-    ? 'Mit diesem Protokoll bestaetigen Sie die vollstaendige Rueckgabe der unten aufgefuehrten IT-Hardware an die IT-Abteilung.'
-    : 'Mit diesem Protokoll bestaetigen Sie den Erhalt der unten aufgefuehrten IT-Hardware zur dienstlichen Nutzung.';
+    ? 'Mit diesem Protokoll bestätigen Sie die vollständige Rückgabe der unten aufgeführten IT-Hardware an die IT-Abteilung.'
+    : 'Mit diesem Protokoll bestätigen Sie den Erhalt der unten aufgeführten IT-Hardware zur dienstlichen Nutzung.';
 
 $fullName = trim((string) (($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
 if ($fullName === '') {
@@ -351,7 +351,7 @@ if ($fullName === '') {
 }
 
 $returnTo = getSafeProtocolReturnTo($_GET['return_to'] ?? '', $userId);
-$returnLabel = str_starts_with($returnTo, 'assets.php') ? 'Zurueck zu den Assets' : 'Zurueck zum Benutzer';
+$returnLabel = str_starts_with($returnTo, 'assets.php') ? 'Zurück zu den Assets' : 'Zurück zum Benutzer';
 $protocolQuery = buildProtocolQuery([
     'id' => $userId,
     'type' => $protocolType,
@@ -394,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') =
         exit;
     }
 
-    $subject = $siteName . ' - ' . ($protocolType === 'return' ? 'Rueckgabeprotokoll' : 'Ausgabeprotokoll') . ' fuer ' . $fullName;
+    $subject = $siteName . ' - ' . ($protocolType === 'return' ? 'Rückgabeprotokoll' : 'Ausgabeprotokoll') . ' für ' . $fullName;
     $mailText = renderProtocolMailText($siteName, $fullName, $protocolTitle, $protocolDate, $headerText, $typeExplanation, $assets, $footerText);
     $mailHtml = renderProtocolMailHtml(
         $siteName,
@@ -429,7 +429,7 @@ if ($mailFeedback === 'sent') {
     $mailNoticeClass .= ' error';
     unset($_SESSION['user_protocol_mail_error']);
 } elseif ($mailFeedback === 'no_email') {
-    $mailNotice = 'Beim Benutzer ist keine gueltige E-Mail-Adresse hinterlegt.';
+    $mailNotice = 'Beim Benutzer ist keine gültige E-Mail-Adresse hinterlegt.';
     $mailNoticeClass .= ' error';
 } elseif ($mailFeedback === 'csrf') {
     $mailNotice = 'Der Mailversand wurde aus Sicherheitsgruenden abgebrochen. Bitte erneut versuchen.';
@@ -734,7 +734,7 @@ if ($mailFeedback === 'sent') {
         <form method="POST" action="user_protocol.php?<?php echo htmlspecialchars($protocolQuery); ?>">
             <input type="hidden" name="action" value="send_protocol_mail">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($protocolCsrf); ?>">
-            <button type="submit" class="btn-mail" <?php echo $hasValidEmail ? '' : 'disabled'; ?> title="<?php echo htmlspecialchars($hasValidEmail ? 'Protokoll an den Benutzer senden' : 'Beim Benutzer ist keine gueltige E-Mail-Adresse hinterlegt'); ?>">
+                <button type="submit" class="btn-mail" <?php echo $hasValidEmail ? '' : 'disabled'; ?> title="<?php echo htmlspecialchars($hasValidEmail ? 'Protokoll an den Benutzer senden' : 'Beim Benutzer ist keine gültige E-Mail-Adresse hinterlegt'); ?>">
                 Per Mail an Benutzer
             </button>
         </form>
@@ -815,7 +815,7 @@ if ($mailFeedback === 'sent') {
 
         <div class="closing-section">
             <div class="signature-section">
-                <div>Ich bestaetige die <?php echo htmlspecialchars($protocolType === 'return' ? 'vollstaendige Rueckgabe' : 'ordnungsgemaesse Uebergabe'); ?> der oben aufgefuehrten IT-Hardware.</div>
+                    <div>Ich bestätige die <?php echo htmlspecialchars($protocolType === 'return' ? 'vollständige Rückgabe' : 'ordnungsgemäße Übergabe'); ?> der oben aufgeführten IT-Hardware.</div>
                 <div class="signature-line">
                     <span>Unterschrift:</span>
                     <span></span>
