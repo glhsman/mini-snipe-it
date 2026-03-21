@@ -37,8 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userId = $_POST['user_id'] ? (int)$_POST['user_id'] : null;
     if ($userId) {
         try {
-            $assignmentId = $assetController->checkoutAsset($id, $userId, Auth::getUserId());
-            header('Location: user_protocol.php?type=handover&history_id=' . $assignmentId);
+            $newAssetTag = trim((string) ($_POST['asset_tag_input'] ?? ''));
+            $assetController->checkoutAsset($id, $userId, Auth::getUserId(), $newAssetTag ?: null);
+            header('Location: user_protocol.php?type=handover&id=' . $userId);
             exit;
         } catch (\Throwable $e) {
             header('Location: assets.php');
@@ -46,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$hasAssetTag = trim((string) ($asset['asset_tag'] ?? '')) !== '';
 
 $users = $userController->getAllUsers();
 ?>
@@ -158,6 +161,11 @@ $users = $userController->getAllUsers();
         body.light-mode .user-dropdown-item { border-bottom-color: rgba(0,0,0,0.05); color: #1e293b; }
         body.light-mode .user-dropdown-item .item-meta { color: #64748b; }
         body.light-mode .user-selected-badge { background: rgba(99,102,241,0.08); }
+        body.light-mode #asset_tag_input {
+            background: #ffffff;
+            border-color: rgba(0,0,0,0.15);
+            color: #1e293b;
+        }
     </style>
 </head>
 <body class="<?php echo ($_COOKIE['theme'] ?? 'dark') === 'light' ? 'light-mode' : ''; ?>">
@@ -175,6 +183,18 @@ $users = $userController->getAllUsers();
 
         <div class="card" style="max-width: 500px;">
             <form method="POST">
+                <?php if (!$hasAssetTag): ?>
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="asset_tag_input" style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Asset Tag <span style="opacity:0.6; font-size:0.8rem;">(optional)</span></label>
+                    <input type="text"
+                           id="asset_tag_input"
+                           name="asset_tag_input"
+                           class="form-control"
+                           placeholder="z.&nbsp;B. IT-00123"
+                           autocomplete="off"
+                           style="width:100%; padding:0.65rem 1rem; border-radius:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:var(--text-main); font-size:0.9rem;">
+                </div>
+                <?php endif; ?>
                 <div style="margin-bottom: 2rem;">
                     <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Benutzer auswählen</label>
 

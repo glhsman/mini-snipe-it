@@ -307,7 +307,7 @@ class AssetController {
         return $stmt->fetch();
     }
 
-    public function checkoutAsset($assetId, $userId, $operatorId = null) {
+    public function checkoutAsset($assetId, $userId, $operatorId = null, ?string $assetTag = null) {
         $this->db->beginTransaction();
         try {
             $asset = $this->getAssetById($assetId);
@@ -330,8 +330,15 @@ class AssetController {
             }
 
             $issuedStatusId = $this->getStatusIdByName('Ausgegeben');
-            $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, status_id = ?, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$userId, $issuedStatusId, $assetId]);
+
+            $existingTag = trim((string) ($asset['asset_tag'] ?? ''));
+            if ($existingTag === '' && $assetTag !== null && $assetTag !== '') {
+                $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, status_id = ?, asset_tag = ?, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                $stmt->execute([$userId, $issuedStatusId, $assetTag, $assetId]);
+            } else {
+                $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, status_id = ?, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                $stmt->execute([$userId, $issuedStatusId, $assetId]);
+            }
 
             $stmt = $this->db->prepare("INSERT INTO asset_assignments (asset_id, user_id, checkout_by_user_id) VALUES (?, ?, ?)");
             $stmt->execute([$assetId, $userId, $operatorId]);

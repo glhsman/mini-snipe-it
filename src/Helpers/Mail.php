@@ -16,12 +16,34 @@ class Mail {
     }
 
     public static function sendTextMail(string $toEmail, string $subject, string $message): array {
+        return self::sendMail($toEmail, $subject, $message, false);
+    }
+
+    public static function sendHtmlMail(string $toEmail, string $subject, string $htmlMessage, string $textMessage = ''): array {
+        return self::sendMail($toEmail, $subject, $htmlMessage, true, $textMessage);
+    }
+
+    private static function sendMail(
+        string $toEmail,
+        string $subject,
+        string $message,
+        bool $isHtml,
+        string $textAlternative = ''
+    ): array {
         $cfg = self::getConfig();
-        if (class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
-            return self::sendWithPHPMailer($toEmail, $subject, $message, $cfg);
+
+        if (!class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
+            $composerAutoload = __DIR__ . '/../../vendor/autoload.php';
+            if (is_file($composerAutoload)) {
+                require_once $composerAutoload;
+            }
         }
 
-        return self::sendDirect($toEmail, $subject, $message, $cfg);
+        if (class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
+            return self::sendWithPHPMailer($toEmail, $subject, $message, $cfg, $isHtml, $textAlternative);
+        }
+
+        return self::sendDirect($toEmail, $subject, $message, $cfg, $isHtml, $textAlternative);
     }
 
     private static function readResponse($socket): string {
@@ -70,7 +92,14 @@ class Mail {
         ];
     }
 
-    private static function sendDirect(string $toEmail, string $subject, string $message, array $cfg): array {
+    private static function sendDirect(
+        string $toEmail,
+        string $subject,
+        string $message,
+        array $cfg,
+        bool $isHtml = false,
+        string $textAlternative = ''
+    ): array {
         $host = trim((string) ($cfg['smtp_host'] ?? ''));
         $port = (int) ($cfg['smtp_port'] ?? 0);
         $username = trim((string) ($cfg['auth_username'] ?? ''));
@@ -113,7 +142,7 @@ class Mail {
         }
 
         $supportsStartTls = stripos($ehlo['response'], 'STARTTLS') !== false;
-        if ($transport === 'tcp' && $sslMode !== 'none' && ($sslMode === 'tls' || $sslMode === 'auto')) {
+        if ($transport === 'tcp' && $sslMode !== 'none' && ($sslMode === 'tls' || $sslMode === 'auto' || $sslMode === 'starttls')) {
             if (!$supportsStartTls) {
                 fclose($socket);
                 return ['success' => false, 'message' => 'Server bietet kein STARTTLS an, aber TLS ist konfiguriert.'];
@@ -191,12 +220,33 @@ class Mail {
             'To: ' . $toEmail,
             'Subject: ' . $subject,
             'Reply-To: ' . $fromAddress,
-            'Content-Type: text/plain; charset=UTF-8',
             'X-Mailer: Mini-Snipe SMTP',
+            'MIME-Version: 1.0',
         ];
-        $body = str_replace(["\r\n", "\r"], "\n", $message);
-        $body = str_replace("\n.", "\n..", $body);
-        $payload = implode("\r\n", $headers) . "\r\n\r\n" . str_replace("\n", "\r\n", $body) . "\r\n.\r\n";
+
+        if ($isHtml) {
+            $boundary = '=_MiniSnipe_' . bin2hex(random_bytes(12));
+            $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"';
+            $textBody = trim($textAlternative) !== '' ? $textAlternative : strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $message));
+            $textBody = str_replace(["\r\n", "\r"], "\n", $textBody);
+            $htmlBody = str_replace(["\r\n", "\r"], "\n", $message);
+            $body = '--' . $boundary . "\r\n"
+                . "Content-Type: text/plain; charset=UTF-8\r\n"
+                . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+                . str_replace("\n.", "\n..", str_replace("\n", "\r\n", $textBody)) . "\r\n"
+                . '--' . $boundary . "\r\n"
+                . "Content-Type: text/html; charset=UTF-8\r\n"
+                . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+                . str_replace("\n.", "\n..", str_replace("\n", "\r\n", $htmlBody)) . "\r\n"
+                . '--' . $boundary . "--\r\n";
+        } else {
+            $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+            $body = str_replace(["\r\n", "\r"], "\n", $message);
+            $body = str_replace("\n.", "\n..", $body);
+            $body = str_replace("\n", "\r\n", $body) . "\r\n";
+        }
+
+        $payload = implode("\r\n", $headers) . "\r\n\r\n" . $body . ".\r\n";
         fwrite($socket, $payload);
 
         $queued = self::readResponse($socket);
@@ -211,7 +261,14 @@ class Mail {
         return ['success' => true, 'message' => "Mail erfolgreich versendet ({$host}:{$port})."];
     }
 
-    private static function sendWithPHPMailer(string $toEmail, string $subject, string $message, array $cfg): array {
+    private static function sendWithPHPMailer(
+        string $toEmail,
+        string $subject,
+        string $message,
+        array $cfg,
+        bool $isHtml = false,
+        string $textAlternative = ''
+    ): array {
         $host = trim((string) ($cfg['smtp_host'] ?? ''));
         $port = (int) ($cfg['smtp_port'] ?? 0);
         $username = trim((string) ($cfg['auth_username'] ?? ''));
@@ -253,7 +310,11 @@ class Mail {
             $mail->setFrom($from['address'], $from['name']);
             $mail->addAddress($toEmail);
             $mail->Subject = $subject;
+            $mail->isHTML($isHtml);
             $mail->Body = $message;
+            if ($isHtml) {
+                $mail->AltBody = trim($textAlternative) !== '' ? $textAlternative : trim(strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $message)));
+            }
             $mail->send();
 
             return ['success' => true, 'message' => "Mail erfolgreich versendet ({$host}:{$port})."];

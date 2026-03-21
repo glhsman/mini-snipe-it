@@ -3,10 +3,12 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../src/Controllers/UserController.php';
 require_once __DIR__ . '/../src/Controllers/AssetController.php';
 require_once __DIR__ . '/../src/Helpers/Auth.php';
+require_once __DIR__ . '/../src/Helpers/Mail.php';
 
 use App\Controllers\AssetController;
 use App\Controllers\UserController;
 use App\Helpers\Auth;
+use App\Helpers\Mail;
 
 Auth::requireEditor();
 
@@ -28,6 +30,217 @@ function getSafeProtocolReturnTo(?string $candidate, int $userId): string {
     }
 
     return 'user_edit.php?id=' . $userId;
+}
+
+function buildProtocolQuery(array $params): string {
+    return http_build_query(array_filter($params, static fn($value) => $value !== null && $value !== ''));
+}
+
+function renderProtocolMailText(
+    string $siteName,
+    string $fullName,
+    string $protocolTitle,
+    string $protocolDate,
+    string $headerText,
+    string $typeExplanation,
+    array $assets,
+    string $footerText
+): string {
+    $lines = [
+        $siteName,
+        '',
+        $protocolTitle,
+        'Benutzer: ' . $fullName,
+        'Datum: ' . $protocolDate,
+        '',
+        $headerText,
+        '',
+        $typeExplanation,
+        '',
+        'Assets:',
+    ];
+
+    if (empty($assets)) {
+        $lines[] = '- Keine Assets vorhanden';
+    } else {
+        foreach ($assets as $index => $asset) {
+            $assetLabel = trim((string) ($asset['name'] ?: $asset['model_name'] ?: 'Unbekanntes Asset'));
+            $assetDate = isset($asset['event_date']) && $asset['event_date']
+                ? date('d.m.Y', strtotime($asset['event_date']))
+                : $protocolDate;
+            $lines[] = sprintf(
+                '%d. %s | Seriennummer: %s | Inventar-Nr: %s | Datum: %s',
+                $index + 1,
+                $assetLabel,
+                (string) ($asset['serial'] ?? 'N/A'),
+                (string) ($asset['asset_tag'] ?? '-'),
+                $assetDate
+            );
+        }
+    }
+
+    $lines[] = '';
+    $lines[] = $footerText;
+
+    return implode("\n", $lines);
+}
+
+function renderProtocolMailHtml(
+    string $siteName,
+    string $protocolTitle,
+    string $fullName,
+    string $username,
+    string $protocolDate,
+    string $headerText,
+    string $typeExplanation,
+    array $assets,
+    string $footerText,
+    array $locationLines
+): string {
+    // Asset-Zeilen: auf Mobilgeräten als gestapelte Karten, auf Desktop als Tabelle
+    $rows = '';
+    if (empty($assets)) {
+        $rows = '<tr><td colspan="4" style="padding:14px 10px; border-bottom:1px solid #d6dce5; color:#475569; text-align:center; font-size:14px;">Diesem Benutzer sind aktuell keine Assets zugewiesen.</td></tr>';
+    } else {
+        foreach ($assets as $index => $asset) {
+            $assetLabel = trim((string) ($asset['name'] ?: $asset['model_name'] ?: 'Unbekanntes Asset'));
+            $assetDate = isset($asset['event_date']) && $asset['event_date']
+                ? date('d.m.Y', strtotime($asset['event_date']))
+                : $protocolDate;
+            $bgColor = ($index % 2 === 0) ? '#ffffff' : '#f8fafc';
+            $rows .= '<tr style="background:' . $bgColor . ';">'
+                . '<td style="padding:12px 10px; border-bottom:1px solid #e8edf2; font-size:14px; color:#475569; width:32px; text-align:center;">' . ($index + 1) . '</td>'
+                . '<td style="padding:12px 10px; border-bottom:1px solid #e8edf2; font-size:14px; color:#101827;">' . htmlspecialchars($assetLabel) . '</td>'
+                . '<td style="padding:12px 10px; border-bottom:1px solid #e8edf2; font-size:13px; color:#475569; white-space:nowrap;">'
+                    . htmlspecialchars((string) ($asset['serial'] ?? 'N/A'))
+                    . '<br><span style="color:#94a3b8; font-size:12px;">' . htmlspecialchars((string) ($asset['asset_tag'] ?? '-')) . '</span>'
+                . '</td>'
+                . '<td style="padding:12px 10px; border-bottom:1px solid #e8edf2; font-size:13px; color:#475569; white-space:nowrap;">' . htmlspecialchars($assetDate) . '</td>'
+                . '</tr>';
+        }
+    }
+
+    $locationHtml = '';
+    if (!empty($locationLines)) {
+        foreach ($locationLines as $line) {
+            $locationHtml .= htmlspecialchars((string) $line) . '<br>';
+        }
+    } else {
+        $locationHtml = 'Kein Standort hinterlegt';
+    }
+
+    $headerSafe   = nl2br(htmlspecialchars($headerText));
+    $footerSafe   = nl2br(htmlspecialchars($footerText));
+    $typeExpSafe  = htmlspecialchars($typeExplanation);
+    $titleSafe    = htmlspecialchars($protocolTitle);
+    $siteNameSafe = htmlspecialchars($siteName);
+    $fullNameSafe = htmlspecialchars($fullName);
+    $usernameSafe = htmlspecialchars($username);
+
+    return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>' . $titleSafe . '</title>
+    <style type="text/css">
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; }
+        body { margin: 0 !important; padding: 0 !important; background-color: #eef2f7; }
+        @media only screen and (max-width: 600px) {
+            .outer-table { width: 100% !important; }
+            .card { border-radius: 0 !important; padding: 16px !important; }
+            .info-row td { display: block !important; width: 100% !important; box-sizing: border-box; padding-bottom: 12px !important; }
+            .asset-col-sn { display: none !important; }
+            .asset-th-sn  { display: none !important; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#eef2f7; font-family:Arial,Helvetica,sans-serif;">
+
+<!-- Outer wrapper -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#eef2f7;">
+    <tr>
+        <td align="center" style="padding:24px 12px;">
+
+            <!-- Card -->
+            <table class="outer-table" role="presentation" border="0" cellpadding="0" cellspacing="0" width="640" style="max-width:640px; background:#ffffff; border-radius:12px; box-shadow:0 4px 24px rgba(15,23,42,0.10);">
+                <tr>
+                    <td class="card" style="padding:28px 28px 24px;">
+
+                        <!-- Site name -->
+                        <p style="margin:0 0 6px; font-size:12px; color:#94a3b8; letter-spacing:0.05em; text-transform:uppercase;">' . $siteNameSafe . '</p>
+
+                        <!-- Title -->
+                        <h1 style="margin:0 0 20px; font-size:22px; font-weight:700; color:#0f172a; line-height:1.3;">' . $titleSafe . '</h1>
+
+                        <!-- Info row: Name | Standort | Datum -->
+                        <table class="info-row" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:20px;">
+                            <tr>
+                                <td valign="top" style="padding:14px 16px; border:1px solid #d6dce5; border-radius:8px; width:44%;">
+                                    <p style="margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:0.07em; color:#94a3b8;">Mitarbeiter/in</p>
+                                    <p style="margin:0 0 4px; font-size:16px; font-weight:700; color:#0f172a;">' . $fullNameSafe . '</p>
+                                    <p style="margin:0; font-size:13px; color:#475569;">' . $usernameSafe . '</p>
+                                </td>
+                                <td width="10" style="font-size:0; line-height:0;">&nbsp;</td>
+                                <td valign="top" style="padding:14px 16px; border:1px solid #d6dce5; border-radius:8px; width:34%; font-size:13px; color:#475569; line-height:1.6;">
+                                    <p style="margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:0.07em; color:#94a3b8;">Standort</p>
+                                    ' . $locationHtml . '
+                                </td>
+                                <td width="10" style="font-size:0; line-height:0;">&nbsp;</td>
+                                <td valign="top" style="padding:14px 16px; border:1px solid #d6dce5; border-radius:8px; width:18%;">
+                                    <p style="margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:0.07em; color:#94a3b8;">Datum</p>
+                                    <p style="margin:0; font-size:14px; font-weight:700; color:#0f172a;">' . htmlspecialchars($protocolDate) . '</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Header text box -->
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:20px;">
+                            <tr>
+                                <td style="padding:14px 16px; border:1px solid #d6dce5; border-radius:8px; font-size:14px; color:#334155; line-height:1.6;">
+                                    ' . $headerSafe . '
+                                    <p style="margin:12px 0 0; font-weight:700; color:#0f172a;">' . $typeExpSafe . '</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Asset table -->
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse; margin-bottom:20px; border:1px solid #d6dce5; border-radius:8px; overflow:hidden;">
+                            <thead>
+                                <tr style="background:#f1f5f9;">
+                                    <th style="text-align:center; padding:10px 10px; font-size:12px; color:#64748b; border-bottom:1px solid #d6dce5; width:32px;">#</th>
+                                    <th style="text-align:left; padding:10px 10px; font-size:12px; color:#64748b; border-bottom:1px solid #d6dce5;">Asset</th>
+                                    <th class="asset-th-sn" style="text-align:left; padding:10px 10px; font-size:12px; color:#64748b; border-bottom:1px solid #d6dce5;">Serien-Nr / Inventar-Nr</th>
+                                    <th style="text-align:left; padding:10px 10px; font-size:12px; color:#64748b; border-bottom:1px solid #d6dce5; white-space:nowrap;">Datum</th>
+                                </tr>
+                            </thead>
+                            <tbody>' . $rows . '</tbody>
+                        </table>
+
+                        <!-- Footer text box -->
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td style="padding:14px 16px; border:1px solid #d6dce5; border-radius:8px; font-size:13px; color:#64748b; line-height:1.6;">
+                                    ' . $footerSafe . '
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+            </table>
+            <!-- /Card -->
+
+        </td>
+    </tr>
+</table>
+<!-- /Outer wrapper -->
+
+</body>
+</html>';
 }
 
 if ((!isset($_GET['id']) || !is_numeric($_GET['id']))
@@ -96,9 +309,13 @@ if ($historyEntry) {
         ];
     }
 } else {
-    $assets = $assetController->getAssetsByUserId($userId);
+    $rawAssets = $assetController->getAssetsByUserId($userId);
     if ($singleAssetId) {
-        $assets = array_values(array_filter($assets, static fn($asset) => (int) $asset['id'] === $singleAssetId));
+        $rawAssets = array_values(array_filter($rawAssets, static fn($asset) => (int) $asset['id'] === $singleAssetId));
+    }
+    foreach ($rawAssets as $a) {
+        $a['event_date'] = $a['assigned_at'] ?? null;
+        $assets[] = $a;
     }
 }
 $settings = $db->query("SELECT * FROM settings WHERE id = 1")->fetch() ?: [];
@@ -135,12 +352,89 @@ if ($fullName === '') {
 
 $returnTo = getSafeProtocolReturnTo($_GET['return_to'] ?? '', $userId);
 $returnLabel = str_starts_with($returnTo, 'assets.php') ? 'Zurueck zu den Assets' : 'Zurueck zum Benutzer';
+$protocolQuery = buildProtocolQuery([
+    'id' => $userId,
+    'type' => $protocolType,
+    'history_id' => $historyId,
+    'history_ids' => !empty($historyIds) ? implode(',', $historyIds) : null,
+    'asset_id' => $singleAssetId,
+    'return_to' => $returnTo,
+]);
 
 $locationLines = array_filter([
     $user['location_name'] ?? '',
     $user['location_address'] ?? '',
     $user['location_city'] ?? '',
 ]);
+$userEmail = trim((string) ($user['email'] ?? ''));
+$hasValidEmail = filter_var($userEmail, FILTER_VALIDATE_EMAIL) !== false;
+$mailFeedback = (string) ($_GET['mail'] ?? '');
+$mailNotice = '';
+$mailNoticeClass = 'mail-notice';
+$protocolCsrf = (string) ($_SESSION['user_protocol_csrf'] ?? '');
+if ($protocolCsrf === '') {
+    $protocolCsrf = bin2hex(random_bytes(16));
+    $_SESSION['user_protocol_csrf'] = $protocolCsrf;
+}
+
+$siteName = trim((string) ($settings['site_name'] ?? ''));
+if ($siteName === '') {
+    $siteName = 'Mini-Snipe';
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') === 'send_protocol_mail') {
+    $postedCsrf = (string) ($_POST['csrf_token'] ?? '');
+    if ($protocolCsrf === '' || !hash_equals($protocolCsrf, $postedCsrf)) {
+        header('Location: user_protocol.php?' . $protocolQuery . '&mail=csrf');
+        exit;
+    }
+
+    if (!$hasValidEmail) {
+        header('Location: user_protocol.php?' . $protocolQuery . '&mail=no_email');
+        exit;
+    }
+
+    $subject = $siteName . ' - ' . ($protocolType === 'return' ? 'Rueckgabeprotokoll' : 'Ausgabeprotokoll') . ' fuer ' . $fullName;
+    $mailText = renderProtocolMailText($siteName, $fullName, $protocolTitle, $protocolDate, $headerText, $typeExplanation, $assets, $footerText);
+    $mailHtml = renderProtocolMailHtml(
+        $siteName,
+        $protocolTitle,
+        $fullName,
+        (string) ($user['username'] ?? ''),
+        $protocolDate,
+        $headerText,
+        $typeExplanation,
+        $assets,
+        $footerText,
+        $locationLines
+    );
+    $mailResult = Mail::sendHtmlMail($userEmail, $subject, $mailHtml, $mailText);
+    $mailStatus = !empty($mailResult['success']) ? 'sent' : 'failed';
+    if ($mailStatus === 'failed' && !empty($mailResult['message'])) {
+        $_SESSION['user_protocol_mail_error'] = (string) $mailResult['message'];
+    } else {
+        unset($_SESSION['user_protocol_mail_error']);
+    }
+
+    header('Location: user_protocol.php?' . $protocolQuery . '&mail=' . $mailStatus);
+    exit;
+}
+
+if ($mailFeedback === 'sent') {
+    $mailNotice = 'Das Protokoll wurde per E-Mail an ' . $userEmail . ' versendet.';
+    $mailNoticeClass .= ' success';
+} elseif ($mailFeedback === 'failed') {
+    $errorDetail = trim((string) ($_SESSION['user_protocol_mail_error'] ?? ''));
+    $mailNotice = 'Der Mailversand ist fehlgeschlagen.' . ($errorDetail !== '' ? ' ' . $errorDetail : '');
+    $mailNoticeClass .= ' error';
+    unset($_SESSION['user_protocol_mail_error']);
+} elseif ($mailFeedback === 'no_email') {
+    $mailNotice = 'Beim Benutzer ist keine gueltige E-Mail-Adresse hinterlegt.';
+    $mailNoticeClass .= ' error';
+} elseif ($mailFeedback === 'csrf') {
+    $mailNotice = 'Der Mailversand wurde aus Sicherheitsgruenden abgebrochen. Bitte erneut versuchen.';
+    $mailNoticeClass .= ' error';
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -174,7 +468,8 @@ $locationLines = array_filter([
             justify-content: flex-end;
         }
         .toolbar button,
-        .toolbar a {
+        .toolbar a,
+        .toolbar form button {
             border: 0;
             background: #0f172a;
             color: #fff;
@@ -185,6 +480,37 @@ $locationLines = array_filter([
             cursor: pointer;
         }
         .toolbar a { background: #475569; }
+        .toolbar form { margin: 0; }
+        .toolbar .btn-mail {
+            background: #2563eb;
+        }
+        .toolbar .btn-mail:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .mail-note {
+            max-width: 960px;
+            margin: 1rem auto 0;
+            padding: 0 1rem;
+        }
+        .mail-notice {
+            border-radius: 0.75rem;
+            padding: 0.85rem 1rem;
+            font-size: 0.92rem;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        .mail-notice.success {
+            border-color: #86efac;
+            background: #f0fdf4;
+            color: #166534;
+        }
+        .mail-notice.error {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #991b1b;
+        }
         .page {
             width: 210mm;
             min-height: 297mm;
@@ -314,7 +640,7 @@ $locationLines = array_filter([
         }
         @media print {
             body { background: #fff; font-size: 9.5pt; }
-            .toolbar { display: none; }
+            .toolbar, .mail-note { display: none; }
             .page {
                 width: auto;
                 min-height: 269mm;
@@ -405,8 +731,20 @@ $locationLines = array_filter([
 <body>
     <div class="toolbar">
         <a href="<?php echo htmlspecialchars($returnTo); ?>"><?php echo htmlspecialchars($returnLabel); ?></a>
+        <form method="POST" action="user_protocol.php?<?php echo htmlspecialchars($protocolQuery); ?>">
+            <input type="hidden" name="action" value="send_protocol_mail">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($protocolCsrf); ?>">
+            <button type="submit" class="btn-mail" <?php echo $hasValidEmail ? '' : 'disabled'; ?> title="<?php echo htmlspecialchars($hasValidEmail ? 'Protokoll an den Benutzer senden' : 'Beim Benutzer ist keine gueltige E-Mail-Adresse hinterlegt'); ?>">
+                Per Mail an Benutzer
+            </button>
+        </form>
         <button type="button" onclick="window.print()">Drucken / Als PDF speichern</button>
     </div>
+    <?php if ($mailNotice !== ''): ?>
+        <div class="mail-note">
+            <div class="<?php echo htmlspecialchars($mailNoticeClass); ?>"><?php echo htmlspecialchars($mailNotice); ?></div>
+        </div>
+    <?php endif; ?>
 
     <div class="page">
         <?php if ($companyAddress !== ''): ?>
