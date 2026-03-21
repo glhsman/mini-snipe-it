@@ -127,7 +127,12 @@ function usersPaginationUrl($p, $pp) {
                     <?php foreach ($users as $user): ?>
                     <tr>
                         <td><?php echo htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')); ?></td>
-                        <td><strong><?php echo htmlspecialchars($user['username']); ?></strong></td>
+                        <td>
+                            <?php if (!array_key_exists('can_login', $user) || (int) ($user['can_login'] ?? 0) === 1): ?>
+                                <span title="Web-Login erlaubt" aria-label="Web-Login erlaubt" style="display:inline-block; margin-right:0.35rem; color:#38bdf8; font-size:0.9rem; line-height:1; vertical-align:middle;">🌐</span>
+                            <?php endif; ?>
+                            <strong><?php echo htmlspecialchars($user['username']); ?></strong>
+                        </td>
                         <td><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($user['location_name'] ?? '-'); ?></td>
                         <td>

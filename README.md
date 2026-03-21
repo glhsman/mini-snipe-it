@@ -6,6 +6,7 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 
 -   **Dashboard**: Schneller Überblick über Gesamtzahl, zugewiesene und verfügbare Assets sowie detaillierte Status-Zähler (z.B. "Einsatzbereit", "Ausgegeben").
 -   **Asset-Management**: Anlegen, Bearbeiten und Löschen von Assets mit Seriennummern, Kaufdatum und Notizen.
+    -   Bei Modellen ohne Seriennummer-Pflicht kann statt Seriennummer eine Stückzahl erfasst werden; eindeutige NA-Seriennummern werden serverseitig erzeugt.
 -   **Automatische Asset-Tags**: Generierung von Tags basierend auf Standort- und Kategorie-Kürzeln (z.B. `MUNB0001`).
 -   **Stammdatenverwaltung**:
     -   Standorte (Locations) mit Kürzeln
@@ -15,6 +16,9 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 -   **Benutzerverwaltung**: Rollenbasiertes System (Admin, Editor, User) mit wählbarer Rolle und optionalem Web-Login bei der Erstellung.
 -   **Asset Check-in / Check-out**: Assets direkt aus Dashboard und Assetliste einem Benutzer zuweisen (Check-out) oder die Zuweisung aufheben (Check-in).
     -   Check-out nur fuer einsatzbereite Assets verfuegbar (UI + serverseitige Pruefung)
+-   **Buchungs- und Aktivitätsprotokolle**:
+    -   Login-Protokoll mit Bereinigung (Anzahl der neuesten Einträge behalten)
+    -   Asset-Umbuchungsprotokoll (Ausgabe/Rückgabe aus `asset_assignments`) mit eigener Bereinigungsfunktion
 -   **Asset-Suche & Filter**: Freitextsuche nach Asset-Tag, Seriennummer und Name sowie Filterung nach Asset-Modell in der Assetliste.
 -   **Session-Sicherheit**: Automatischer Logout nach 2 Stunden Inaktivitaet.
 -   **Hardware-Anforderungen**: Bei Statuswechsel auf *In Arbeit* oder *Abgelehnt* wird der anfordernde Benutzer automatisch per E-Mail informiert (falls gueltige E-Mail hinterlegt).
@@ -232,7 +236,7 @@ Wenn Sie eine ältere Version aktualisieren möchten, führen Sie die folgende M
 
 -   `db_migration.sql`
 
-Hinweis: Fuer die zuletzt ergaenzten Funktionen (Inaktivitaets-Timeout, Check-out-Statuslogik, E-Mail-Benachrichtigung bei Anforderungen) sind keine neuen SQL-Tabellen oder Spalten notwendig.
+Hinweis: Der aktuelle Schema-Stand fuer neue und bestehende Installationen ist in `database.sql`, `db_migration.sql` und `db_verify.sql` abgebildet. Bei Updates immer `db_migration.sql` und anschließend `db_verify.sql` ausführen.
 
 ### Empfohlener Rollout (Produktiv)
 
