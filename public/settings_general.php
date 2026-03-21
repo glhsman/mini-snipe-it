@@ -590,6 +590,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     }
 }
 
+// Asset-Log-Cleanup Handler
+$assetLogCleanupSuccess = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cleanup_asset_logs'])) {
+    $postedToken = (string) ($_POST['csrf_token'] ?? '');
+    if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), $postedToken)) {
+        $error = 'Ungueltiges Formular-Token. Bitte Seite neu laden.';
+    } else {
+        $keepCount = (int) ($_POST['asset_keep_count'] ?? 10);
+        if (in_array($keepCount, [10, 25, 50, 100], true)) {
+            try {
+                // Jede asset_assignments-Zeile erzeugt bis zu 2 Anzeigezeilen (Ausgabe + Rückgabe).
+                // Daher LIMIT = ceil(keepCount / 2), damit die Tabelle <= keepCount Zeilen zeigt.
+                // $keepCount ist gegen Whitelist validiert – direkte Interpolation sicher.
+                $dbRowsToKeep = (int) ceil($keepCount / 2);
+                $stmt = $db->prepare("
+                    DELETE FROM asset_assignments
+                    WHERE id NOT IN (
+                        SELECT id FROM (
+                            SELECT id FROM asset_assignments
+                            ORDER BY COALESCE(checkin_at, checkout_at) DESC
+                            LIMIT {$dbRowsToKeep}
+                        ) AS newest
+                    )
+                ");
+                $stmt->execute([]);
+                $assetLogCleanupSuccess = "Asset-Log bereinigt. Es werden maximal {$keepCount} Protokollzeilen angezeigt.";
+            } catch (\Throwable $e) {
+                $error = "Fehler beim Bereinigen des Asset-Logs: " . $e->getMessage();
+            }
+        }
+    }
+}
+
 // Log-Cleanup Handler
 $logCleanupSuccess = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cleanup_logs'])) {
@@ -601,17 +634,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cleanup_logs'])) {
         if (in_array($keepCount, [10, 25, 50, 100], true)) {
             try {
                 // DELETE Einträge, die älter sind als die keepCount neuesten
+                // $keepCount ist gegen Whitelist validiert – direkte Interpolation sicher
                 $stmt = $db->prepare("
                     DELETE FROM login_logs 
                     WHERE id NOT IN (
                         SELECT id FROM (
                             SELECT id FROM login_logs 
                             ORDER BY created_at DESC 
-                            LIMIT ?
+                            LIMIT {$keepCount}
                         ) AS newest
                     )
                 ");
-                $stmt->execute([$keepCount]);
+                $stmt->execute([]);
                 $logCleanupSuccess = "Log erfolgreich bereinigt. Die neuesten {$keepCount} Einträge wurden beibehalten.";
             } catch (\Throwable $e) {
                 $error = "Fehler beim Bereinigen des Logs: " . $e->getMessage();
@@ -634,6 +668,51 @@ try {
 } catch (\Throwable $e) {
     // Tabelle existiert noch nicht (erste Ausführung vor Migration)
     $loginLogs = [];
+}
+
+// Asset-Umbuchungslog laden (letzte 200 Checkout- und Checkin-Ereignisse)
+$assetActivityLogs = [];
+try {
+    $assetActivityLogs = $db->query(
+        "SELECT event_at, event_type, asset_name, asset_tag, serial,
+                target_username, target_name, operator_username, operator_name
+         FROM (
+             SELECT aa.checkout_at    AS event_at,
+                    'checkout'        AS event_type,
+                    COALESCE(a.name, a.asset_tag, a.serial, CONCAT('#', a.id)) AS asset_name,
+                    a.asset_tag,
+                    a.serial,
+                    u_t.username      AS target_username,
+                    TRIM(CONCAT(COALESCE(u_t.first_name,''),' ',COALESCE(u_t.last_name,''))) AS target_name,
+                    u_op.username     AS operator_username,
+                    TRIM(CONCAT(COALESCE(u_op.first_name,''),' ',COALESCE(u_op.last_name,''))) AS operator_name
+             FROM asset_assignments aa
+             LEFT JOIN assets a   ON a.id  = aa.asset_id
+             LEFT JOIN users u_t  ON u_t.id = aa.user_id
+             LEFT JOIN users u_op ON u_op.id = aa.checkout_by_user_id
+
+             UNION ALL
+
+             SELECT aa.checkin_at     AS event_at,
+                    'checkin'         AS event_type,
+                    COALESCE(a.name, a.asset_tag, a.serial, CONCAT('#', a.id)) AS asset_name,
+                    a.asset_tag,
+                    a.serial,
+                    u_t.username      AS target_username,
+                    TRIM(CONCAT(COALESCE(u_t.first_name,''),' ',COALESCE(u_t.last_name,''))) AS target_name,
+                    u_op.username     AS operator_username,
+                    TRIM(CONCAT(COALESCE(u_op.first_name,''),' ',COALESCE(u_op.last_name,''))) AS operator_name
+             FROM asset_assignments aa
+             LEFT JOIN assets a   ON a.id  = aa.asset_id
+             LEFT JOIN users u_t  ON u_t.id = aa.user_id
+             LEFT JOIN users u_op ON u_op.id = aa.checkin_by_user_id
+             WHERE aa.checkin_at IS NOT NULL
+         ) AS combined
+         ORDER BY event_at DESC
+         LIMIT 200"
+    )->fetchAll();
+} catch (\Throwable $e) {
+    $assetActivityLogs = [];
 }
 
 $theme = $_COOKIE['theme'] ?? 'dark';
@@ -944,7 +1023,7 @@ $theme = $_COOKIE['theme'] ?? 'dark';
                             <option value="50">50 Einträge</option>
                             <option value="100">100 Einträge</option>
                         </select>
-                        <button type="submit" name="cleanup_logs" value="1" class="btn" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.35); padding: 0.5rem 1rem; font-size: 0.875rem; cursor: pointer; border-radius: 0.375rem;">
+                        <button type="submit" name="cleanup_logs" value="1" class="btn" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.35); padding: 0.5rem 1rem; font-size: 0.875rem; cursor: pointer; border-radius: 0.375rem;" onclick="return confirmLogCleanup('keep_count', 'Login-Log')">
                             <i class="fas fa-trash-alt" style="margin-right:0.5rem;"></i> Log bereinigen
                         </button>
                         <small style="color: var(--text-muted); font-size: 0.8rem;">Ältere Einträge werden gelöscht.</small>
@@ -996,9 +1075,101 @@ $theme = $_COOKIE['theme'] ?? 'dark';
             </div>
         </div>
 
+            <!-- ===== Asset-Umbuchungsprotokoll ===== -->
+            <div class="form-section" style="margin-top: 2.5rem;">
+                <h2><i class="fas fa-exchange-alt" style="margin-right:0.5rem; color:var(--primary-color);"></i> Asset-Umbuchungsprotokoll</h2>
+                <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:1.25rem;">Die letzten 200 Checkout- und Checkin-Ereignisse &ndash; wer hat wann welches Asset umgebucht.</p>
+
+                <?php if (!empty($assetLogCleanupSuccess)): ?>
+                    <div style="background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; color: #10b981;">
+                        <i class="fas fa-check-circle" style="margin-right:0.5rem;"></i> <?php echo htmlspecialchars($assetLogCleanupSuccess); ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Asset-Log-Cleanup Button Section -->
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <form method="POST" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                        <label for="asset_keep_count" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Behalte die neuesten</label>
+                        <?php $assetKeepSel = (int) ($_POST['asset_keep_count'] ?? 10); ?>
+                        <select name="asset_keep_count" id="asset_keep_count" class="form-control" style="width: auto; padding: 0.5rem 0.75rem;">
+                            <option value="10"  <?= $assetKeepSel === 10  ? 'selected' : '' ?>>10 Einträge</option>
+                            <option value="25"  <?= $assetKeepSel === 25  ? 'selected' : '' ?>>25 Einträge</option>
+                            <option value="50"  <?= $assetKeepSel === 50  ? 'selected' : '' ?>>50 Einträge</option>
+                            <option value="100" <?= $assetKeepSel === 100 ? 'selected' : '' ?>>100 Einträge</option>
+                        </select>
+                        <button type="submit" name="cleanup_asset_logs" value="1" class="btn" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.35); padding: 0.5rem 1rem; font-size: 0.875rem; cursor: pointer; border-radius: 0.375rem;" onclick="return confirmLogCleanup('asset_keep_count', 'Asset-Umbuchungsprotokoll')">
+                            <i class="fas fa-trash-alt" style="margin-right:0.5rem;"></i> Log bereinigen
+                        </button>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Ältere Einträge werden gelöscht.</small>
+                    </form>
+                </div>
+
+                <?php if (empty($assetActivityLogs)): ?>
+                    <p style="color:var(--text-muted); font-size:0.875rem;">Noch keine Eintr&auml;ge vorhanden.</p>
+                <?php else: ?>
+                <div style="overflow-x:auto;">
+                <table class="data-table" style="font-size:0.85rem;">
+                    <thead>
+                        <tr>
+                            <th>Datum / Uhrzeit</th>
+                            <th>Aktion</th>
+                            <th>Asset</th>
+                            <th>Seriennummer / Inventar-Nr</th>
+                            <th>Benutzer (Empf&auml;nger)</th>
+                            <th>Durchgef&uuml;hrt von</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($assetActivityLogs as $log): ?>
+                        <tr>
+                            <td style="white-space:nowrap;"><?php echo htmlspecialchars((string) ($log['event_at'] ?? '')); ?></td>
+                            <td>
+                                <?php if ($log['event_type'] === 'checkout'): ?>
+                                    <span class="badge badge-success"><i class="fas fa-arrow-right"></i> Ausgabe</span>
+                                <?php else: ?>
+                                    <span class="badge badge-secondary"><i class="fas fa-arrow-left"></i> R&uuml;ckgabe</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars((string) ($log['asset_name'] ?? '')); ?></td>
+                            <td style="font-size:0.8rem; color:var(--text-muted);">
+                                <?php echo htmlspecialchars((string) ($log['serial'] ?? '')); ?>
+                                <?php if (!empty($log['asset_tag'])): ?>
+                                    <br><span style="opacity:0.7;"><?php echo htmlspecialchars((string) $log['asset_tag']); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php echo htmlspecialchars((string) ($log['target_username'] ?? '')); ?>
+                                <?php $targetName = trim((string) ($log['target_name'] ?? '')); ?>
+                                <?php if ($targetName !== ''): ?>
+                                    <span style="color:var(--text-muted); font-size:0.8rem;"> &ndash; <?php echo htmlspecialchars($targetName); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php echo htmlspecialchars((string) ($log['operator_username'] ?? '')); ?>
+                                <?php $opName = trim((string) ($log['operator_name'] ?? '')); ?>
+                                <?php if ($opName !== ''): ?>
+                                    <span style="color:var(--text-muted); font-size:0.8rem;"> &ndash; <?php echo htmlspecialchars($opName); ?></span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+
+                </table>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
     </main>
 
     <script>
+        function confirmLogCleanup(selectId, logName) {
+            const keepCount = document.getElementById(selectId).value;
+            return confirm('Sicher? Alle Einträge des ' + logName + ' außer den neuesten ' + keepCount + ' werden dauerhaft gelöscht.');
+        }
+
         function previewImage(input) {
             const preview = document.getElementById('img_preview');
             const container = document.getElementById('preview_container') || preview.parentElement;

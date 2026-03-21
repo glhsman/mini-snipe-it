@@ -345,6 +345,56 @@ select.form-control {
     appearance: auto;
 }
 
+/* Native date/time picker: Kalender im Dark Mode sichtbar machen */
+input[type="date"].form-control,
+input[type="datetime-local"].form-control,
+input[type="time"].form-control,
+input[type="month"].form-control,
+input[type="week"].form-control {
+    color-scheme: dark;
+}
+
+input[type="date"].form-control::-webkit-calendar-picker-indicator,
+input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator,
+input[type="time"].form-control::-webkit-calendar-picker-indicator,
+input[type="month"].form-control::-webkit-calendar-picker-indicator,
+input[type="week"].form-control::-webkit-calendar-picker-indicator {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23cccccc'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4C2.9 3 2 3.9 2 5v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 16px;
+    opacity: 0.75;
+    cursor: pointer;
+    color: transparent;
+}
+
+input[type="date"].form-control::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+body.light-mode input[type="date"].form-control,
+body.light-mode input[type="datetime-local"].form-control,
+body.light-mode input[type="time"].form-control,
+body.light-mode input[type="month"].form-control,
+body.light-mode input[type="week"].form-control {
+    color-scheme: light;
+}
+
+body.light-mode input[type="date"].form-control::-webkit-calendar-picker-indicator,
+body.light-mode input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator,
+body.light-mode input[type="time"].form-control::-webkit-calendar-picker-indicator,
+body.light-mode input[type="month"].form-control::-webkit-calendar-picker-indicator,
+body.light-mode input[type="week"].form-control::-webkit-calendar-picker-indicator {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23475569'%3E%3Cpath d='M20 3h-1V1h-2v2H7V1H5v2H4C2.9 3 2 3.9 2 5v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z'/%3E%3C/svg%3E");
+    opacity: 0.6;
+}
+
+body.light-mode input[type="date"].form-control::-webkit-calendar-picker-indicator:hover,
+body.light-mode input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
 .form-control option,
 .form-control optgroup {
     background: #1f2937;

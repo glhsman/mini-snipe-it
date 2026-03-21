@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-grid">
                     <div class="form-group" style="grid-column: 1 / -1;">
                         <label>Kaufdatum</label>
-                        <input type="date" name="purchase_date" class="form-control" style="width: 50%;" value="<?php echo isset($_POST['purchase_date']) ? htmlspecialchars($_POST['purchase_date']) : ''; ?>">
+                        <input type="date" name="purchase_date" class="form-control" style="width: 50%;" value="<?php echo isset($_POST['purchase_date']) ? htmlspecialchars($_POST['purchase_date']) : date('Y-m-d'); ?>">
                     </div>
                 </div>
 

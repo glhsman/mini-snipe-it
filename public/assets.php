@@ -26,11 +26,11 @@ $statusId = isset($_GET['status_id']) ? (int)$_GET['status_id'] : 0;
 $sort    = isset($_GET['sort'])     ? $_GET['sort']           : 'created_at';
 $order   = isset($_GET['order'])    ? $_GET['order']          : 'desc';
 
-// Modelle fÃ¼r Dropdown laden
+// Modelle für Dropdown laden
 $models = $masterData->getAssetModels();
 $statuses = $masterData->getStatusLabels();
 
-// Fallback: Wenn auf dem Zielsystem noch ein Ã¤lterer Controller ohne Pagination-Methoden liegt,
+// Fallback: Wenn auf dem Zielsystem noch ein älterer Controller ohne Pagination-Methoden liegt,
 // wird serverseitig aus getAllAssets paginiert statt mit Fatal Error abzubrechen.
 if (method_exists($assetController, 'countAssetsFiltered') && method_exists($assetController, 'getAssetsPaginatedFiltered')) {
     $totalAssets = $assetController->countAssetsFiltered($search, $modelId ?: null, $statusId ?: null);
@@ -167,7 +167,7 @@ function renderPagination($page, $totalPages, $perPage) {
         </header>
 
         <?php if (isset($_GET['success'])): ?>
-            <div class="alert alert-success">Asset erfolgreich gelÃ¶scht.</div>
+            <div class="alert alert-success">Asset erfolgreich gelöscht.</div>
         <?php endif; ?>
 
         <?php if (isset($_GET['error'])): ?>
@@ -203,7 +203,7 @@ function renderPagination($page, $totalPages, $perPage) {
                 </div>
                 <!-- Modell-Filter -->
                 <select name="model_id" onchange="this.form.submit()" class="asset-filter-select">
-                    <option value="">â€“ Alle Modelle â€“</option>
+                    <option value="">- Alle Modelle -</option>
                     <?php foreach ($models as $m): ?>
                         <option value="<?php echo $m['id']; ?>" <?php echo $modelId === (int)$m['id'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($m['name']); ?>
@@ -212,7 +212,7 @@ function renderPagination($page, $totalPages, $perPage) {
                 </select>
                 <!-- Status-Schnellfilter -->
                 <select name="status_id" onchange="this.form.submit()" class="asset-filter-select">
-                    <option value="">â€“ Alle Status â€“</option>
+                    <option value="">- Alle Status -</option>
                     <?php foreach ($statuses as $status): ?>
                         <option value="<?php echo $status['id']; ?>" <?php echo $statusId === (int)$status['id'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($status['name']); ?>
@@ -223,7 +223,7 @@ function renderPagination($page, $totalPages, $perPage) {
                 <button type="submit" class="btn btn-primary" style="padding:0.6rem 1rem; font-size:0.875rem;"><i class="fas fa-filter"></i> Suchen</button>
                 <?php if ($search !== '' || $modelId || $statusId): ?>
                     <a href="assets.php?per_page=<?php echo $perPage; ?>" style="padding:0.6rem 0.75rem; border-radius:0.5rem; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); color:var(--text-muted); text-decoration:none; font-size:0.875rem; white-space:nowrap;">
-                        <i class="fas fa-times"></i> Filter zurÃ¼cksetzen
+                        <i class="fas fa-times"></i> Filter zurücksetzen
                     </a>
                 <?php endif; ?>
             </form>
@@ -283,12 +283,12 @@ function renderPagination($page, $totalPages, $perPage) {
                         <td>
                             <?php if (Auth::isEditor()): ?>
                                     <?php $isReadyForCheckout = strtolower(trim((string)($asset['status_name'] ?? ''))) === 'einsatzbereit'; ?>
-                                    <!-- Ausgabe / RÃ¼cknahme -->
+                                    <!-- Ausgabe / Rücknahme -->
                                     <?php if ($asset['assigned_to']): ?>
                                         <form method="POST" action="asset_checkin.php" style="display:inline;">
                                             <input type="hidden" name="id" value="<?php echo $asset['id']; ?>">
                                             <input type="hidden" name="return_to" value="<?php echo htmlspecialchars($currentListUrl); ?>">
-                                            <button type="submit" title="RÃ¼cknahme (Check-in)" class="btn-icon" style="color: var(--accent-emerald);">
+                                            <button type="submit" title="Rücknahme (Check-in)" class="btn-icon" style="color: var(--accent-emerald);">
                                                 <i class="fas fa-undo"></i>
                                             </button>
                                         </form>
@@ -297,7 +297,7 @@ function renderPagination($page, $totalPages, $perPage) {
                                             <i class="fas fa-hand-holding"></i>
                                         </a>
                                     <?php else: ?>
-                                        <span class="btn-icon" title="Nur einsatzbereite Assets kÃ¶nnen ausgegeben werden." style="opacity:0.45; cursor:not-allowed; color:#64748b;">
+                                        <span class="btn-icon" title="Nur einsatzbereite Assets können ausgegeben werden." style="opacity:0.45; cursor:not-allowed; color:#64748b;">
                                             <i class="fas fa-hand-holding"></i>
                                         </span>
                                     <?php endif; ?>
@@ -305,9 +305,9 @@ function renderPagination($page, $totalPages, $perPage) {
                                     <a href="asset_edit.php?id=<?php echo $asset['id']; ?>&amp;return_url=<?php echo urlencode($currentListUrl); ?>" class="btn-icon" title="Bearbeiten">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form method="POST" action="asset_delete.php" style="display:inline;" onsubmit="return confirm('MÃ¶chten Sie das Asset \'<?php echo htmlspecialchars(addslashes($asset['name'] ?: $asset['asset_tag'])); ?>\' wirklich lÃ¶schen?');">
+                                    <form method="POST" action="asset_delete.php" style="display:inline;" onsubmit="return confirm('Möchten Sie das Asset \'<?php echo htmlspecialchars(addslashes($asset['name'] ?: $asset['asset_tag'])); ?>\' wirklich löschen?');">
                                         <input type="hidden" name="id" value="<?php echo $asset['id']; ?>">
-                                        <button type="submit" title="LÃ¶schen" class="btn-icon btn-icon-danger">
+                                        <button type="submit" title="Löschen" class="btn-icon btn-icon-danger">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
