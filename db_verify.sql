@@ -177,6 +177,22 @@ SELECT 'Spalte asset_models.serial_number_required vorhanden' AS check_name,
              AND COLUMN_NAME = 'serial_number_required'
        ), 'OK', 'FEHLT') AS result;
 
+SELECT 'Spalte asset_models.has_sim_fields vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_models'
+             AND COLUMN_NAME = 'has_sim_fields'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_models.has_hardware_fields vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_models'
+             AND COLUMN_NAME = 'has_hardware_fields'
+       ), 'OK', 'FEHLT') AS result;
+
 SELECT 'Spalte assets.serial_number_required vorhanden' AS check_name,
        IF(EXISTS(
            SELECT 1 FROM information_schema.COLUMNS
@@ -224,6 +240,38 @@ SELECT 'Spalte asset_requests.category_id vorhanden' AS check_name,
            WHERE TABLE_SCHEMA = @schema_name
              AND TABLE_NAME = 'asset_requests'
              AND COLUMN_NAME = 'category_id'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_requests.processed_by_user_id vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_requests'
+             AND COLUMN_NAME = 'processed_by_user_id'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_requests.internal_note vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_requests'
+             AND COLUMN_NAME = 'internal_note'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_assignments.checkout_by_user_id vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_assignments'
+             AND COLUMN_NAME = 'checkout_by_user_id'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte asset_assignments.checkin_by_user_id vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'asset_assignments'
+             AND COLUMN_NAME = 'checkin_by_user_id'
        ), 'OK', 'FEHLT') AS result;
 
 SET @has_users_can_login := (
