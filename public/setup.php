@@ -46,27 +46,24 @@ function hasValidSetupData(array $data): bool {
 }
 
 function hasValidMailData(array $data): bool {
-    $mailFields = [
-        trim((string) ($data['mail_host'] ?? '')),
-        trim((string) ($data['mail_port'] ?? '')),
-        trim((string) ($data['mail_user'] ?? '')),
-        (string) ($data['mail_pass'] ?? ''),
-        trim((string) ($data['mail_from_address'] ?? '')),
-        trim((string) ($data['mail_from_name'] ?? '')),
-    ];
-    $mailConfigured = false;
-    foreach ($mailFields as $fieldValue) {
-        if ($fieldValue !== '') {
-            $mailConfigured = true;
-            break;
-        }
-    }
+    $mailHost = trim((string) ($data['mail_host'] ?? ''));
+    $mailPort = trim((string) ($data['mail_port'] ?? ''));
+    $mailUser = trim((string) ($data['mail_user'] ?? ''));
+    $mailPass = (string) ($data['mail_pass'] ?? '');
+    $mailFromAddress = trim((string) ($data['mail_from_address'] ?? ''));
+    $mailFromName = trim((string) ($data['mail_from_name'] ?? ''));
+
+    $mailConfigured = $mailHost !== ''
+        || $mailUser !== ''
+        || $mailPass !== ''
+        || $mailFromAddress !== ''
+        || ($mailFromName !== '' && $mailFromName !== 'Mini-Snipe');
 
     if (!$mailConfigured) {
         return true;
     }
 
-    if (trim((string) ($data['mail_host'] ?? '')) === '' || trim((string) ($data['mail_port'] ?? '')) === '') {
+    if ($mailHost === '' || $mailPort === '') {
         return false;
     }
 
@@ -75,7 +72,7 @@ function hasValidMailData(array $data): bool {
         return false;
     }
 
-    return ctype_digit((string) $data['mail_port']);
+    return ctype_digit($mailPort);
 }
 
 $data = [
@@ -121,12 +118,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stage = 'review_migration';
                 } else {
                     $error = 'Datenbankverbindung fehlgeschlagen: ' . $test;
+                    if (stripos($test, 'pdo_mysql') !== false || stripos($test, 'could not find driver') !== false) {
+                        $error .= ' Bitte auf dem Zielsystem die PHP-Erweiterung pdo_mysql bzw. den MySQL-Treiber aktivieren.';
+                    }
                     $stage = 'review_connection';
                 }
             } elseif ($action === 'run_migrations') {
                 $test = $setup->testConnection($data);
                 if ($test !== true) {
                     $error = 'Datenbankverbindung fehlgeschlagen: ' . $test;
+                    if (stripos($test, 'pdo_mysql') !== false || stripos($test, 'could not find driver') !== false) {
+                        $error .= ' Bitte auf dem Zielsystem die PHP-Erweiterung pdo_mysql bzw. den MySQL-Treiber aktivieren.';
+                    }
                     $stage = 'review_connection';
                 } else {
                     $migration = $setup->runMigrations($data);
@@ -141,6 +144,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $test = $setup->testConnection($data);
                 if ($test !== true) {
                     $error = 'Datenbankverbindung fehlgeschlagen: ' . $test;
+                    if (stripos($test, 'pdo_mysql') !== false || stripos($test, 'could not find driver') !== false) {
+                        $error .= ' Bitte auf dem Zielsystem die PHP-Erweiterung pdo_mysql bzw. den MySQL-Treiber aktivieren.';
+                    }
                     $stage = 'review_connection';
                 } else {
                     $saveResult = $setup->saveConfig($data);

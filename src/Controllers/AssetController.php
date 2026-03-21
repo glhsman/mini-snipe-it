@@ -5,6 +5,8 @@ use PDO;
 
 class AssetController {
     private $db;
+    private const MANUAL_ASSET_TAG_CATEGORY_CODES = ['DT', 'NB'];
+    private const BLOCKED_ASSIGNED_STATUS_NAMES = ['in reparatur', 'ausgemustert', 'defekt'];
 
     public function __construct($db) {
         $this->db = $db;
@@ -327,8 +329,9 @@ class AssetController {
                 $stmt->execute([$operatorId, $openAssignment['id']]);
             }
 
-            $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$userId, $assetId]);
+            $issuedStatusId = $this->getStatusIdByName('Ausgegeben');
+            $stmt = $this->db->prepare("UPDATE assets SET user_id = ?, status_id = ?, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$userId, $issuedStatusId, $assetId]);
 
             $stmt = $this->db->prepare("INSERT INTO asset_assignments (asset_id, user_id, checkout_by_user_id) VALUES (?, ?, ?)");
             $stmt->execute([$assetId, $userId, $operatorId]);
@@ -365,8 +368,9 @@ class AssetController {
                 throw new \RuntimeException('Asset ist keinem Benutzer zugewiesen.');
             }
 
-            $stmt = $this->db->prepare("UPDATE assets SET user_id = NULL, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$assetId]);
+            $readyStatusId = $this->getStatusIdByName('Einsatzbereit');
+            $stmt = $this->db->prepare("UPDATE assets SET user_id = NULL, status_id = ?, archiv_bit = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$readyStatusId, $assetId]);
 
             $this->db->commit();
             return $assignmentId;
@@ -379,6 +383,8 @@ class AssetController {
     }
 
     public function createAsset($data) {
+        $this->validateAssetStateRules($data);
+
         $modelId = !empty($data['model_id']) ? (int)$data['model_id'] : null;
         $serialRequired = array_key_exists('serial_number_required', $data)
             ? ((int)$data['serial_number_required'] === 1 ? 1 : 0)
@@ -403,6 +409,8 @@ class AssetController {
     }
 
     public function updateAsset($id, $data) {
+        $this->validateAssetStateRules($data, (int)$id);
+
         $modelId = !empty($data['model_id']) ? (int)$data['model_id'] : null;
         $serialRequired = array_key_exists('serial_number_required', $data)
             ? ((int)$data['serial_number_required'] === 1 ? 1 : 0)
@@ -468,6 +476,10 @@ class AssetController {
     }
 
     public function generateAssetTag($locationId, $modelId) {
+        if ($this->requiresManualAssetTag($modelId)) {
+            throw new \RuntimeException("Für Assets der Kategorien 'DT' und 'NB' muss das Asset-Tag manuell vergeben werden.");
+        }
+
         // 1. Get Location Kuerzel
         $locKuerzel = 'XX';
         if ($locationId) {
@@ -508,5 +520,72 @@ class AssetController {
 
         // 4. Formatieren mit führenden Nullen (4-stellig)
         return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+    public function shouldAutoGenerateAssetTag($modelId): bool {
+        return !$this->requiresManualAssetTag($modelId);
+    }
+
+    private function validateAssetStateRules(array &$data, ?int $assetId = null): void {
+        $data['asset_tag'] = trim((string)($data['asset_tag'] ?? ''));
+
+        if ($data['asset_tag'] === '' && $this->requiresManualAssetTag($data['model_id'] ?? null)) {
+            throw new \RuntimeException("Für Assets der Kategorien 'DT' und 'NB' darf kein Asset-Tag automatisch generiert werden. Bitte ein manuell vergebenes Asset-Tag eintragen.");
+        }
+
+        $userId = !empty($data['user_id']) ? (int)$data['user_id'] : 0;
+        $statusName = $this->getStatusNameById($data['status_id'] ?? null);
+
+        if ($userId > 0 && in_array($statusName, self::BLOCKED_ASSIGNED_STATUS_NAMES, true)) {
+            throw new \RuntimeException("Ein zugeordnetes Asset kann nicht auf 'In Reparatur', 'Defekt' oder 'Ausgemustert' gesetzt werden.");
+        }
+
+        if ($assetId !== null && $assetId > 0 && $userId === 0) {
+            $asset = $this->getAssetById($assetId);
+            if ($asset && !empty($asset['user_id']) && in_array($statusName, self::BLOCKED_ASSIGNED_STATUS_NAMES, true)) {
+                throw new \RuntimeException("Ein zugeordnetes Asset kann nicht auf 'In Reparatur', 'Defekt' oder 'Ausgemustert' gesetzt werden.");
+            }
+        }
+    }
+
+    private function requiresManualAssetTag($modelId): bool {
+        $categoryCode = $this->getCategoryCodeByModelId($modelId);
+        return in_array($categoryCode, self::MANUAL_ASSET_TAG_CATEGORY_CODES, true);
+    }
+
+    private function getCategoryCodeByModelId($modelId): string {
+        if (empty($modelId)) {
+            return '';
+        }
+
+        $stmt = $this->db->prepare("SELECT UPPER(COALESCE(c.kuerzel, ''))
+                                    FROM asset_models m
+                                    LEFT JOIN categories c ON m.category_id = c.id
+                                    WHERE m.id = ?
+                                    LIMIT 1");
+        $stmt->execute([(int)$modelId]);
+        $value = $stmt->fetchColumn();
+        return is_string($value) ? trim($value) : '';
+    }
+
+    private function getStatusNameById($statusId): string {
+        if (empty($statusId)) {
+            return '';
+        }
+
+        $stmt = $this->db->prepare("SELECT LOWER(TRIM(name)) FROM status_labels WHERE id = ? LIMIT 1");
+        $stmt->execute([(int)$statusId]);
+        $value = $stmt->fetchColumn();
+        return is_string($value) ? trim($value) : '';
+    }
+
+    private function getStatusIdByName(string $statusName): int {
+        $stmt = $this->db->prepare("SELECT id FROM status_labels WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1");
+        $stmt->execute([$statusName]);
+        $value = $stmt->fetchColumn();
+        if ($value === false) {
+            throw new \RuntimeException("Status '" . $statusName . "' wurde nicht gefunden.");
+        }
+
+        return (int) $value;
     }
 }

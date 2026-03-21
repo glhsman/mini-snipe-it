@@ -30,6 +30,38 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 
 ## Voraussetzungen
 
+Fuer eine erfolgreiche Neuinstallation auf einem leeren Zielsystem werden folgende Punkte vorausgesetzt:
+
+-   **PHP 8.x**
+-   **MySQL oder MariaDB**
+-   **Webserver** wie Apache, z.B. ueber XAMPP
+-   **PHP-Module**:
+    -   `PDO`
+    -   `pdo_mysql`
+-   **Projektstruktur auf dem Zielsystem**:
+    -   Ordner `config`
+    -   Ordner `public`
+    -   Ordner `src`
+    -   Ordner `vendor`
+-   **Schutzdateien fuer Apache**:
+    -   `.htaccess` im Projekt-Root
+    -   `.htaccess` in `config/`
+    -   `.htaccess` in `src/`
+-   **Dateien im Projekt-Root**:
+    -   `database.sql`
+    -   `db_migration.sql`
+    -   `db_verify.sql`
+    -   optional `.env.example`
+-   **Schreibrechte** im Projektverzeichnis, damit die Datei `.env` angelegt werden kann
+-   **Leere Datenbank** sowie ein Benutzer mit Rechten auf diese Datenbank
+-   **Optional fuer erweiterten SMTP-Test oder Nachinstallation von Abhaengigkeiten**: Composer
+
+Wichtige Hinweise:
+
+-   Wenn beim Setup `could not find driver` erscheint, fehlt in der Regel `pdo_mysql`
+-   Maildaten sind fuer die Erstinstallation nicht erforderlich
+-   Bei Apache/XAMPP sollten die vorhandenen `.htaccess`-Dateien mitkopiert werden, damit sensible Bereiche und Dateien geschuetzt bleiben
+
 -   **XAMPP** (mit PHP 8.x und MySQL/MariaDB)
 -   **Optional für erweiterten SMTP-Test**: Composer (für PHPMailer)
 
@@ -59,6 +91,133 @@ composer require phpmailer/phpmailer
 3.  Sicherstellen, dass `vendor/autoload.php` vorhanden ist
 
 Ohne PHPMailer verwendet die Anwendung einen direkten SMTP-Fallback. PHPMailer ist jedoch robuster bei TLS/Authentifizierung und liefert verständlichere Fehlermeldungen.
+
+### Detaillierte Installationsanleitung fuer ein leeres Zielsystem
+
+Die Kurzfassung oben reicht fuer bestehende XAMPP-Setups oft aus. Fuer ein komplett neues Test- oder Zielsystem sollte die Installation in dieser Reihenfolge erfolgen.
+
+#### 1. Projektdateien vollstaendig kopieren
+
+Folgende Ordner muessen vorhanden sein:
+
+-   `config`
+-   `public`
+-   `src`
+-   `vendor`
+
+Zusätzlich sollten im Projekt-Root mindestens diese Dateien vorhanden sein:
+
+-   `database.sql`
+-   `db_migration.sql`
+-   `db_verify.sql`
+-   optional `.env.example`
+
+
+#### 2. PHP-Voraussetzungen pruefen
+
+Erforderlich sind insbesondere diese PHP-Module:
+
+-   `PDO`
+-   `pdo_mysql`
+
+Pruefung per CLI:
+
+```bash
+php -m
+```
+
+Wenn beim Setup der Fehler `could not find driver` erscheint, sind in der Regel nicht die Zugangsdaten falsch, sondern `pdo_mysql` fehlt oder ist nicht aktiviert.
+
+Bei XAMPP die `php.ini` pruefen:
+
+```ini
+extension=pdo_mysql
+```
+
+Danach Apache bzw. PHP neu starten.
+
+#### 3. Datenbank vorbereiten
+
+-   Eine leere Datenbank anlegen, z.B. `minisnipeit`
+-   Einen Benutzer mit Rechten auf diese Datenbank anlegen
+-   Host, Datenbankname, Benutzer und Passwort notieren
+
+#### 4. Schreibrechte sicherstellen
+
+Das Projekt muss im Root-Verzeichnis die Datei `.env` schreiben duerfen. Wenn der Webserver dort keine Schreibrechte hat, kann das Setup die Konfiguration nicht speichern.
+
+#### 5. Setup-Assistent aufrufen
+
+Im Browser:
+
+```text
+http://localhost/minisnipeit/public/setup.php
+```
+
+Dann:
+
+1.  DB Host eintragen
+2.  DB Name eintragen
+3.  DB User eintragen
+4.  DB Passwort eintragen
+5.  Mail-Felder nur dann befuellen, wenn SMTP wirklich genutzt werden soll
+
+#### 6. Setup-Schritte durchlaufen
+
+Der Assistent arbeitet in drei Schritten:
+
+1.  Verbindung testen
+2.  Tabellen und Vorbelegungen anlegen
+3.  `.env` speichern
+
+#### 7. Mail ist optional
+
+SMTP-Daten sind keine Pflicht fuer die Erstinstallation.
+
+-   Wenn kein Mailversand genutzt wird, alle Mail-Felder leer lassen
+-   Erst wenn Mail konfiguriert werden soll, muessen Host und numerischer Port korrekt gesetzt sein
+
+#### 8. Login nach erfolgreicher Installation
+
+Nach erfolgreichem Setup:
+
+-   `http://localhost/minisnipeit/public/login.php`
+
+oder:
+
+-   `http://localhost/minisnipeit/public/`
+
+#### 9. Typische Fehler bei Neuinstallationen
+
+**Fehler:** `Datenbankverbindung fehlgeschlagen: could not find driver`
+
+Bedeutung:
+
+-   `pdo_mysql` ist auf dem Zielsystem nicht installiert oder nicht aktiviert
+
+**Fehler:** Zugangsdaten funktionieren extern, aber im Setup nicht
+
+Typische Ursachen:
+
+-   `pdo_mysql` fehlt
+-   falscher Hostname aus Sicht des Webservers
+-   Firewall / DNS / Container-Netzwerk
+
+**Fehler:** `.env` kann nicht geschrieben werden
+
+Ursache:
+
+-   fehlende Schreibrechte im Projektverzeichnis
+
+#### 10. Installation ohne mitkopiertes `vendor`
+
+Wenn `vendor/` nicht mitkopiert wurde, muessen die PHP-Abhaengigkeiten auf dem Zielsystem installiert werden:
+
+```bash
+composer install
+```
+
+Danach pruefen, ob `vendor/autoload.php` vorhanden ist.
 
 ### Hinweis zu SMTP-Zertifikaten
 

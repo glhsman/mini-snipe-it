@@ -161,6 +161,10 @@ class UserController {
         $vorgesetzter = (isset($data['vorgesetzter']) && trim($data['vorgesetzter']) !== '') ? trim($data['vorgesetzter']) : null;
         $isActiv = array_key_exists('is_activ', $data) ? (!empty($data['is_activ']) ? 1 : 0) : 1;
 
+        if ($isActiv === 0 && $this->countAssignedAssets((int)$id) > 0) {
+            throw new \RuntimeException('Benutzer kann nicht auf inaktiv gesetzt werden, solange ihm Assets zugeordnet sind.');
+        }
+
         $fields = ["first_name=?", "last_name=?", "email=?", "personalnummer=?", "vorgesetzter=?", "is_activ=?", "username=?", "location_id=?"];
         $params = [$firstName, $lastName, $email, $personalnummer, $vorgesetzter, $isActiv, $data['username'], $data['location_id']];
 
@@ -305,5 +309,11 @@ class UserController {
         
         $stmt->execute();
         return $stmt->fetchAll();
+    }
+
+    private function countAssignedAssets(int $userId): int {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM assets WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        return (int) $stmt->fetchColumn();
     }
 }

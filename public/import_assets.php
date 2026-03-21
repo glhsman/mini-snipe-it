@@ -280,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
                     // --- Asset Bauen ---
                     $assetData = [
                         'name' => $assetName,
-                        'asset_tag' => !empty($assetTag) ? $assetTag : null,
+                        'asset_tag' => !empty($assetTag) ? trim($assetTag) : '',
                         'serial' => !empty($serial) ? $serial : null,
                         'model_id' => $modelId,
                         'status_id' => $statusId,

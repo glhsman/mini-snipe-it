@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'os_version'    => !empty($_POST['os_version']) ? (int)$_POST['os_version'] : (!empty($_POST) ? null : ($asset['os_version'] ?? null))
     ];
 
-    if (empty($data['asset_tag'])) {
+    if (empty($data['asset_tag']) && $assetController->shouldAutoGenerateAssetTag($data['model_id'])) {
         $data['asset_tag'] = $assetController->generateAssetTag($data['location_id'], $data['model_id']);
     }
 
@@ -103,6 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $error = "Fehler beim Bearbeiten des Assets.";
             }
+        } catch (\RuntimeException $e) {
+            $error = $e->getMessage();
         } catch (PDOException $e) {
             // Prüfung, ob Asset Tag bereits existiert (Unique Constraint Verletzung)
             if ($e->getCode() == 23000) {

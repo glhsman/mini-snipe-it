@@ -49,6 +49,10 @@ class SetupController {
 
     public function testConnection($data) {
         try {
+            if (!extension_loaded('pdo_mysql')) {
+                throw new Exception("Der PHP-Treiber 'pdo_mysql' ist auf diesem System nicht installiert oder nicht aktiviert.");
+            }
+
             $dsn = "mysql:host=" . $data['db_host'] . ";dbname=" . $data['db_name'] . ";charset=utf8mb4";
             new PDO($dsn, $data['db_user'], $data['db_pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
             return true;
@@ -59,12 +63,23 @@ class SetupController {
 
     public function runMigrations($data) {
         try {
+            if (!extension_loaded('pdo_mysql')) {
+                throw new Exception("Der PHP-Treiber 'pdo_mysql' ist auf diesem System nicht installiert oder nicht aktiviert.");
+            }
+
+            if (!is_file($this->sqlPath)) {
+                throw new Exception("Die Datei 'database.sql' wurde im Projekt-Root nicht gefunden. Bitte diese Datei zusammen mit 'config', 'public', 'src' und 'vendor' auf das Zielsystem kopieren.");
+            }
+            if (!is_readable($this->sqlPath)) {
+                throw new Exception("Die Datei 'database.sql' ist vorhanden, aber nicht lesbar. Bitte Dateirechte und Besitzer pruefen.");
+            }
+
             $dsn = "mysql:host=" . $data['db_host'] . ";dbname=" . $data['db_name'] . ";charset=utf8mb4";
             $pdo = new PDO($dsn, $data['db_user'], $data['db_pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
             
             $sql = file_get_contents($this->sqlPath);
             if ($sql === false) {
-                throw new Exception("Migration-Datei nicht gefunden.");
+                throw new Exception("Die Datei 'database.sql' konnte nicht geladen werden.");
             }
 
             // Statements einzeln ausführen – PDO::exec() ist bei Multi-Statement-Strings

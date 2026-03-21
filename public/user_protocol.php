@@ -10,6 +10,26 @@ use App\Helpers\Auth;
 
 Auth::requireEditor();
 
+function getSafeProtocolReturnTo(?string $candidate, int $userId): string {
+    $candidate = trim((string) $candidate);
+    if ($candidate !== '') {
+        $parts = parse_url($candidate);
+        if ($parts !== false
+            && !isset($parts['scheme'])
+            && !isset($parts['host'])
+            && !isset($parts['user'])
+            && !isset($parts['pass'])) {
+            $path = ltrim((string) ($parts['path'] ?? ''), '/');
+            if (in_array($path, ['assets.php', 'user_edit.php'], true)) {
+                $query = isset($parts['query']) && $parts['query'] !== '' ? '?' . $parts['query'] : '';
+                return $path . $query;
+            }
+        }
+    }
+
+    return 'user_edit.php?id=' . $userId;
+}
+
 if ((!isset($_GET['id']) || !is_numeric($_GET['id']))
     && (!isset($_GET['history_id']) || !is_numeric($_GET['history_id']))
     && !isset($_GET['history_ids'])) {
@@ -112,6 +132,9 @@ $fullName = trim((string) (($user['first_name'] ?? '') . ' ' . ($user['last_name
 if ($fullName === '') {
     $fullName = (string) ($user['username'] ?? 'Unbekannter Benutzer');
 }
+
+$returnTo = getSafeProtocolReturnTo($_GET['return_to'] ?? '', $userId);
+$returnLabel = str_starts_with($returnTo, 'assets.php') ? 'Zurueck zu den Assets' : 'Zurueck zum Benutzer';
 
 $locationLines = array_filter([
     $user['location_name'] ?? '',
@@ -381,7 +404,7 @@ $locationLines = array_filter([
 </head>
 <body>
     <div class="toolbar">
-        <a href="user_edit.php?id=<?php echo $userId; ?>">Zurueck zum Benutzer</a>
+        <a href="<?php echo htmlspecialchars($returnTo); ?>"><?php echo htmlspecialchars($returnLabel); ?></a>
         <button type="button" onclick="window.print()">Drucken / Als PDF speichern</button>
     </div>
 

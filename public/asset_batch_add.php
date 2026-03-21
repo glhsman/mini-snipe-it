@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
                 
                 if ($serialRequired && empty($data['serial'])) continue;
 
-                if (empty($data['asset_tag'])) {
+                if (empty($data['asset_tag']) && $assetController->shouldAutoGenerateAssetTag($data['model_id'])) {
                     $data['asset_tag'] = $assetController->generateAssetTag($data['location_id'], $data['model_id']);
                 }
 

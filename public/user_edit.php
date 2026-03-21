@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($data['username'])) {
         $error = "Benutzername darf nicht leer sein.";
     } elseif ($canLogin === 1 && $password !== $password_confirm) {
-        $error = "Die eingegebenen Passwörter stimmen nicht überein.";
+        $error = "Die eingegebenen Passwoerter stimmen nicht ueberein.";
     } elseif (
         $canLogin === 1 &&
         empty($password) &&
@@ -82,11 +82,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($canLogin === 0) {
             $data['password'] = '';
         }
-        if ($userController->updateUser($userId, $data)) {
-            header('Location: users.php');
-            exit;
-        } else {
-            $error = "Fehler beim Speichern der Benutzerdaten. Möglicherweise existiert der Benutzername oder die E-Mail bereits.";
+        try {
+            if ($userController->updateUser($userId, $data)) {
+                header('Location: users.php');
+                exit;
+            } else {
+                $error = "Fehler beim Speichern der Benutzerdaten. Moeglicherweise existiert der Benutzername oder die E-Mail bereits.";
+            }
+        } catch (\RuntimeException $e) {
+            $error = $e->getMessage();
         }
     }
 }
@@ -135,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="main-content">
         <header class="header">
             <h1>Benutzer bearbeiten</h1>
-            <a href="users.php" class="btn" style="background: rgba(255,255,255,0.1);"><i class="fas fa-arrow-left"></i> Zurück</a>
+            <a href="users.php" class="btn" style="background: rgba(255,255,255,0.1);"><i class="fas fa-arrow-left"></i> Zurueck</a>
         </header>
 
         <div class="card" style="max-width: 800px;">
@@ -152,6 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="asset-list">
                     <form method="POST" action="asset_checkin.php" id="bulk-return-form" onsubmit="return validateBulkReturn();">
                         <input type="hidden" name="user_id" value="<?php echo $userId; ?>">
+                        <input type="hidden" name="return_to" value="<?php echo htmlspecialchars('user_edit.php?id=' . $userId); ?>">
                         <table>
                         <thead>
                             <tr>
@@ -246,20 +251,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="checkbox" name="is_activ" value="1" <?php echo ((int)($user['is_activ'] ?? 1) === 1) ? 'checked' : ''; ?>>
                         Benutzer ist aktiv
                     </label>
+                    <?php if ($assignedAssetCount > 0): ?>
+                        <small style="color: var(--text-muted);">Solange diesem Benutzer Assets zugewiesen sind, kann er nicht auf inaktiv gesetzt werden.</small>
+                    <?php endif; ?>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label id="passwordLabel">Passwort (Pflichtfeld bei Web-Login)</label>
                         <div class="password-wrapper">
-                            <input type="password" name="password" id="pwd1" class="form-control" placeholder="••••••••">
+                            <input type="password" name="password" id="pwd1" class="form-control" placeholder="********">
                             <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd1', this)"></i>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Passwort bestätigen</label>
+                        <label>Passwort bestaetigen</label>
                         <div class="password-wrapper">
-                            <input type="password" name="password_confirm" id="pwd2" class="form-control" placeholder="••••••••">
+                            <input type="password" name="password_confirm" id="pwd2" class="form-control" placeholder="********">
                             <i class="fas fa-eye password-toggle" onclick="togglePassword('pwd2', this)"></i>
                         </div>
                     </div>
@@ -319,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else if (mustSetPassword) {
                 passwordLabel.textContent = 'Passwort (Pflichtfeld, da noch keines gesetzt ist)';
             } else {
-                passwordLabel.textContent = 'Passwort (optional, nur bei Änderung)';
+                passwordLabel.textContent = 'Passwort (optional, nur bei Aenderung)';
             }
         }
 

@@ -23,10 +23,35 @@ function buildReturnRedirectUrl(int $userId = 0, string $status = '', string $me
     return 'user_edit.php' . (!empty($query) ? '?' . http_build_query($query) : '');
 }
 
+function getSafeReturnTo(?string $candidate): string {
+    $candidate = trim((string) $candidate);
+    if ($candidate === '') {
+        return '';
+    }
+
+    $parts = parse_url($candidate);
+    if ($parts === false) {
+        return '';
+    }
+
+    if (isset($parts['scheme']) || isset($parts['host']) || isset($parts['user']) || isset($parts['pass'])) {
+        return '';
+    }
+
+    $path = ltrim((string) ($parts['path'] ?? ''), '/');
+    if (!in_array($path, ['assets.php', 'user_edit.php'], true)) {
+        return '';
+    }
+
+    $query = isset($parts['query']) && $parts['query'] !== '' ? '?' . $parts['query'] : '';
+    return $path . $query;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db = Database::getInstance();
     $assetController = new AssetController($db);
     $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+    $returnTo = getSafeReturnTo($_POST['return_to'] ?? '');
 
     if (isset($_POST['asset_ids']) && is_array($_POST['asset_ids'])) {
         $assetIds = array_values(array_unique(array_filter(array_map('intval', $_POST['asset_ids']), static fn($id) => $id > 0)));
@@ -34,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors = [];
 
         if (empty($assetIds)) {
-            header('Location: ' . buildReturnRedirectUrl($userId, 'error', 'Bitte mindestens ein Asset fuer die Rueckgabe auswaehlen.'));
+            header('Location: ' . ($returnTo !== '' ? $returnTo : buildReturnRedirectUrl($userId, 'error', 'Bitte mindestens ein Asset fuer die Rueckgabe auswaehlen.')));
             exit;
         }
 
@@ -51,6 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($userId > 0) {
                 $query .= '&id=' . $userId;
             }
+            if ($returnTo !== '') {
+                $query .= '&return_to=' . urlencode($returnTo);
+            }
             header('Location: user_protocol.php?' . $query);
             exit;
         }
@@ -64,10 +92,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int) $_POST['id'];
         try {
             $assignmentId = $assetController->checkinAsset($id, Auth::getUserId());
-            header('Location: user_protocol.php?type=return&history_id=' . $assignmentId);
+            $query = 'type=return&history_id=' . $assignmentId;
+            if ($returnTo !== '') {
+                $query .= '&return_to=' . urlencode($returnTo);
+            }
+            header('Location: user_protocol.php?' . $query);
             exit;
         } catch (\Throwable $e) {
-            header('Location: ' . buildReturnRedirectUrl($userId, 'error', $e->getMessage()));
+            header('Location: ' . ($returnTo !== '' ? $returnTo : buildReturnRedirectUrl($userId, 'error', $e->getMessage())));
             exit;
         }
     }

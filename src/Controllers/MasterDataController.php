@@ -38,7 +38,7 @@ class MasterDataController {
     }
 
     public function getAssetModels() {
-        $stmt = $this->db->query("SELECT m.*, ma.name as manufacturer_name, c.name as category_name 
+        $stmt = $this->db->query("SELECT m.*, ma.name as manufacturer_name, c.name as category_name, c.kuerzel as category_kuerzel
                                   FROM asset_models m 
                                   LEFT JOIN manufacturers ma ON m.manufacturer_id = ma.id 
                                   LEFT JOIN categories c ON m.category_id = c.id 
