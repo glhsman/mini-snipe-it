@@ -32,6 +32,7 @@ $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $serialRequired = $assetController->isSerialNumberRequiredForModel(!empty($_POST['model_id']) ? (int)$_POST['model_id'] : null);
+    $quantity = (!$serialRequired) ? max(1, min(50, (int)($_POST['quantity'] ?? 1))) : 1;
     $data = [
         'asset_tag'     => trim($_POST['asset_tag'] ?? ''),
         'serial'        => trim($_POST['serial'] ?? ''),
@@ -53,17 +54,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'os_version'    => !empty($_POST['os_version']) ? (int)$_POST['os_version'] : null
     ];
 
-    if (empty($data['asset_tag']) && $assetController->shouldAutoGenerateAssetTag($data['model_id'])) {
-        $data['asset_tag'] = $assetController->generateAssetTag($data['location_id'], $data['model_id']);
-    }
-
     if (($serialRequired && empty($data['serial'])) || empty($data['status_id'])) {
         $error = $serialRequired
             ? "Seriennummer und Status sind Pflichtfelder."
             : "Status ist ein Pflichtfeld.";
     } else {
         try {
-            if ($assetController->createAsset($data)) {
+            $created = 0;
+            for ($i = 0; $i < $quantity; $i++) {
+                $loopData = $data;
+                // Bei Stückzahl > 1: Asset-Tag jede Iteration neu generieren
+                if ($quantity > 1) {
+                    $loopData['asset_tag'] = '';
+                }
+                if (empty($loopData['asset_tag']) && $assetController->shouldAutoGenerateAssetTag($loopData['model_id'])) {
+                    $loopData['asset_tag'] = $assetController->generateAssetTag($loopData['location_id'], $loopData['model_id']);
+                }
+                if ($assetController->createAsset($loopData)) {
+                    $created++;
+                }
+            }
+            if ($created > 0) {
                 header('Location: assets.php');
                 exit;
             } else {
@@ -121,8 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="POST">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label id="serialLabel">Seriennummer</label>
+                        <label id="serialLabel">Seriennummer (Pflichtfeld)</label>
                         <input type="text" name="serial" id="serialInput" class="form-control" value="<?php echo isset($_POST['serial']) ? htmlspecialchars($_POST['serial']) : ''; ?>">
+                        <input type="number" name="quantity" id="quantityInput" class="form-control" min="1" max="50" value="<?php echo isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1; ?>" style="display:none;" placeholder="Anzahl Assets (1–50)">
                         <small id="serialHint" style="color: var(--text-muted); display: block; margin-top: 0.35rem;"></small>
                     </div>
                     <div class="form-group">
@@ -356,22 +368,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const serialInput = document.getElementById('serialInput');
                 const serialLabel = document.getElementById('serialLabel');
                 const serialHint = document.getElementById('serialHint');
+                const quantityInput = document.getElementById('quantityInput');
 
                 $('#group-sim').toggle(sim);
                 $('#group-hardware').toggle(hardware);
 
-                serialInput.required = serialRequired;
-                serialInput.readOnly = !serialRequired;
-                serialInput.placeholder = serialRequired
-                    ? 'Seriennummer eingeben'
-                    : 'Wird beim Speichern automatisch erzeugt';
-                serialLabel.textContent = serialRequired ? 'Seriennummer (Pflichtfeld)' : 'Seriennummer (automatisch)';
-                serialHint.textContent = serialRequired
-                    ? ''
-                    : 'Bei diesem Modell wird automatisch eine eindeutige NA-Seriennummer erzeugt.';
-
-                if (!serialRequired) {
+                if (serialRequired) {
+                    serialInput.style.display = '';
+                    serialInput.required = true;
+                    serialInput.readOnly = false;
+                    serialInput.placeholder = 'Seriennummer eingeben';
+                    serialLabel.textContent = 'Seriennummer (Pflichtfeld)';
+                    serialHint.textContent = '';
+                    quantityInput.style.display = 'none';
+                } else {
+                    serialInput.style.display = 'none';
+                    serialInput.required = false;
                     serialInput.value = '';
+                    quantityInput.style.display = '';
+                    serialLabel.textContent = 'Stückzahl';
+                    serialHint.textContent = 'Für jedes Asset wird eine eindeutige NA-Seriennummer automatisch erzeugt.';
                 }
             }
 

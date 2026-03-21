@@ -60,8 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assets_json'])) {
                 $data['serial'] = strtoupper(trim((string)($a['serial'] ?? '')));
                 $data['mac_adresse'] = !empty($a['mac']) ? trim($a['mac']) : null;
                 $data['asset_tag'] = !empty($a['inventar']) ? trim($a['inventar']) : '';
-                
+
                 if ($serialRequired && empty($data['serial'])) continue;
+
+                // Bei Modellen ohne Seriennummernpflicht: immer PHP-seitig generieren
+                // (JS-Platzhalter werden nicht gegen die DB geprüft)
+                if (!$serialRequired) {
+                    $data['serial'] = '';
+                }
 
                 if (empty($data['asset_tag']) && $assetController->shouldAutoGenerateAssetTag($data['model_id'])) {
                     $data['asset_tag'] = $assetController->generateAssetTag($data['location_id'], $data['model_id']);
