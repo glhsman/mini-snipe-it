@@ -27,6 +27,15 @@ $stats = $dashboardController->getStats();
 $catDistribution = $dashboardController->getCategoryDistribution();
 $topManufacturers = $dashboardController->getTopManufacturers(5);
 
+$recentInventoryEntries = [];
+try {
+    $recentInventoryStmt = $db->query("SELECT id, serial_number, room_text, comment_text, company_name, captured_at, created_at FROM inventory_staging ORDER BY id DESC LIMIT 5");
+    $recentInventoryEntries = $recentInventoryStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    // In alten Installationen kann die Tabelle noch fehlen.
+    $recentInventoryEntries = [];
+}
+
 // Letzte 5 Assets für die Tabelle
 $recentAssets = array_slice($assets, 0, 5);
 
@@ -143,6 +152,41 @@ $statusClasses = [
                 </div>
             </div>
         </div>
+
+        <?php if (!empty($recentInventoryEntries)): ?>
+            <div class="card" style="margin-top: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Neue Inventurdaten</h2>
+                    <?php if (Auth::isEditor()): ?>
+                        <a href="inventory_review.php" style="color: var(--primary-color); text-decoration: none; font-size: 0.875rem;">Zur Inventur-Prüfung</a>
+                    <?php endif; ?>
+                </div>
+                <div style="overflow-x: auto; width: 100%;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Raum</th>
+                                <th>Kommentar</th>
+                                <th>Firma</th>
+                                <th>Erfasst am</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentInventoryEntries as $entry): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($entry['serial_number'] ?? ''); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($entry['room_text'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars($entry['comment_text'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars($entry['company_name'] ?? '-'); ?></td>
+                                    <td><?php echo !empty($entry['captured_at']) ? htmlspecialchars(date('d.m.Y H:i', strtotime((string)$entry['captured_at']))) : (!empty($entry['created_at']) ? htmlspecialchars(date('d.m.Y H:i', strtotime((string)$entry['created_at']))) : '-'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <div class="card" style="margin-top: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">

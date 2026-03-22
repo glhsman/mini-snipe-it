@@ -36,6 +36,28 @@ function getSafeAssetsReturnUrl($candidate) {
     return 'assets.php' . $query;
 }
 
+function normalizeDateInputValue($value): string {
+    if ($value === null) {
+        return '';
+    }
+
+    $raw = trim((string)$value);
+    if ($raw === '' || strpos($raw, '0000-00-00') === 0) {
+        return '';
+    }
+
+    $formats = ['Y-m-d', 'Y-m-d H:i:s', 'Y-m-d H:i'];
+    foreach ($formats as $format) {
+        $dt = \DateTime::createFromFormat($format, $raw);
+        if ($dt instanceof \DateTime) {
+            return $dt->format('Y-m-d');
+        }
+    }
+
+    $ts = strtotime($raw);
+    return $ts ? date('Y-m-d', $ts) : '';
+}
+
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header('Location: assets.php');
     exit;
@@ -52,6 +74,9 @@ if (!$asset) {
     header('Location: assets.php');
     exit;
 }
+
+$assetPurchaseDateValue = normalizeDateInputValue($asset['purchase_date'] ?? null);
+$assetLastInventurValue = normalizeDateInputValue($asset['last_inventur'] ?? null);
 
 $models = $masterData->getAssetModels();
 $statusLabels = $masterData->getStatusLabels();
@@ -75,8 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'model_id'      => !empty($_POST['model_id']) ? (int)$_POST['model_id'] : null,
         'status_id'     => !empty($_POST['status_id']) ? (int)$_POST['status_id'] : null,
         'location_id'   => !empty($_POST['location_id']) ? (int)$_POST['location_id'] : null,
+        'room'          => trim($_POST['room'] ?? ''),
         'user_id'       => !empty($_POST['user_id']) ? (int)$_POST['user_id'] : null,
         'purchase_date' => !empty($_POST['purchase_date']) ? $_POST['purchase_date'] : null,
+        'last_inventur' => !empty($_POST['last_inventur']) ? $_POST['last_inventur'] : null,
         'notes'         => $_POST['notes'] ?? '',
         'name'          => $asset['name'] ?? '',
         'pin'           => !empty($_POST['pin']) ? trim($_POST['pin']) : (!empty($_POST) ? null : ($asset['pin'] ?? null)),
@@ -167,9 +194,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="form-grid">
-                    <div class="form-group" style="grid-column: 1 / -1;">
+                    <div class="form-group">
                         <label>Kaufdatum</label>
-                        <input type="date" name="purchase_date" class="form-control" style="width: 50%;" value="<?php echo isset($_POST['purchase_date']) ? htmlspecialchars($_POST['purchase_date']) : htmlspecialchars($asset['purchase_date'] ?? ''); ?>">
+                        <input type="date" name="purchase_date" class="form-control" style="width: 50%;" placeholder="tt.mm.jjjj" value="<?php echo isset($_POST['purchase_date']) ? htmlspecialchars($_POST['purchase_date']) : htmlspecialchars($assetPurchaseDateValue); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>Letzte Inventur</label>
+                        <input type="date" name="last_inventur" class="form-control" style="width: 50%;" placeholder="tt.mm.jjjj" value="<?php echo isset($_POST['last_inventur']) ? htmlspecialchars($_POST['last_inventur']) : htmlspecialchars($assetLastInventurValue); ?>">
                     </div>
                 </div>
 
@@ -217,6 +248,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Raum</label>
+                        <input type="text" name="room" class="form-control" placeholder="z.B. Raum 204" value="<?php echo isset($_POST['room']) ? htmlspecialchars($_POST['room']) : htmlspecialchars($asset['room'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <div class="form-grid">
                     <div class="form-group">
                         <label>Benutzer zuweisen</label>
                         <select name="user_id" id="user-select" class="form-control">

@@ -35,9 +35,9 @@ class AssetController {
         $conditions = [];
         $params     = [];
         if (!empty($search)) {
-            $conditions[] = "(a.asset_tag LIKE ? OR a.serial LIKE ? OR a.name LIKE ?)";
+            $conditions[] = "(a.asset_tag LIKE ? OR a.serial LIKE ? OR a.name LIKE ? OR a.room LIKE ?)";
             $like = '%' . $search . '%';
-            $params[] = $like; $params[] = $like; $params[] = $like;
+            $params[] = $like; $params[] = $like; $params[] = $like; $params[] = $like;
         }
         if (!empty($modelId)) {
             $conditions[] = "a.model_id = ?";
@@ -61,9 +61,9 @@ class AssetController {
         $conditions = [];
         $params     = [];
         if (!empty($search)) {
-            $conditions[] = "(a.asset_tag LIKE ? OR a.serial LIKE ? OR a.name LIKE ?)";
+            $conditions[] = "(a.asset_tag LIKE ? OR a.serial LIKE ? OR a.name LIKE ? OR a.room LIKE ?)";
             $like = '%' . $search . '%';
-            $params[] = $like; $params[] = $like; $params[] = $like;
+            $params[] = $like; $params[] = $like; $params[] = $like; $params[] = $like;
         }
         if (!empty($modelId)) {
             $conditions[] = "a.model_id = ?";
@@ -75,7 +75,7 @@ class AssetController {
         }
         
         // Sorting Whitelist
-        $allowedSort = ['name', 'asset_tag', 'model_name', 'manufacturer_name', 'status_name', 'location_name', 'id', 'created_at'];
+        $allowedSort = ['name', 'asset_tag', 'model_name', 'manufacturer_name', 'status_name', 'location_name', 'room', 'last_inventur', 'id', 'created_at'];
         $sort = in_array(strtolower($sort), $allowedSort) ? strtolower($sort) : 'created_at';
         $order = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
 
@@ -87,7 +87,9 @@ class AssetController {
             'model_name' => 'm.name',
             'manufacturer_name' => 'mf.name',
             'status_name' => 's.name',
-            'location_name' => 'l.name'
+            'location_name' => 'l.name',
+            'room' => 'a.room',
+            'last_inventur' => 'a.last_inventur'
         ];
         $orderBy = $sortMap[$sort] ?? 'a.created_at';
 
@@ -402,13 +404,13 @@ class AssetController {
             $serial = $this->generatePlaceholderSerial();
         }
 
-        $sql = "INSERT INTO assets (name, asset_tag, serial, serial_number_required, model_id, status_id, location_id, user_id, purchase_date, notes, pin, puk, rufnummer, mac_adresse, ram, ssd_size, cores, os_version, archiv_bit) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO assets (name, asset_tag, serial, serial_number_required, model_id, status_id, location_id, room, user_id, purchase_date, last_inventur, notes, pin, puk, rufnummer, mac_adresse, ram, ssd_size, cores, os_version, archiv_bit) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $data['name'], $data['asset_tag'], $serial, $serialRequired, $data['model_id'], 
-            $data['status_id'], $data['location_id'], $data['user_id'] ?? null, 
-            $data['purchase_date'], $data['notes'],
+            $data['status_id'], $data['location_id'], $data['room'] ?? null, $data['user_id'] ?? null, 
+            $data['purchase_date'], $data['last_inventur'] ?? null, $data['notes'],
             $data['pin'] ?? null, $data['puk'] ?? null, $data['rufnummer'] ?? null,
             $data['mac_adresse'] ?? null, $data['ram'] ?? null, $data['ssd_size'] ?? null,
             $data['cores'] ?? null, $data['os_version'] ?? null, 0
@@ -428,13 +430,13 @@ class AssetController {
             $serial = $this->generatePlaceholderSerial();
         }
 
-        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, serial_number_required=?, model_id=?, status_id=?, location_id=?, user_id=?, purchase_date=?, notes=?, pin=?, puk=?, rufnummer=?, mac_adresse=?, ram=?, ssd_size=?, cores=?, os_version=?, archiv_bit=0 
+        $sql = "UPDATE assets SET name=?, asset_tag=?, serial=?, serial_number_required=?, model_id=?, status_id=?, location_id=?, room=?, user_id=?, purchase_date=?, last_inventur=?, notes=?, pin=?, puk=?, rufnummer=?, mac_adresse=?, ram=?, ssd_size=?, cores=?, os_version=?, archiv_bit=0 
                 WHERE id=?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $data['name'], $data['asset_tag'], $serial, $serialRequired, $data['model_id'], 
-            $data['status_id'], $data['location_id'], $data['user_id'] ?? null, 
-            $data['purchase_date'], $data['notes'],
+            $data['status_id'], $data['location_id'], $data['room'] ?? null, $data['user_id'] ?? null, 
+            $data['purchase_date'], $data['last_inventur'] ?? null, $data['notes'],
             $data['pin'] ?? null, $data['puk'] ?? null, $data['rufnummer'] ?? null,
             $data['mac_adresse'] ?? null, $data['ram'] ?? null, $data['ssd_size'] ?? null,
             $data['cores'] ?? null, $data['os_version'] ?? null,

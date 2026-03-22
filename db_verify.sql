@@ -42,6 +42,12 @@ SELECT 'Tabelle asset_requests vorhanden' AS check_name,
        WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'asset_requests'
      ), 'OK', 'FEHLT') AS result;
 
+SELECT 'Tabelle inventory_staging vorhanden' AS check_name,
+     IF(EXISTS(
+       SELECT 1 FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'inventory_staging'
+     ), 'OK', 'FEHLT') AS result;
+
 SELECT 'Tabelle password_resets vorhanden' AS check_name,
      IF(EXISTS(
        SELECT 1 FROM information_schema.TABLES
@@ -201,6 +207,22 @@ SELECT 'Spalte assets.serial_number_required vorhanden' AS check_name,
              AND COLUMN_NAME = 'serial_number_required'
        ), 'OK', 'FEHLT') AS result;
 
+SELECT 'Spalte assets.room vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'assets'
+             AND COLUMN_NAME = 'room'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte assets.last_inventur vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'assets'
+             AND COLUMN_NAME = 'last_inventur'
+       ), 'OK', 'FEHLT') AS result;
+
 SELECT 'Spalte assets.os_version ist INT' AS check_name,
        IF(EXISTS(
            SELECT 1 FROM information_schema.COLUMNS
@@ -272,6 +294,30 @@ SELECT 'Spalte asset_assignments.checkin_by_user_id vorhanden' AS check_name,
            WHERE TABLE_SCHEMA = @schema_name
              AND TABLE_NAME = 'asset_assignments'
              AND COLUMN_NAME = 'checkin_by_user_id'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte inventory_staging.room_text vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'inventory_staging'
+             AND COLUMN_NAME = 'room_text'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte inventory_staging.comment_text vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'inventory_staging'
+             AND COLUMN_NAME = 'comment_text'
+       ), 'OK', 'FEHLT') AS result;
+
+SELECT 'Spalte inventory_staging.target_asset_id vorhanden' AS check_name,
+       IF(EXISTS(
+           SELECT 1 FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = @schema_name
+             AND TABLE_NAME = 'inventory_staging'
+             AND COLUMN_NAME = 'target_asset_id'
        ), 'OK', 'FEHLT') AS result;
 
 SET @has_users_can_login := (
@@ -405,6 +451,8 @@ SELECT 'Anzahl Kategorien' AS check_name, COUNT(*) AS result FROM categories;
 SELECT 'Anzahl Hersteller' AS check_name, COUNT(*) AS result FROM manufacturers;
 SELECT 'Anzahl Asset-Modelle' AS check_name, COUNT(*) AS result FROM asset_models;
 SELECT 'Anzahl Assets gesamt' AS check_name, COUNT(*) AS result FROM assets;
+SELECT 'Anzahl Inventur-Staging gesamt' AS check_name, COUNT(*) AS result FROM inventory_staging;
+SELECT 'Anzahl Inventur-Staging pending' AS check_name, COUNT(*) AS result FROM inventory_staging WHERE sync_status = 'pending';
 
 SELECT 'Mindestens 1 Admin vorhanden' AS check_name,
        IF(EXISTS(SELECT 1 FROM users WHERE role = 'admin' AND can_login = 1), 'OK', 'KEIN ADMIN') AS result;

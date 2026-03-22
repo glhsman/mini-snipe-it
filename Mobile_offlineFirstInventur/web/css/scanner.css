@@ -1,0 +1,113 @@
+/* Scanner Button */
+.input-with-button {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-with-button input {
+    flex: 1;
+}
+
+.scan-button {
+    padding: 0.75rem 1rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.scan-button:hover {
+    background-color: var(--primary-hover);
+}
+
+.scan-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Scanner Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.close-btn:hover,
+.close-btn:active {
+    background-color: #f0f0f0;
+    border-radius: 50%;
+}
+
+#scanner-container {
+    width: 100%;
+    min-height: 300px;
+    background: #000;
+}
+
+#scanner-container video {
+    width: 100%;
+    height: auto;
+}
+
+.scanner-status {
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.scanner-status.success {
+    color: var(--success);
+}
+
+.scanner-status.error {
+    color: var(--error);
+}

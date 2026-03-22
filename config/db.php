@@ -166,6 +166,9 @@ class Database {
             }
             $this->connection->exec("UPDATE assets SET archiv_bit = 0 WHERE archiv_bit IS NULL");
 
+            $this->connection->exec("ALTER TABLE assets ADD COLUMN IF NOT EXISTS room VARCHAR(255) NULL");
+            $this->connection->exec("ALTER TABLE assets ADD COLUMN IF NOT EXISTS last_inventur DATETIME NULL");
+
             $loginReasonStmt = $this->connection->prepare("SELECT COUNT(*)
                 FROM information_schema.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE()

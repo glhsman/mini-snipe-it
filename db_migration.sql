@@ -351,6 +351,7 @@ ALTER TABLE asset_models
 
 ALTER TABLE assets 
     ADD COLUMN IF NOT EXISTS serial_number_required TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS room VARCHAR(255) NULL,
     ADD COLUMN IF NOT EXISTS pin VARCHAR(4) NULL,
     ADD COLUMN IF NOT EXISTS puk VARCHAR(8) NULL,
     ADD COLUMN IF NOT EXISTS rufnummer VARCHAR(20) NULL,
@@ -358,7 +359,8 @@ ALTER TABLE assets
     ADD COLUMN IF NOT EXISTS ram INT NULL,
     ADD COLUMN IF NOT EXISTS ssd_size INT NULL,
     ADD COLUMN IF NOT EXISTS cores INT NULL,
-    ADD COLUMN IF NOT EXISTS os_version VARCHAR(100) NULL;
+    ADD COLUMN IF NOT EXISTS os_version VARCHAR(100) NULL,
+    ADD COLUMN IF NOT EXISTS last_inventur DATETIME NULL;
 
 ALTER TABLE users
     ADD COLUMN IF NOT EXISTS personalnummer VARCHAR(10) NULL AFTER email,
@@ -393,6 +395,58 @@ CREATE TABLE IF NOT EXISTS login_logs (
     INDEX idx_login_logs_created (created_at),
     INDEX idx_login_logs_user    (user_id)
 );
+
+-- 14c) Inventurdaten-Puffer fuer manuelle Pruefung im Asset Management
+-- Wird von `public/api/mobile/v1/sync/inventory.php` beschrieben und von
+-- `public/inventory_review.php` / `public/inventory_review_detail.php` verarbeitet.
+CREATE TABLE IF NOT EXISTS inventory_staging (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    client_id VARCHAR(120) NOT NULL,
+    serial_number VARCHAR(255) NOT NULL,
+    asset_model_id INT NULL,
+    room_text VARCHAR(255) NULL,
+    comment_text TEXT NULL,
+    company_id INT NULL,
+    company_name VARCHAR(255) NULL,
+    captured_at DATETIME NULL,
+    sync_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    review_note TEXT NULL,
+    reviewed_at DATETIME NULL,
+    reviewed_by_user_id INT NULL,
+    target_asset_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_inventory_staging_client_id (client_id),
+    INDEX idx_inventory_staging_status (sync_status),
+    INDEX idx_inventory_staging_serial (serial_number),
+    INDEX idx_inventory_staging_company (company_id),
+    INDEX idx_inventory_staging_asset_model (asset_model_id),
+    INDEX idx_inventory_staging_reviewed_by (reviewed_by_user_id),
+    INDEX idx_inventory_staging_target_asset (target_asset_id)
+);
+
+ALTER TABLE inventory_staging
+    ADD COLUMN IF NOT EXISTS room_text VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS comment_text TEXT NULL;
+
+-- Rueckwaertskompatibel: alte Spalte location_text in room_text ueberfuehren
+SET @has_inventory_location_text_col := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'inventory_staging'
+      AND COLUMN_NAME = 'location_text'
+);
+
+SET @sql_copy_inventory_location_to_room := IF(
+    @has_inventory_location_text_col > 0,
+    'UPDATE inventory_staging SET room_text = COALESCE(NULLIF(room_text, ''''), location_text) WHERE room_text IS NULL OR room_text = ''''',
+    'SELECT ''Spalte inventory_staging.location_text nicht vorhanden'' AS info'
+);
+
+PREPARE stmt_copy_inventory_location_to_room FROM @sql_copy_inventory_location_to_room;
+EXECUTE stmt_copy_inventory_location_to_room;
+DEALLOCATE PREPARE stmt_copy_inventory_location_to_room;
 
 -- 14b) login_logs um neue Felder/Aktionen erweitern (idempotent)
 SET @has_login_reason_col := (

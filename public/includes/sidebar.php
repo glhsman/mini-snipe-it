@@ -38,7 +38,8 @@ if (\App\Helpers\Auth::isEditor()) {
             <a href="assets.php" class="nav-link<?php echo $activePage === 'assets' ? ' active' : ''; ?>" title="Assets"><i class="fas fa-laptop"></i><span class="nav-label"> Assets</span></a>
             <?php if (\App\Helpers\Auth::isEditor()): ?>
                 <a href="asset_bookings.php" class="nav-link<?php echo $activePage === 'asset_bookings' ? ' active' : ''; ?>" title="Buchungen"><i class="fas fa-exchange-alt"></i><span class="nav-label"> Buchungen</span></a>
-                <a href="asset_requests.php" class="nav-link<?php echo $activePage === 'asset_requests' ? ' active' : ''; ?>" title="Anforderungen"><i class="fas fa-clipboard-list"></i><span class="nav-label"> Anforderungen<?php if ($showAssetRequestIndicator): ?><span class="nav-indicator" aria-label="Neue Anforderung vorhanden"></span><?php endif; ?></span></a>
+                 <a href="asset_requests.php" class="nav-link<?php echo $activePage === 'asset_requests' ? ' active' : ''; ?>" title="Anforderungen"><i class="fas fa-clipboard-list"></i><span class="nav-label"> Anforderungen<?php if ($showAssetRequestIndicator): ?><span class="nav-indicator" aria-label="Neue Anforderung vorhanden"></span><?php endif; ?></span></a>
+                 <a href="inventory_review.php" class="nav-link<?php echo $activePage === 'inventory_review' ? ' active' : ''; ?>" title="Inventur-Prüfung"><i class="fas fa-clipboard-check"></i><span class="nav-label"> Inventur-Prüfung</span></a>
             <?php endif; ?>
             <a href="users.php" class="nav-link<?php echo $activePage === 'users' ? ' active' : ''; ?>" title="User"><i class="fas fa-users"></i><span class="nav-label"> User</span></a>
             <?php if (\App\Helpers\Auth::isAdmin()): ?>

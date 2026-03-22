@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS assets (
     location_id INT,
     user_id INT,
     purchase_date DATE,
+    room VARCHAR(255) NULL,
     notes TEXT,
     pin VARCHAR(4) NULL,
     puk VARCHAR(8) NULL,
@@ -125,6 +126,7 @@ CREATE TABLE IF NOT EXISTS assets (
     ssd_size INT NULL,
     cores INT NULL,
     os_version INT NULL,
+    last_inventur DATETIME NULL,
     archiv_bit TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -132,6 +134,35 @@ CREATE TABLE IF NOT EXISTS assets (
     FOREIGN KEY (status_id) REFERENCES status_labels(id) ON DELETE SET NULL,
     FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 7b. Geparkte Inventurzeilen (zur Pruefung im Asset Management)
+-- Quelle: Mobile-Sync API (`public/api/mobile/v1/sync/inventory.php`)
+-- Nutzung: Dashboard-Widget + Inventur-Pruefung (`inventory_review*.php`)
+CREATE TABLE IF NOT EXISTS inventory_staging (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    client_id VARCHAR(120) NOT NULL,
+    serial_number VARCHAR(255) NOT NULL,
+    asset_model_id INT NULL,
+    room_text VARCHAR(255) NULL,
+    comment_text TEXT NULL,
+    company_id INT NULL,
+    company_name VARCHAR(255) NULL,
+    captured_at DATETIME NULL,
+    sync_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    review_note TEXT NULL,
+    reviewed_at DATETIME NULL,
+    reviewed_by_user_id INT NULL,
+    target_asset_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_inventory_staging_client_id (client_id),
+    INDEX idx_inventory_staging_status (sync_status),
+    INDEX idx_inventory_staging_serial (serial_number),
+    INDEX idx_inventory_staging_company (company_id),
+    INDEX idx_inventory_staging_asset_model (asset_model_id),
+    INDEX idx_inventory_staging_reviewed_by (reviewed_by_user_id),
+    INDEX idx_inventory_staging_target_asset (target_asset_id)
 );
 
 CREATE TABLE IF NOT EXISTS asset_assignments (

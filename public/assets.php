@@ -47,6 +47,7 @@ if (method_exists($assetController, 'countAssetsFiltered') && method_exists($ass
                 (string)($asset['asset_tag'] ?? ''),
                 (string)($asset['serial'] ?? ''),
                 (string)($asset['name'] ?? ''),
+                (string)($asset['room'] ?? ''),
             ]));
             if (mb_strpos($haystack, $needle) === false) {
                 return false;
@@ -198,7 +199,7 @@ function renderPagination($page, $totalPages, $perPage) {
                 <div style="position:relative; flex:1; min-width:200px;">
                     <i class="fas fa-search" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
                     <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
-                        placeholder="Tag, Seriennummer oder Name ..."
+                        placeholder="Tag, Seriennummer, Name oder Raum ..."
                         style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.25rem; border-radius:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.875rem; box-sizing:border-box;">
                 </div>
                 <!-- Modell-Filter -->
@@ -259,6 +260,8 @@ function renderPagination($page, $totalPages, $perPage) {
                         <th><a href="<?php echo sortUrl('manufacturer_name'); ?>" style="color:white; text-decoration:none;">Hersteller <i class="fas <?php echo ($sort === 'manufacturer_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
                         <th><a href="<?php echo sortUrl('status_name'); ?>" style="color:white; text-decoration:none;">Status <i class="fas <?php echo ($sort === 'status_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
                         <th><a href="<?php echo sortUrl('location_name'); ?>" style="color:white; text-decoration:none;">Standort <i class="fas <?php echo ($sort === 'location_name') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
+                        <th><a href="<?php echo sortUrl('room'); ?>" style="color:white; text-decoration:none;">Raum <i class="fas <?php echo ($sort === 'room') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
+                        <th><a href="<?php echo sortUrl('last_inventur'); ?>" style="color:white; text-decoration:none;">Letzte Inventur <i class="fas <?php echo ($sort === 'last_inventur') ? ($order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'; ?>" style="font-size:0.75rem; color:rgba(255,255,255,0.4);"></i></a></th>
                         <th>Benutzer</th>
                         <th>Aktionen</th>
                     </tr>
@@ -279,6 +282,8 @@ function renderPagination($page, $totalPages, $perPage) {
                             <span class="badge <?php echo $sClass; ?>"><?php echo htmlspecialchars($sName); ?></span>
                         </td>
                         <td><?php echo htmlspecialchars($asset['location_name'] ?? '-'); ?></td>
+                        <td><?php echo htmlspecialchars($asset['room'] ?? '-'); ?></td>
+                        <td><?php echo !empty($asset['last_inventur']) ? htmlspecialchars(date('d.m.Y H:i', strtotime($asset['last_inventur']))) : '-'; ?></td>
                         <td><?php echo $asset['assigned_to'] ? htmlspecialchars($asset['assigned_to']) : '-'; ?></td>
                         <td>
                             <?php if (Auth::isEditor()): ?>

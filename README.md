@@ -31,6 +31,14 @@ Eine vereinfachte, leichtgewichtige Version von Snipe-IT für das Asset-Manageme
 -   **Pagination in Listenansichten**:
     -   Asset-Verwaltung: 25/50/100/250 pro Seite
     -   Benutzer-Verwaltung: 25/50/100/250 pro Seite
+-   **Mobile Inventur-Sync & Review-Workflow**:
+    -   PWA-Sync schreibt Inventurdaten in `inventory_staging` und aktualisiert vorhandene Assets (Raum + letzte Inventur) direkt.
+    -   Neue Verwaltungsseite **Inventur-Prüfung** (`inventory_review.php`) mit deduplizierter Liste (je Seriennummer/Asset-Tag nur der neueste Pending-Eintrag).
+    -   Detailseite **Inventureintrag prüfen** (`inventory_review_detail.php`) mit Split-Ansicht: links Asset-Bearbeitung, rechts Scan-Daten.
+    -   Falls kein Asset existiert, kann direkt aus dem Inventureintrag ein neues Asset angelegt werden.
+    -   Aktion **Asset überprüft - OK** entfernt den Pending-Eintrag und springt auf den nächsten.
+-   **Dashboard-Erweiterung**:
+    -   Widget **Neue Inventurdaten** (max. 5 Einträge aus `inventory_staging`) zwischen Charts und "Zuletzt erfasste Assets".
 
 ## Voraussetzungen
 
@@ -263,10 +271,16 @@ Nach `db_verify.sql` sollten insbesondere folgende Prüfungen auf `OK` stehen:
 -   Tabelle `settings` vorhanden
 -   Tabelle `assets` vorhanden
 -   Tabelle `asset_assignments` vorhanden
+-   Tabelle `inventory_staging` vorhanden
 -   Spalte `settings.company_address` vorhanden
 -   Spalte `settings.protocol_header_text` vorhanden
 -   Spalte `settings.protocol_footer_text` vorhanden
+-   Spalte `assets.room` vorhanden
+-   Spalte `assets.last_inventur` vorhanden
 -   Spalte `assets.os_version` ist `INT`
+-   Spalte `inventory_staging.room_text` vorhanden
+-   Spalte `inventory_staging.comment_text` vorhanden
+-   Spalte `inventory_staging.target_asset_id` vorhanden
 
 Diese Checks sollten idealerweise `0` liefern:
 
