@@ -25,10 +25,15 @@ public/temp_*.php
 
 # Lokale Sync-/Dump-Artefakte
 sync.ffs_db
-DB_Dump_Produktiv.sql
 
-# CSV-Exports nur im Projekt-Root (Unterordner bleiben unberuehrt)
-/*.csv
+# CSV-Exports (alle außer Sample-Daten für Initial-Import)
+*.csv
+
+# SQL-Dateien (alle außer 3 Produktionsschema-Dateien)
+*.sql
+!database.sql
+!db_migration.sql
+!db_verify.sql
 
 # IDE-spezifische Dateien
 .idea/
@@ -37,3 +42,6 @@ nbproject/
 
 # Lokale Agent-/Skill-Dateien
 .agents/
+
+# Mobile Offline-First Implementierung (lokal nur, nicht im Repo)
+Mobile_offlineFirstInventur/
